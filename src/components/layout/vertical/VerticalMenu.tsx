@@ -6,6 +6,8 @@ import { useTheme } from '@mui/material/styles'
 import PerfectScrollbar from 'react-perfect-scrollbar'
 
 // Type Imports
+import HolidayVillageIcon from '@mui/icons-material/HolidayVillage'
+
 import type { VerticalMenuContextProps } from '@menu/components/vertical-menu/Menu'
 
 // Component Imports
@@ -45,13 +47,13 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
     <ScrollWrapper
       {...(isBreakpointReached
         ? {
-          className: 'bs-full overflow-y-auto overflow-x-hidden',
-          onScroll: container => scrollMenu(container, false)
-        }
+            className: 'bs-full overflow-y-auto overflow-x-hidden',
+            onScroll: container => scrollMenu(container, false)
+          }
         : {
-          options: { wheelPropagation: false, suppressScrollX: true },
-          onScrollY: container => scrollMenu(container, true)
-        })}
+            options: { wheelPropagation: false, suppressScrollX: true },
+            onScrollY: container => scrollMenu(container, true)
+          })}
     >
       {/* Incase you also want to scroll NavHeader to scroll with Vertical Menu, remove NavHeader from above and paste it below this comment */}
       {/* Vertical Menu */}
@@ -121,44 +123,32 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
         <MenuItem
           href={`/`}
           icon={<i className='ri-dashboard-line' />}
-        // suffix={<Chip label='Pro' size='small' color='primary' variant='tonal' />}
+
+          // suffix={<Chip label='Pro' size='small' color='primary' variant='tonal' />}
         >
           Dashboard
         </MenuItem>
         <MenuSection label='Apps & Pages'>
-          <MenuItem
-            href={`/employees`}
-            icon={<i className='ri-user-3-line' />}
-          >
+          <MenuItem href={`/employees`} icon={<i className='ri-user-3-line' />}>
             Employees
           </MenuItem>
-          <MenuItem
-            href={`/chat`}
-            icon={<i className='ri-wechat-line' />}
-          >
+          <MenuItem href={`/holidays`} icon={<i className='ri-calendar-event-line' />}>
+            Holiday
+          </MenuItem>
+          <MenuItem href={`/chat`} icon={<i className='ri-wechat-line' />}>
             Chat
           </MenuItem>
           <MenuItem href='/account-settings' icon={<i className='ri-user-settings-line' />}>
             Account Settings
           </MenuItem>
           <SubMenu label='Auth Pages' icon={<i className='ri-shield-keyhole-line' />}>
-            <MenuItem href='/login'>
-              Login
-            </MenuItem>
-            <MenuItem href='/register'>
-              Register
-            </MenuItem>
-            <MenuItem href='/forgot-password'>
-              Forgot Password
-            </MenuItem>
+            <MenuItem href='/login'>Login</MenuItem>
+            <MenuItem href='/register'>Register</MenuItem>
+            <MenuItem href='/forgot-password'>Forgot Password</MenuItem>
           </SubMenu>
           <SubMenu label='Miscellaneous' icon={<i className='ri-question-line' />}>
-            <MenuItem href='/error'>
-              Error
-            </MenuItem>
-            <MenuItem href='/under-maintenance' >
-              Under Maintenance
-            </MenuItem>
+            <MenuItem href='/error'>Error</MenuItem>
+            <MenuItem href='/under-maintenance'>Under Maintenance</MenuItem>
           </SubMenu>
           <MenuItem href='/card-basic' icon={<i className='ri-bar-chart-box-line' />}>
             Cards
