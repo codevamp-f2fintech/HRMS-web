@@ -19,6 +19,7 @@ import {
   DialogContent,
   Menu
 } from '@mui/material'
+import { DataGrid, GridColDef } from '@mui/x-data-grid'
 import InputLabel from '@mui/material/InputLabel'
 import FormControl from '@mui/material/FormControl'
 import { styled } from '@mui/material/styles'
@@ -26,10 +27,11 @@ import MoreVertIcon from '@mui/icons-material/MoreVert'
 import AddIcon from '@mui/icons-material/Add'
 import ViewModuleIcon from '@mui/icons-material/ViewModule'
 import ViewListIcon from '@mui/icons-material/ViewList'
+import { DriveFileRenameOutlineOutlined } from '@mui/icons-material'
 import CloseIcon from '@mui/icons-material/Close'
 import EditIcon from '@mui/icons-material/Edit'
 
-const employees = [
+const teams = [
   {
     id: 1,
     name: 'John Doe',
@@ -107,6 +109,55 @@ const employees = [
   }
 ]
 
+const columns: GridColDef<(typeof teams)[number]>[] = [
+  { field: 'id', headerName: 'ID', width: 90 },
+  {
+    field: 'name',
+    headerName: 'Name',
+    width: 150,
+    editable: true,
+
+  },
+  {
+    field: 'designation',
+    headerName: 'Designation',
+    type: 'number',
+    width: 110,
+    editable: true,
+
+  },
+  {
+    field: 'image',
+    headerName: 'Image',
+    description: 'This column has a value getter and is not sortable.',
+    sortable: false,
+    width: 160,
+  },
+  {
+    field: 'edit',
+    headerName: 'Edit',
+    description: 'This column has a value getter and is not sortable.',
+    sortable: false,
+    width: 160,
+    renderCell: ({ row: { id } }) => {
+      return (
+        <Box width="85%"
+          m="0 auto"
+          p="5px"
+          display="flex"
+          justifyContent="space-around">
+
+          <Button color="info" variant="contained"
+            sx={{ minWidth: "50px" }}
+          >
+            <DriveFileRenameOutlineOutlined />
+          </Button>
+        </Box>
+      );
+    }
+  },
+];
+
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
   ...theme.typography.body2,
@@ -115,7 +166,7 @@ const Item = styled(Paper)(({ theme }) => ({
   color: theme.palette.text.secondary
 }))
 
-function EmployeeCard({ employee, onEdit }) {
+function TeamCard({ team, onEdit }) {
   const [anchorEl, setAnchorEl] = useState(null)
 
   const handleMenuOpen = event => {
@@ -137,7 +188,7 @@ function EmployeeCard({ employee, onEdit }) {
             <MenuItem
               onClick={() => {
                 handleMenuClose()
-                onEdit(employee)
+                onEdit(team)
               }}
             >
               <EditIcon fontSize='small' style={{ marginRight: 8 }} />
@@ -149,24 +200,24 @@ function EmployeeCard({ employee, onEdit }) {
             </MenuItem> */}
           </Menu>
         </Box>
-        <Avatar alt={employee.name} src={employee.image} sx={{ width: 56, height: 56, margin: '0 auto' }} />
+        <Avatar alt={team.name} src={team.image} sx={{ width: 56, height: 56, margin: '0 auto' }} />
         <Typography style={{ fontWeight: 'bold', fontSize: '1.2em', textAlign: 'center' }} variant='h6' component='div'>
-          {employee.name}
+          {team.name}
         </Typography>
         <Typography style={{ fontWeight: 'bold', textAlign: 'center' }} variant='body2' color='text.secondary'>
-          {employee.designation}
+          {team.designation}
         </Typography>
       </CardContent>
     </Card>
   )
 }
 
-function AddEmployeeForm({ handleClose }) {
+function AddTeamForm({ handleClose }) {
   return (
     <Box sx={{ flexGrow: 1, padding: 2 }}>
       <Box display='flex' justifyContent='space-between' alignItems='center'>
         <Typography style={{ fontSize: '2em', color: 'black' }} variant='h5' gutterBottom>
-          Add Employee
+          Add Team
         </Typography>
         <IconButton onClick={handleClose}>
           <CloseIcon />
@@ -216,7 +267,7 @@ function AddEmployeeForm({ handleClose }) {
           <TextField fullWidth label='Confirm Password' type='password' required />
         </Grid>
         <Grid item xs={12} md={6}>
-          <TextField fullWidth label='Employee ID' required />
+          <TextField fullWidth label='Team ID' required />
         </Grid>
         <Grid item xs={12} md={6}>
           <TextField fullWidth label='Joining Date' type='date' InputLabelProps={{ shrink: true }} required />
@@ -261,7 +312,7 @@ function AddEmployeeForm({ handleClose }) {
             >
               <MenuItem value='1'>Admin</MenuItem>
               <MenuItem value='2'>Manager</MenuItem>
-              <MenuItem value='3'>Employee</MenuItem>
+              <MenuItem value='3'>Team</MenuItem>
               <MenuItem value='4'>Channel Partner</MenuItem>
             </Select>
           </FormControl>
@@ -288,12 +339,12 @@ function AddEmployeeForm({ handleClose }) {
   )
 }
 
-function EditEmployeeForm({ employee, handleClose }) {
+function EditTeamForm({ team, handleClose }) {
   return (
     <Box sx={{ flexGrow: 1, padding: 2 }}>
       <Box display='flex' justifyContent='space-between' alignItems='center'>
         <Typography style={{ fontSize: '2em', color: 'black' }} variant='h5' gutterBottom>
-          Edit Employee
+          Edit Team
         </Typography>
         <IconButton onClick={handleClose}>
           <CloseIcon />
@@ -301,21 +352,21 @@ function EditEmployeeForm({ employee, handleClose }) {
       </Box>
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
-          <TextField fullWidth label='First Name' defaultValue={employee.first_name} required />
+          <TextField fullWidth label='First Name' defaultValue={team.first_name} required />
         </Grid>
         <Grid item xs={12} md={6}>
-          <TextField fullWidth label='Last Name' defaultValue={employee.last_name} required />
+          <TextField fullWidth label='Last Name' defaultValue={team.last_name} required />
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <TextField fullWidth label='Email' defaultValue={employee.email} required />
+          <TextField fullWidth label='Email' defaultValue={team.email} required />
         </Grid>
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
             label='Joining Date'
             type='date'
-            defaultValue={employee.dob}
+            defaultValue={team.dob}
             InputLabelProps={{ shrink: true }}
             required
           />
@@ -328,7 +379,7 @@ function EditEmployeeForm({ employee, handleClose }) {
               labelId='demo-simple-select-label'
               id='demo-simple-select'
               fullWidth
-              defaultValue={employee.gender}
+              defaultValue={team.gender}
             >
               <MenuItem value='male'>Male</MenuItem>
               <MenuItem value='female'>Female</MenuItem>
@@ -337,20 +388,20 @@ function EditEmployeeForm({ employee, handleClose }) {
           </FormControl>
         </Grid>
         <Grid item xs={12} md={6}>
-          <TextField fullWidth label='Password' type='password' defaultValue={employee.password} required />
+          <TextField fullWidth label='Password' type='password' defaultValue={team.password} required />
         </Grid>
         <Grid item xs={12} md={6}>
-          <TextField fullWidth label='Confirm Password' type='password' defaultValue={employee.password} required />
+          <TextField fullWidth label='Confirm Password' type='password' defaultValue={team.password} required />
         </Grid>
         <Grid item xs={12} md={6}>
-          <TextField fullWidth label='Employee ID' defaultValue={employee.employeeId} required />
+          <TextField fullWidth label='Team ID' defaultValue={team.teamId} required />
         </Grid>
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
             label='Joining Date'
             type='date'
-            defaultValue={employee.joining_date}
+            defaultValue={team.joining_date}
             InputLabelProps={{ shrink: true }}
             required
           />
@@ -360,13 +411,13 @@ function EditEmployeeForm({ employee, handleClose }) {
             fullWidth
             label='Leaving Date'
             type='date'
-            defaultValue={employee.leaving_date}
+            defaultValue={team.leaving_date}
             InputLabelProps={{ shrink: true }}
             required
           />
         </Grid>
         <Grid item xs={12} md={6}>
-          <TextField fullWidth label='Status' defaultValue={employee.status} />
+          <TextField fullWidth label='Status' defaultValue={team.status} />
         </Grid>
         <Grid item xs={12} md={6}>
           <FormControl fullWidth>
@@ -376,7 +427,7 @@ function EditEmployeeForm({ employee, handleClose }) {
               labelId='demo-simple-select-label'
               id='demo-simple-select'
               fullWidth
-              defaultValue={employee.department}
+              defaultValue={team.department}
             >
               {/* <MenuItem value=''>
                 <em>Select Department</em>
@@ -397,14 +448,14 @@ function EditEmployeeForm({ employee, handleClose }) {
               labelId='demo-simple-select-label'
               id='demo-simple-select'
               fullWidth
-              defaultValue={employee.designation}
+              defaultValue={team.designation}
             >
               {/* <MenuItem value=''>
                 <em>Select Department</em>
               </MenuItem> */}
               <MenuItem value='1'>Admin</MenuItem>
               <MenuItem value='2'>Manager</MenuItem>
-              <MenuItem value='3'>Employee</MenuItem>
+              <MenuItem value='3'>Team</MenuItem>
               <MenuItem value='4'>Channel Partner</MenuItem>
             </Select>
           </FormControl>
@@ -431,18 +482,18 @@ function EditEmployeeForm({ employee, handleClose }) {
   )
 }
 
-export default function EmployeeGrid() {
+export default function TeamGrid() {
   const [showForm, setShowForm] = useState(false)
   const [editMode, setEditMode] = useState(false)
-  const [selectedEmployee, setSelectedEmployee] = useState(null)
+  const [selectedTeam, setSelectedTeam] = useState(null)
 
-  const handleAddEmployeeClick = () => {
+  const handleAddTeamClick = () => {
     setShowForm(true)
     setEditMode(false)
   }
 
-  const handleEditEmployeeClick = employee => {
-    setSelectedEmployee(employee)
+  const handleEditTeamClick = team => {
+    setSelectedTeam(team)
     setShowForm(true)
     setEditMode(true)
   }
@@ -452,27 +503,27 @@ export default function EmployeeGrid() {
   }
 
   return (
-    <Box sx={{ flexGrow: 1, padding: 2 }}>
+    <Box sx={{ flexGrow: 1, padding: 2, gap: "10" }}>
       <Dialog open={showForm} onClose={handleClose} fullWidth maxWidth='md'>
         <DialogContent>
           {editMode ? (
-            <EditEmployeeForm employee={selectedEmployee} handleClose={handleClose} />
+            <EditTeamForm team={selectedTeam} handleClose={handleClose} />
           ) : (
-            <AddEmployeeForm handleClose={handleClose} />
+            <AddTeamForm handleClose={handleClose} />
           )}
         </DialogContent>
       </Dialog>
       <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
         <Box>
           <Typography style={{ fontSize: '2em', color: 'black' }} variant='h5' gutterBottom>
-            Employee
+            Team
           </Typography>
           <Typography
             style={{ color: '#212529bf', fontSize: '1em', fontWeight: 'bold' }}
             variant='subtitle1'
             gutterBottom
           >
-            Dashboard / Employee
+            Dashboard / Team
           </Typography>
         </Box>
         <Box display='flex' alignItems='center'>
@@ -493,18 +544,18 @@ export default function EmployeeGrid() {
             variant='contained'
             color='warning'
             startIcon={<AddIcon />}
-            onClick={handleAddEmployeeClick}
+            onClick={handleAddTeamClick}
           >
-            Add Employee
+            Add Team
           </Button>
         </Box>
       </Box>
       <Grid container spacing={6} alignItems='center' mb={2}>
         <Grid item xs={12} md={3}>
-          <TextField fullWidth label='Employee ID' variant='outlined' />
+          <TextField fullWidth label='Team ID' variant='outlined' />
         </Grid>
         <Grid item xs={12} md={3}>
-          <TextField fullWidth label='Employee Name' variant='outlined' />
+          <TextField fullWidth label='Team Name' variant='outlined' />
         </Grid>
         <Grid item xs={12} md={3}>
           <FormControl fullWidth>
@@ -521,7 +572,7 @@ export default function EmployeeGrid() {
               </MenuItem> */}
               <MenuItem value='1'>Admin</MenuItem>
               <MenuItem value='2'>Manager</MenuItem>
-              <MenuItem value='3'>Employee</MenuItem>
+              <MenuItem value='3'>Team</MenuItem>
               <MenuItem value='4'>Channel Partner</MenuItem>
             </Select>
           </FormControl>
@@ -533,12 +584,33 @@ export default function EmployeeGrid() {
         </Grid>
       </Grid>
       <Grid container spacing={6}>
-        {employees.map(employee => (
-          <Grid item xs={12} sm={6} md={3} key={employee.id}>
-            <EmployeeCard employee={employee} onEdit={handleEditEmployeeClick} />
-          </Grid>
-        ))}
+        <Grid item xs={12} sm={6} md={12}>
+          <DataGrid
+            sx={{
+              '& .mui-yrdy0g-MuiDataGrid-columnHeaderRow ': {
+                background: 'linear-gradient(270deg, var(--mui-palette-primary-main), rgb(197, 171, 255) 100%) !important',
+              },
+              '& .mui-wop1k0-MuiDataGrid-footerContainer': {
+                background: 'linear-gradient(270deg, var(--mui-palette-primary-main), rgb(197, 171, 255) 100%) !important',
+              }
+            }}
+            rows={teams}
+            columns={columns}
+            initialState={{
+              pagination: {
+                paginationModel: {
+                  pageSize: 10,
+                },
+
+              },
+            }}
+            pageSizeOptions={[10, 20, 30]}
+            checkboxSelection
+            disableRowSelectionOnClick
+          />
+        </Grid>
       </Grid>
+
     </Box>
   )
 }

@@ -135,8 +135,8 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
           <MenuItem href={`/holidays`} icon={<i className='ri-calendar-event-line' />}>
             Holiday
           </MenuItem>
-          <MenuItem href={`/chat`} icon={<i className='ri-wechat-line' />}>
-            Chat
+          <MenuItem href={`/teams`} icon={<i className='ri-wechat-line' />}>
+            Teams
           </MenuItem>
           <MenuItem href='/account-settings' icon={<i className='ri-user-settings-line' />}>
             Account Settings
