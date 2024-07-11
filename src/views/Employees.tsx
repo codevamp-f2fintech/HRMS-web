@@ -226,7 +226,20 @@ function AddEmployeeForm({ handleClose }) {
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <TextField fullWidth label='Status' />
+          <FormControl fullWidth>
+            <InputLabel id='demo-simple-select-label'>Select Status</InputLabel>
+            <Select
+              label='Select Status'
+              labelId='demo-simple-select-label'
+              id='demo-simple-select'
+              fullWidth
+              defaultValue=''
+            >
+
+              <MenuItem value='active'>Active</MenuItem>
+              <MenuItem value='in_active'>In Active</MenuItem>
+            </Select>
+          </FormControl>
         </Grid>
         <Grid item xs={12} md={6}>
           <FormControl fullWidth>
@@ -238,9 +251,6 @@ function AddEmployeeForm({ handleClose }) {
               fullWidth
               defaultValue=''
             >
-              {/* <MenuItem value=''>
-                <em>Select Department</em>
-              </MenuItem> */}
               <MenuItem value={10}>IT</MenuItem>
               <MenuItem value={20}>Credit</MenuItem>
               <MenuItem value={30}>Operation</MenuItem>

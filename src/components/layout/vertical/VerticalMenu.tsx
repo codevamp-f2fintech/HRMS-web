@@ -47,13 +47,13 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
     <ScrollWrapper
       {...(isBreakpointReached
         ? {
-            className: 'bs-full overflow-y-auto overflow-x-hidden',
-            onScroll: container => scrollMenu(container, false)
-          }
+          className: 'bs-full overflow-y-auto overflow-x-hidden',
+          onScroll: container => scrollMenu(container, false)
+        }
         : {
-            options: { wheelPropagation: false, suppressScrollX: true },
-            onScrollY: container => scrollMenu(container, true)
-          })}
+          options: { wheelPropagation: false, suppressScrollX: true },
+          onScrollY: container => scrollMenu(container, true)
+        })}
     >
       {/* Incase you also want to scroll NavHeader to scroll with Vertical Menu, remove NavHeader from above and paste it below this comment */}
       {/* Vertical Menu */}
@@ -124,7 +124,7 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
           href={`/`}
           icon={<i className='ri-dashboard-line' />}
 
-          // suffix={<Chip label='Pro' size='small' color='primary' variant='tonal' />}
+        // suffix={<Chip label='Pro' size='small' color='primary' variant='tonal' />}
         >
           Dashboard
         </MenuItem>
@@ -137,6 +137,9 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
           </MenuItem>
           <MenuItem href={`/teams`} icon={<i className='ri-wechat-line' />}>
             Teams
+          </MenuItem>
+          <MenuItem href={`/assests`} icon={<i className='ri-wechat-line' />}>
+            Assets
           </MenuItem>
           <MenuItem href='/account-settings' icon={<i className='ri-user-settings-line' />}>
             Account Settings
