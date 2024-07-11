@@ -1,54 +1,45 @@
-'use client'
+"use client"
 
 import React, { useEffect, useState } from 'react'
+import { useSelector, useDispatch } from 'react-redux';
 import {
   Box,
   Grid,
-  Paper,
   Typography,
   TextField,
   Button,
-  Avatar,
-  Card,
-  CardContent,
   Select,
   MenuItem,
   IconButton,
   Dialog,
   DialogContent,
-  Menu,
   InputLabel
 } from '@mui/material'
 
+import { fetchTeams } from '../redux/features/teams/teamsSlice';
+import { RootState, AppDispatch } from '../redux/store';
+
 import type { GridColDef } from '@mui/x-data-grid';
-import { DataGrid } from '@mui/x-data-grid'
-import FormControl from '@mui/material/FormControl'
-import { styled } from '@mui/material/styles'
-import MoreVertIcon from '@mui/icons-material/MoreVert'
-import AddIcon from '@mui/icons-material/Add'
-import ViewModuleIcon from '@mui/icons-material/ViewModule'
-import ViewListIcon from '@mui/icons-material/ViewList'
-import { DriveFileRenameOutlineOutlined } from '@mui/icons-material'
-import CloseIcon from '@mui/icons-material/Close'
-import EditIcon from '@mui/icons-material/Edit'
+import { DataGrid } from '@mui/x-data-grid';
+import FormControl from '@mui/material/FormControl';
+import AddIcon from '@mui/icons-material/Add';
+import ViewModuleIcon from '@mui/icons-material/ViewModule';
+import ViewListIcon from '@mui/icons-material/ViewList';
+import { DriveFileRenameOutlineOutlined } from '@mui/icons-material';
+import CloseIcon from '@mui/icons-material/Close';
 
 export default function TeamGrid() {
+  const dispatch: AppDispatch = useDispatch();
+  const { teams, loading, error } = useSelector((state: RootState) => state.teams);
+
   const [showForm, setShowForm] = useState(false)
   const [selectedTeam, setSelectedTeam] = useState(null)
-  const [teams, setTeams] = useState([])
-
-  const fetchTeams = () => {
-    fetch('http://localhost:5500/teams/get')
-      .then(response => response.json())
-      .then(data => setTeams(data))
-
-
-      .catch(error => console.error('Error fetching team data:', error))
-  }
 
   useEffect(() => {
-    fetchTeams()
-  }, [])
+    if (teams.length === 0) {
+      dispatch(fetchTeams());
+    }
+  }, [dispatch, teams.length]);
 
   function AddTeamForm({ handleClose, team }) {
     const [formData, setFormData] = useState({
@@ -94,7 +85,7 @@ export default function TeamGrid() {
         .then(data => {
           console.log('Success:', data)
           handleClose()
-          fetchTeams()
+          dispatch(fetchTeams());
         })
         .catch(error => {
           console.error('Error:', error)

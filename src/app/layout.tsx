@@ -7,6 +7,8 @@ import type { ChildrenType } from '@core/types'
 // Style Imports
 import '@/app/globals.css'
 
+import ReduxProvider from '@/redux/provider';
+
 // Generated Icon CSS Imports
 import '@assets/iconify-icons/generated-icons.css'
 
@@ -22,7 +24,11 @@ const RootLayout = ({ children }: ChildrenType) => {
 
   return (
     <html id='__next' dir={direction}>
-      <body className='flex is-full min-bs-full flex-auto flex-col'>{children}</body>
+      <body className='flex is-full min-bs-full flex-auto flex-col'>
+        <ReduxProvider>
+          {children}
+        </ReduxProvider>
+      </body>
     </html>
   )
 }
