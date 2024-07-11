@@ -1,13 +1,16 @@
 'use client'
 
 // Next Imports
-import Link from 'next/link'
 
 // Third-party Imports
-import classnames from 'classnames'
 
 // Hook Imports
+import { Container, Box, Typography, Link, Stack, Divider } from "@mui/material";
+
 import useVerticalNav from '@menu/hooks/useVerticalNav'
+
+
+
 
 // Util Imports
 import { verticalLayoutClasses } from '@layouts/utils/layoutClasses'
@@ -17,35 +20,106 @@ const FooterContent = () => {
   const { isBreakpointReached } = useVerticalNav()
 
   return (
-    <div
-      className={classnames(verticalLayoutClasses.footerContent, 'flex items-center justify-between flex-wrap gap-4')}
+    <Container
+      maxWidth="false"
+      sx={{
+        background: "linear-gradient(270deg, var(--mui-palette-primary-main), rgb(197, 171, 255) 100%)",
+        height: "65vh"
+      }}
     >
-      <p>
-        <span>{`© ${new Date().getFullYear()}, Made with `}</span>
-        <span>{`❤️`}</span>
-        <span>{` by `}</span>
-        <Link href='https://themeselection.com' target='_blank' className='text-primary'>
-          CodeVamp
-        </Link>
-      </p>
-      {!isBreakpointReached && (
-        <div className='flex items-center gap-4'>
-          <Link href='https://themeselection.com/license' target='_blank' className='text-primary'>
-            License
-          </Link>
-          <Link href='https://themeselection.com' target='_blank' className='text-primary'>
-            More Themes
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          margin: '0cm 1cm 0cm 1cm'
+        }}
+      >
+        <Box width={350} alignItems="center" sx={{ marginTop: '1cm' }}>
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: "600", color: "white", marginBottom: "1rem" }}
+          >
+            F2-FINTECH
+          </Typography>
+          <Typography variant="h6" sx={{ color: "white", lineHeight: "3rem" }}>
+            Open Financial Technologies Pvt Ltd, Tower 2, 3rd floor, RGA Tech
+            Park, Sarjapur Road, Bengaluru Karnataka - 560035
+          </Typography>
+        </Box>
+        <Box
+          sx={{ display: "flex", flexDirection: "column", marginTop: '1cm' }}
+        >
+          <Typography
+            variant="h5"
+            sx={{ fontWeight: "600", color: "white", marginBottom: "1rem" }}
+          >
+            Company
+          </Typography>
+          <Link
+            underline="none"
+            variant="h6"
+            sx={{ color: "white", marginBottom: "1rem" }}
+          >
+            About us
           </Link>
           <Link
-            href={`https://github.com/themeselection/${process.env.NEXT_PUBLIC_REPO_NAME}/issues`}
-            target='_blank'
-            className='text-primary'
+            underline="none"
+            variant="h6"
+            sx={{ color: "white", marginBottom: "1rem" }}
           >
-            Support
+            Blogs
           </Link>
-        </div>
-      )}
-    </div>
+          <Link
+            underline="none"
+            variant="h6"
+            sx={{ color: "white", marginBottom: "1rem" }}
+          >
+            Privacy Policy
+          </Link>
+          <Link
+            underline="none"
+            variant="h6"
+            sx={{ color: "white", marginBottom: "1rem" }}
+          >
+            Term & Condition
+          </Link>
+        </Box>
+        <Box
+          sx={{ display: "flex", flexDirection: "column", marginTop: '1cm' }}
+        >
+          <Typography
+            variant="h5"
+            sx={{ fontWeight: "600", color: "white", marginBottom: "1rem" }}
+          >
+            Let's Talk
+          </Typography>
+          <Link
+            underline="none"
+            variant="h6"
+            sx={{ color: "white", marginBottom: "1rem" }}
+          >
+            Have any doubts?
+          </Link>
+          <Link
+            underline="none"
+            variant="h6"
+            sx={{ color: "white", marginBottom: "1rem" }}
+          >
+            Contact Us
+          </Link>
+          <Stack direction="row" spacing={3}>
+          </Stack>
+        </Box>
+      </Box>
+      <Typography sx={{ color: 'white', fontSize: '15px', margin: '1cm 1cm 0cm 1cm' }}>
+        © 2024 All Rights Reserved by Open
+      </Typography>
+      <Divider color="white" sx={{ height: "1px", margin: '1cm 1cm 0cm 1cm' }} />
+      <Typography sx={{ color: 'white', fontSize: '15px', margin: '1cm 1cm 0cm 1cm' }}>
+        Open Capital is a platform that connects businesses with lending options offered by RBI-licensed NBFC partners.
+        The loans offered on the platform are subject to the terms and conditions and loan approval process of the NBFC partners
+      </Typography>
+    </Container>
   )
 }
 
