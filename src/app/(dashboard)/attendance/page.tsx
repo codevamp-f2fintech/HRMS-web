@@ -1,15 +1,15 @@
-// Component Imports
+
 
 // Server Action Imports
-import HolidayGrid from '@/views/Holidays';
 import { getServerMode } from '@core/utils/serverHelpers'
 
+import AttendenceGrid from '@/views/Attendence'
 
 const EmployeesPage = () => {
   // Vars
   const mode = getServerMode()
 
-  return <HolidayGrid />
+  return <AttendenceGrid />
 }
 
-export default EmployeesPage;
+export default EmployeesPage

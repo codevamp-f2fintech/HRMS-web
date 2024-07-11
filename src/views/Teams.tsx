@@ -1,6 +1,8 @@
+/* eslint-disable padding-line-between-statements */
 'use client'
 
 import React, { useEffect, useState } from 'react'
+
 import {
   Box,
   Grid,
