@@ -17,10 +17,12 @@ import {
   IconButton,
   Dialog,
   DialogContent,
-  Menu
+  Menu,
+  InputLabel
 } from '@mui/material'
-import { DataGrid, GridColDef } from '@mui/x-data-grid'
-import InputLabel from '@mui/material/InputLabel'
+
+import type { GridColDef } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid'
 import FormControl from '@mui/material/FormControl'
 import { styled } from '@mui/material/styles'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
