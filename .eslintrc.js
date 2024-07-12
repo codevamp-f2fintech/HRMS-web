@@ -116,6 +116,7 @@ module.exports = {
       }
     }
   },
+
   overrides: [
     {
       files: ['*.ts', '*.tsx', 'src/iconify-bundle/*'],
