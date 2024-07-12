@@ -24,7 +24,7 @@ const initialState: TeamsState = {
 
 // Thunk for fetching teams
 export const fetchTeams = createAsyncThunk('teams/fetchTeams', async () => {
-    const response = await fetch('http://localhost:5500/teams/get');
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/teams/get`);
     if (!response.ok) {
         throw new Error('Failed to fetch teams');
     }
