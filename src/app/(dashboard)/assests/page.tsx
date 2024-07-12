@@ -2,7 +2,7 @@
 
 // Server Action Imports
 import { getServerMode } from '@core/utils/serverHelpers'
-import AssetsGrid from '@/views/pages/Assets'
+import AssetsGrid from '@/views/Assets'
 
 const EmployeesPage = () => {
   // Vars

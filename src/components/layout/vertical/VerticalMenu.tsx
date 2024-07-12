@@ -18,6 +18,12 @@ import useVerticalNav from '@menu/hooks/useVerticalNav'
 
 // Styled Component Imports
 import StyledVerticalNavExpandIcon from '@menu/styles/vertical/StyledVerticalNavExpandIcon'
+import EventAvailableIcon from '@mui/icons-material/EventAvailable';
+import GroupIcon from '@mui/icons-material/Group';
+import InventoryIcon from '@mui/icons-material/Inventory';
+import EventIcon from '@mui/icons-material/Event';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import DescriptionIcon from '@mui/icons-material/Description';
 
 // Style Imports
 import menuItemStyles from '@core/styles/vertical/menuItemStyles'
@@ -132,15 +138,25 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
           <MenuItem href={`/employees`} icon={<i className='ri-user-3-line' />}>
             Employees
           </MenuItem>
-          <MenuItem href={`/holidays`} icon={<i className='ri-calendar-event-line' />}>
+          <MenuItem href={`/holidays`} icon={<EventIcon />}>
             Holiday
           </MenuItem>
-          <MenuItem href={`/teams`} icon={<i className='ri-wechat-line' />}>
+          <MenuItem href={`/attendance`} icon={<AccessTimeIcon />}>
+            Attendance
+          </MenuItem>
+          <MenuItem href={`/teams`} icon={<GroupIcon />}>
             Teams
           </MenuItem>
-          <MenuItem href={`/assests`} icon={<i className='ri-wechat-line' />}>
+          <MenuItem href={`/assests`} icon={<InventoryIcon />}>
             Assets
           </MenuItem>
+          <MenuItem href={`/leaves`} icon={<EventAvailableIcon />}>
+            Leaves
+          </MenuItem>
+          <MenuItem href={`/policy`} icon={<DescriptionIcon />}>
+            Policy
+          </MenuItem>
+
           <MenuItem href='/account-settings' icon={<i className='ri-user-settings-line' />}>
             Account Settings
           </MenuItem>
