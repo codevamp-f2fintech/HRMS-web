@@ -20,22 +20,22 @@ import {
 import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material'
+import { AppDispatch, RootState } from '@/redux/store';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchHolidays } from '@/redux/features/holidays/holidaysSlice';
+
 
 export default function HolidayGrid() {
+  const dispatch: AppDispatch = useDispatch();
+  const { holidays, loading, error } = useSelector((state: RootState) => state.holidays)
   const [showForm, setShowForm] = useState(false)
   const [selectedHoliday, setSelectedHoliday] = useState(null)
-  const [holidays, setHolidays] = useState([])
-
-  const fetchHolidays = () => {
-    fetch('http://localhost:5500/holidays/get')
-      .then(response => response.json())
-      .then(data => setHolidays(data))
-      .catch(error => console.error('Error fetching holidays data:', error))
-  }
 
   useEffect(() => {
-    fetchHolidays()
-  }, [])
+    if (holidays.length === 0) {
+      dispatch(fetchHolidays())
+    }
+  }, [dispatch, holidays.length]);
 
   function AddHolidayForm({ handleClose, holiday }) {
     const [formData, setFormData] = useState({
@@ -81,7 +81,7 @@ export default function HolidayGrid() {
         .then(data => {
           console.log('Success', data);
           handleClose();
-          fetchHolidays();
+          dispatch(fetchHolidays());
         })
         .catch(error => {
           console.log('Error', error);

@@ -25,6 +25,9 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material'
+import { AppDispatch, RootState } from '@/redux/store';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchLeaves } from '@/redux/features/leaves/leavesSlice';
 
 // Custom theme
 const theme = createTheme({
@@ -42,20 +45,18 @@ const theme = createTheme({
 });
 
 export default function LeavesGrid() {
+  const dispatch: AppDispatch = useDispatch();
+  const { leaves, loading, error } = useSelector((state: RootState) => state.leaves)
+
   const [showForm, setShowForm] = useState(false)
   const [selectedLeaves, setSelectedLeaves] = useState(null)
-  const [leaves, setLeaves] = useState([])
 
-  const fetchLeaves = () => {
-    fetch('http://localhost:5500/leaves/get')
-      .then(response => response.json())
-      .then(data => setLeaves(data))
-      .catch(error => console.error('Error fetching leaves data:', error))
-  }
 
   useEffect(() => {
-    fetchLeaves()
-  }, [])
+    if (leaves.length === 0) {
+      dispatch(fetchLeaves())
+    }
+  }, [dispatch, leaves.length])
 
   function AddLeavesForm({ handleClose, leave }) {
     const [formData, setFormData] = useState({
@@ -105,7 +106,7 @@ export default function LeavesGrid() {
         .then(data => {
           console.log('Success', data);
           handleClose();
-          fetchLeaves();
+          dispatch(fetchLeaves());
         })
         .catch(error => {
           console.log('Error', error);

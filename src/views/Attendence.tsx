@@ -24,22 +24,22 @@ import {
 import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material'
+import { AppDispatch, RootState } from '@/redux/store';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchAttendances } from '@/redux/features/attendances/attendancesSlice';
 
 export default function AttendenceGrid() {
+  const dispatch: AppDispatch = useDispatch()
+  const { attendances, loading, error } = useSelector((state: RootState) => state.attendances)
+
   const [showForm, setShowForm] = useState(false)
   const [selectedAttendance, setSelectedAttendance] = useState(null)
-  const [attendances, setAttendances] = useState([])
-
-  const fetchAttendance = () => {
-    fetch('http://localhost:5500/attendence/get')
-      .then(response => response.json())
-      .then(data => setAttendances(data))
-      .catch(error => console.error('Error fetching attendance data:', error))
-  }
 
   useEffect(() => {
-    fetchAttendance()
-  }, [])
+    if (attendances.length === 0) {
+      dispatch(fetchAttendances())
+    }
+  }, [dispatch, attendances.length])
 
   function AddAttendanceForm({ handleClose, attendance }) {
     const [formData, setFormData] = useState({
@@ -81,7 +81,7 @@ export default function AttendenceGrid() {
         .then(data => {
           console.log('Success', data);
           handleClose();
-          fetchAttendance();
+          dispatch(fetchAttendances());
         })
         .catch(error => {
           console.log('Error', error);

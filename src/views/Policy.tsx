@@ -24,22 +24,22 @@ import {
 import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material'
+import { AppDispatch, RootState } from '@/redux/store';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchPolicies } from '@/redux/features/policies/policiesSlice';
 
 export default function PolicyGrid() {
+  const dispatch: AppDispatch = useDispatch()
+  const { policies, loading, error } = useSelector((state: RootState) => state.policies)
+
   const [showForm, setShowForm] = useState(false)
   const [selectedPolicy, setSelectedPolicy] = useState(null)
-  const [policies, setPolicies] = useState([])
-
-  const fetchPolicy = () => {
-    fetch('http://localhost:5500/policies/get')
-      .then(response => response.json())
-      .then(data => setPolicies(data))
-      .catch(error => console.error('Error fetching policy data:', error))
-  }
 
   useEffect(() => {
-    fetchPolicy()
-  }, [])
+    if (policies.length === 0) {
+      dispatch(fetchPolicies())
+    }
+  }, [dispatch, policies.length])
 
   function AddPolicyForm({ handleClose, policy }) {
     const [formData, setFormData] = useState({
@@ -82,7 +82,7 @@ export default function PolicyGrid() {
         .then(data => {
           console.log('Success', data);
           handleClose();
-          fetchPolicy();
+          dispatch(fetchPolicies());
         })
         .catch(error => {
           console.log('Error', error);
