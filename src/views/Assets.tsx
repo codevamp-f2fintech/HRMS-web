@@ -3,6 +3,8 @@
 'use client'
 
 import { useEffect, useState } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import { Button, Dialog, DialogContent, FormControl, Grid, IconButton, InputLabel, MenuItem, Select, TextField, Typography } from '@mui/material';
 import Box from '@mui/material/Box';
@@ -11,24 +13,24 @@ import { DataGrid } from '@mui/x-data-grid';
 import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material';
+import { AppDispatch, RootState } from '@/redux/store';
+import { useDispatch, useSelector } from 'react-redux';
 
-export default function AssetsGrid() {
+import { fetchAssests } from '@/redux/features/assests/assestsSlice';
 
+export default function AssestsGrid() {
+
+  const dispatch: AppDispatch = useDispatch();
+  const { assests, loading, error } = useSelector((state: RootState) => state.assests);
   const [showForm, setShowForm] = useState(false)
-  const [selectedAsset, setSelectedAsset] = useState(null)
-  const [assets, setAssets] = useState([])
-
-  const fetchAssets = () => {
-    fetch('http://localhost:5500/assests/get')
-      .then(response => response.json())
-      .then(data => setAssets(data))
-
-      .catch(error => console.error('Error fetching assests data:', error))
-  }
+  const [selectedAsset, setSelectedAsset] = useState(null);
 
   useEffect(() => {
-    fetchAssets()
-  }, [])
+    if (assests.length === 0) {
+      dispatch(fetchAssests())
+    }
+  }, [dispatch, assests.length])
+
 
   function AddAssetForm({ handleClose, asset }) {
     const [formData, setFormData] = useState({
@@ -44,7 +46,7 @@ export default function AssetsGrid() {
 
     useEffect(() => {
       if (asset) {
-        const selected = assets.find(ast => ast._id === asset)
+        const selected = assests.find(ast => ast._id === asset)
         if (selected) {
           setFormData({
             employee_id: selected.employee_id,
@@ -58,7 +60,7 @@ export default function AssetsGrid() {
           })
         }
       }
-    }, [asset, assets])
+    }, [asset, assests])
 
     const handleChange = (e) => {
       const { name, value } = e.target
@@ -70,7 +72,7 @@ export default function AssetsGrid() {
 
     const handleSubmit = () => {
       const method = asset ? 'PUT' : 'POST'
-      const url = asset ? `http://localhost:5500/assests/update/${asset}` : `http://localhost:5500/assests/create`
+      const url = asset ? `${process.env.NEXT_PUBLIC_APP_URL}/assests/update/${asset}` : `${process.env.NEXT_PUBLIC_APP_URL}/assests/create`
       fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -78,15 +80,28 @@ export default function AssetsGrid() {
       })
         .then(response => response.json())
         .then(data => {
-          console.log('Success', data);
+          if (data.message) {
+            if (data.message.includes('success')) {
+              toast.success(data.message, {
+                position: 'top-center',
+              });
+            } else {
+              toast.error('Error: ' + data.message, {
+                position: 'top-center',
+              });
+            }
+          } else {
+            toast.error('Unexpected error occurred', {
+              position: 'top-center',
+            });
+          }
           handleClose();
-          fetchAssets();
+          dispatch(fetchAssests());
         })
         .catch(error => {
           console.log('Error', error);
-
-        })
-    }
+        });
+    };
 
     return (
       <Box sx={{ flexGrow: 1, padding: 2 }}>
@@ -227,7 +242,7 @@ export default function AssetsGrid() {
     },
     {
       field: 'name',
-      headerName: 'Assets Name',
+      headerName: 'Assests Name',
       width: 150,
       editable: true,
     },
@@ -290,6 +305,7 @@ export default function AssetsGrid() {
   return (
 
     <>
+      <ToastContainer />
       <Box sx={{ flexGrow: 1, padding: 2 }}>
         <Dialog open={showForm} onClose={handleClose} fullWidth maxWidth='md'>
           <DialogContent>
@@ -299,14 +315,14 @@ export default function AssetsGrid() {
         <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
           <Box>
             <Typography style={{ fontSize: '2em', color: 'black' }} variant='h5' gutterBottom>
-              Assets
+              Assests
             </Typography>
             <Typography
               style={{ color: '#212529bf', fontSize: '1em', fontWeight: 'bold' }}
               variant='subtitle1'
               gutterBottom
             >
-              Dashboard / Assets
+              Dashboard / Assests
             </Typography>
           </Box>
           <Box display='flex' alignItems='center'>
@@ -341,7 +357,7 @@ export default function AssetsGrid() {
 
           // getRowHeight={() => 'auto'}
 
-          rows={assets}
+          rows={assests}
           columns={columns}
           getRowId={(row) => row._id}
           initialState={{
