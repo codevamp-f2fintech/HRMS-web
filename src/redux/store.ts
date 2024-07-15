@@ -3,11 +3,14 @@
 import { configureStore } from '@reduxjs/toolkit';
 
 import teamsReducer from './features/teams/teamsSlice';
+import employeesReducer from './features/employees/employeesSlice';
+
 
 const store = configureStore({
     reducer: {
         // Add your reducers here
         teams: teamsReducer,
+        employees: employeesReducer
     },
 });
 
