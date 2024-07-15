@@ -1,3 +1,5 @@
+/* eslint-disable newline-before-return */
+/* eslint-disable padding-line-between-statements */
 // features/teams/teamsSlice.ts
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
