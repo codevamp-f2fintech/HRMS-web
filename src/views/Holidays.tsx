@@ -24,6 +24,9 @@ import { AppDispatch, RootState } from '@/redux/store';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchHolidays } from '@/redux/features/holidays/holidaysSlice';
 
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 
 export default function HolidayGrid() {
   const dispatch: AppDispatch = useDispatch();
@@ -71,7 +74,7 @@ export default function HolidayGrid() {
 
     const handleSubmit = () => {
       const method = holiday ? 'PUT' : 'POST'
-      const url = holiday ? `http://localhost:5500/holidays/update/${holiday}` : 'http://localhost:5500/holidays/create'
+      const url = holiday ? `${process.env.NEXT_PUBLIC_APP_URL}/holidays/update/${holiday}` : `${process.env.NEXT_PUBLIC_APP_URL}/holidays/create`
       fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -79,14 +82,30 @@ export default function HolidayGrid() {
       })
         .then(response => response.json())
         .then(data => {
-          console.log('Success', data);
+          if (data.message) {
+            if (data.message.includes('success')) {
+              toast.success(data.message, {
+                position: 'top-center',
+              });
+            } else {
+              toast.error('Error: ' + data.message, {
+                position: 'top-center',
+              });
+            }
+          } else {
+            toast.error('Unexpected error occurred', {
+              position: 'top-center',
+            });
+          }
           handleClose();
           dispatch(fetchHolidays());
         })
         .catch(error => {
-          console.log('Error', error);
-        })
-    }
+          toast.error('Error: ' + error.message, {
+            position: 'top-center',
+          });
+        });
+    };
 
     return (
       <Box sx={{ flexGrow: 1, padding: 2 }}>
@@ -212,6 +231,7 @@ export default function HolidayGrid() {
   return (
 
     <Box>
+      <ToastContainer />
       <Box sx={{ flexGrow: 1, padding: 2 }}>
         <Dialog open={showForm} onClose={handleClose} fullWidth maxWidth='md'>
           <DialogContent>

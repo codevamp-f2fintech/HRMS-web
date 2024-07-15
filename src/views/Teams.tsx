@@ -1,6 +1,10 @@
 "use client"
 
 import React, { useEffect, useState } from 'react'
+
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 import { useSelector, useDispatch } from 'react-redux';
 import {
   Box,
@@ -16,8 +20,6 @@ import {
   InputLabel
 } from '@mui/material'
 
-import { fetchTeams } from '../redux/features/teams/teamsSlice';
-import { RootState, AppDispatch } from '../redux/store';
 
 import type { GridColDef } from '@mui/x-data-grid';
 import { DataGrid } from '@mui/x-data-grid';
@@ -27,6 +29,9 @@ import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material';
 import CloseIcon from '@mui/icons-material/Close';
+
+import type { RootState, AppDispatch } from '../redux/store';
+import { fetchTeams } from '../redux/features/teams/teamsSlice';
 
 export default function TeamGrid() {
   const dispatch: AppDispatch = useDispatch();
@@ -52,6 +57,7 @@ export default function TeamGrid() {
     useEffect(() => {
       if (team) {
         const selected = teams.find(t => t._id === team)
+
         if (selected) {
           setFormData({
             manager_id: selected.manager_id,
@@ -65,6 +71,7 @@ export default function TeamGrid() {
 
     const handleChange = (e) => {
       const { name, value } = e.target
+
       setFormData(prevState => ({
         ...prevState,
         [name]: value
@@ -73,7 +80,8 @@ export default function TeamGrid() {
 
     const handleSubmit = () => {
       const method = team ? 'PUT' : 'POST'
-      const url = team ? `http://localhost:5500/teams/update/${team}` : 'http://localhost:5500/teams/create'
+      const url = team ? `${process.env.NEXT_PUBLIC_APP_URL}/teams/update/${team}` : `${process.env.NEXT_PUBLIC_APP_URL}/teams/create`
+
       fetch(url, {
         method,
         headers: {
@@ -83,14 +91,29 @@ export default function TeamGrid() {
       })
         .then(response => response.json())
         .then(data => {
-          console.log('Success:', data)
-          handleClose()
+          if (data.message) {
+            if (data.message.includes('success')) {
+              toast.success(data.message, {
+                position: 'top-center',
+              });
+            } else {
+              toast.error('Error: ' + data.message, {
+                position: 'top-center',
+              });
+            }
+          } else {
+            toast.error('Unexpected error occurred', {
+              position: 'top-center',
+            });
+          }
+
+          handleClose();
           dispatch(fetchTeams());
         })
         .catch(error => {
-          console.error('Error:', error)
-        })
-    }
+          console.log('Error', error);
+        });
+    };
 
     return (
       <Box sx={{ flexGrow: 1, padding: 2 }}>
@@ -222,6 +245,7 @@ export default function TeamGrid() {
 
   return (
     <Box sx={{ flexGrow: 1, padding: 2 }}>
+      <ToastContainer />
       <Dialog open={showForm} onClose={handleClose} fullWidth maxWidth='md'>
         <DialogContent>
           <AddTeamForm team={selectedTeam} handleClose={handleClose} />

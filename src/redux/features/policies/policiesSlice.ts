@@ -20,7 +20,7 @@ const initialState: policiesState = {
 };
 
 export const fetchPolicies = createAsyncThunk('policies/fetchPolicies', async () => {
-  const response = await fetch('http://localhost:5500/policies/get')
+  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/policies/get`)
   if (!response.ok) {
     throw new Error('Failed to fetch policies')
   }

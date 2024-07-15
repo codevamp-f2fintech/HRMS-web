@@ -20,7 +20,7 @@ const initialState: attendancesState = {
 };
 
 export const fetchAttendances = createAsyncThunk('attendances/fetchAttendances', async () => {
-  const response = await fetch('http://localhost:5500/attendence/get')
+  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/attendence/get`)
   if (!response.ok) {
     throw new Error('Failed to fetch attendances')
   }

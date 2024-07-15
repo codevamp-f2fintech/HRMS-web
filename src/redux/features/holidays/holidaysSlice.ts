@@ -23,7 +23,7 @@ const initialState: holidaysState = {
 };
 
 export const fetchHolidays = createAsyncThunk('holidays/fetchHolidays', async () => {
-  const response = await fetch('http://localhost:5500/holidays/get');
+  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/holidays/get`);
   if (!response.ok) {
     throw new Error('Failed to fetch holidays');
   }

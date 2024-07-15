@@ -3,6 +3,8 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import type { GridColDef } from '@mui/x-data-grid';
 import { DataGrid, GridToolbar } from '@mui/x-data-grid'
@@ -28,21 +30,6 @@ import { DriveFileRenameOutlineOutlined } from '@mui/icons-material'
 import { AppDispatch, RootState } from '@/redux/store';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchLeaves } from '@/redux/features/leaves/leavesSlice';
-
-// Custom theme
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#ff902f',
-    },
-  },
-  typography: {
-    fontFamily: 'Arial, sans-serif',
-  },
-});
 
 export default function LeavesGrid() {
   const dispatch: AppDispatch = useDispatch();
@@ -96,7 +83,7 @@ export default function LeavesGrid() {
 
     const handleSubmit = () => {
       const method = leave ? 'PUT' : 'POST'
-      const url = leave ? `http://localhost:5500/leaves/update/${leave}` : 'http://localhost:5500/leaves/create'
+      const url = leave ? `${process.env.NEXT_PUBLIC_APP_URL}/leaves/update/${leave}` : `${process.env.NEXT_PUBLIC_APP_URL}/leaves/create`
       fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -104,14 +91,28 @@ export default function LeavesGrid() {
       })
         .then(response => response.json())
         .then(data => {
-          console.log('Success', data);
+          if (data.message) {
+            if (data.message.includes('success')) {
+              toast.success(data.message, {
+                position: 'top-center',
+              });
+            } else {
+              toast.error('Error: ' + data.message, {
+                position: 'top-center',
+              });
+            }
+          } else {
+            toast.error('Unexpected error occurred', {
+              position: 'top-center',
+            });
+          }
           handleClose();
           dispatch(fetchLeaves());
         })
         .catch(error => {
           console.log('Error', error);
-        })
-    }
+        });
+    };
 
     return (
       <Box sx={{ flexGrow: 1, padding: 2 }}>
@@ -275,93 +276,93 @@ export default function LeavesGrid() {
   ]
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box>
-        <Box sx={{ flexGrow: 1, padding: 2 }}>
-          <Dialog open={showForm} onClose={handleClose} fullWidth maxWidth='md'>
-            <DialogContent>
-              <AddLeavesForm leave={selectedLeaves} handleClose={handleClose} />
-            </DialogContent>
-          </Dialog>
-          <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
-            <Box>
-              <Typography style={{ fontSize: '2em', color: 'black' }} variant='h5' gutterBottom>
-                Leave
-              </Typography>
-              <Typography
-                style={{ color: '#212529bf', fontSize: '1em', fontWeight: 'bold' }}
-                variant='subtitle1'
-                gutterBottom
-              >
-                Dashboard / Leave
-              </Typography>
-            </Box>
-            <Box display='flex' alignItems='center'>
-              <Button
-                style={{ borderRadius: 50, backgroundColor: '#ff902f' }}
-                variant='contained'
-                color='warning'
-                startIcon={<AddIcon />}
-                onClick={handleLeaveAddClick}
-              >
-                Add Leave
-              </Button>
-            </Box>
+
+    <Box>
+      <ToastContainer />
+      <Box sx={{ flexGrow: 1, padding: 2 }}>
+        <Dialog open={showForm} onClose={handleClose} fullWidth maxWidth='md'>
+          <DialogContent>
+            <AddLeavesForm leave={selectedLeaves} handleClose={handleClose} />
+          </DialogContent>
+        </Dialog>
+        <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
+          <Box>
+            <Typography style={{ fontSize: '2em', color: 'black' }} variant='h5' gutterBottom>
+              Leave
+            </Typography>
+            <Typography
+              style={{ color: '#212529bf', fontSize: '1em', fontWeight: 'bold' }}
+              variant='subtitle1'
+              gutterBottom
+            >
+              Dashboard / Leave
+            </Typography>
           </Box>
-          <Grid container spacing={6} alignItems='center' mb={2}>
-            <Grid item xs={12} md={3}>
-              <TextField fullWidth label='Employee ID' variant='outlined' />
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <TextField fullWidth label='Employee Name' variant='outlined' />
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>
-                SEARCH
-              </Button>
-            </Grid>
+          <Box display='flex' alignItems='center'>
+            <Button
+              style={{ borderRadius: 50, backgroundColor: '#ff902f' }}
+              variant='contained'
+              color='warning'
+              startIcon={<AddIcon />}
+              onClick={handleLeaveAddClick}
+            >
+              Add Leave
+            </Button>
+          </Box>
+        </Box>
+        <Grid container spacing={6} alignItems='center' mb={2}>
+          <Grid item xs={12} md={3}>
+            <TextField fullWidth label='Employee ID' variant='outlined' />
           </Grid>
-        </Box>
-        <Box sx={{ height: 500, width: '100%' }}>
-          <DataGrid
-            sx={{
-              '& .super-app-theme--header': {
-                fontSize: 15,
-                color: 'rgba(0, 0, 0, 0.88)',
-                fontWeight: 600
-              },
-              '& .MuiDataGrid-cell': {
-                fontSize: '1em',
-                color: '#000',
-                align: 'center',
-              },
-              '& .MuiDataGrid-row': {
-                '&:nth-of-type(odd)': {
-                  backgroundColor: '#f5f5f5',
-                },
-              },
-            }}
-            components={{
-              Toolbar: GridToolbar,
-            }}
-            rows={leaves}
-            columns={columns}
-            getRowId={(row) => row._id}
-            initialState={{
-              pagination: {
-                paginationModel: {
-                  pageSize: 10,
-                },
-              },
-              sorting: {
-                sortModel: [{ field: 'employee_id', sort: 'asc' }],
-              },
-            }}
-            pageSizeOptions={[10, 20, 30]}
-            checkboxSelection
-            disableRowSelectionOnClick />
-        </Box>
+          <Grid item xs={12} md={3}>
+            <TextField fullWidth label='Employee Name' variant='outlined' />
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>
+              SEARCH
+            </Button>
+          </Grid>
+        </Grid>
       </Box>
-    </ThemeProvider>
+      <Box sx={{ height: 500, width: '100%' }}>
+        <DataGrid
+          sx={{
+            '& .super-app-theme--header': {
+              fontSize: 15,
+              color: 'rgba(0, 0, 0, 0.88)',
+              fontWeight: 600
+            },
+            '& .MuiDataGrid-cell': {
+              fontSize: '1em',
+              color: '#000',
+              align: 'center',
+            },
+            '& .MuiDataGrid-row': {
+              '&:nth-of-type(odd)': {
+                backgroundColor: '#f5f5f5',
+              },
+            },
+          }}
+          components={{
+            Toolbar: GridToolbar,
+          }}
+          rows={leaves}
+          columns={columns}
+          getRowId={(row) => row._id}
+          initialState={{
+            pagination: {
+              paginationModel: {
+                pageSize: 10,
+              },
+            },
+            sorting: {
+              sortModel: [{ field: 'employee_id', sort: 'asc' }],
+            },
+          }}
+          pageSizeOptions={[10, 20, 30]}
+          checkboxSelection
+          disableRowSelectionOnClick />
+      </Box>
+    </Box>
   );
 }

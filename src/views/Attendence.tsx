@@ -3,6 +3,8 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import type { GridColDef } from '@mui/x-data-grid';
 import { DataGrid, GridToolbar } from '@mui/x-data-grid'
@@ -71,7 +73,7 @@ export default function AttendenceGrid() {
 
     const handleSubmit = () => {
       const method = attendance ? 'PUT' : 'POST'
-      const url = attendance ? `http://localhost:5500/attendence/update/${attendance}` : 'http://localhost:5500/attendence/create'
+      const url = attendance ? `${process.env.NEXT_PUBLIC_APP_URL}/attendence/update/${attendance}` : `${process.env.NEXT_PUBLIC_APP_URL}/attendence/create`
       fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -79,14 +81,28 @@ export default function AttendenceGrid() {
       })
         .then(response => response.json())
         .then(data => {
-          console.log('Success', data);
+          if (data.message) {
+            if (data.message.includes('success')) {
+              toast.success(data.message, {
+                position: 'top-center',
+              });
+            } else {
+              toast.error('Error: ' + data.message, {
+                position: 'top-center',
+              });
+            }
+          } else {
+            toast.error('Unexpected error occurred', {
+              position: 'top-center',
+            });
+          }
           handleClose();
           dispatch(fetchAttendances());
         })
         .catch(error => {
           console.log('Error', error);
-        })
-    }
+        });
+    };
 
     return (
       <Box sx={{ flexGrow: 1, padding: 2 }}>
@@ -198,6 +214,7 @@ export default function AttendenceGrid() {
   return (
 
     <Box>
+      <ToastContainer />
       <Box sx={{ flexGrow: 1, padding: 2 }}>
         <Dialog open={showForm} onClose={handleClose} fullWidth maxWidth='md'>
           <DialogContent>

@@ -26,7 +26,7 @@ const initialState: assestsState = {
 }
 
 export const fetchAssests = createAsyncThunk('assests/fethAssests', async () => {
-  const response = await fetch('http://localhost:5500/assests/get')
+  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/assests/get`)
   if (!response.ok) {
     throw new Error('Failed to fetch assests')
   }
