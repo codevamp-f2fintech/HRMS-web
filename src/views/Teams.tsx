@@ -73,7 +73,7 @@ export default function TeamGrid() {
 
     const handleSubmit = () => {
       const method = team ? 'PUT' : 'POST'
-      const url = team ? `http://localhost:5500/teams/update/${team}` : 'http://localhost:5500/teams/create'
+      const url = team ? `${process.env.NEXT_PUBLIC_APP_URL}/teams/update/${team}` : `${process.env.NEXT_PUBLIC_APP_URL}/teams/create`;
       fetch(url, {
         method,
         headers: {
