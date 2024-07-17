@@ -40,6 +40,8 @@ const RenderExpandIcon = ({ open, transitionDuration }: RenderExpandIconProps) =
   </StyledVerticalNavExpandIcon>
 )
 
+const role = 2;
+
 const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectScrollbar: boolean) => void }) => {
   // Hooks
   const theme = useTheme()
@@ -126,6 +128,7 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
             Help Center
           </MenuItem>
         </SubMenu> */}
+
         <MenuItem
           href={`/`}
           icon={<i className='ri-dashboard-line' />}
