@@ -17,7 +17,8 @@ import {
   IconButton,
   Dialog,
   DialogContent,
-  Menu
+  Menu,
+  Chip
 } from '@mui/material'
 
 import { fetchEmployees } from '../redux/features/employees/employeesSlice';
@@ -42,6 +43,12 @@ export default function EmployeeGrid() {
   const [showForm, setShowForm] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState(null)
 
+  const capitalizeWords = (name) => {
+    return name.split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   useEffect(() => {
     if (employees.length === 0) {
       dispatch(fetchEmployees());
@@ -62,7 +69,11 @@ export default function EmployeeGrid() {
       joining_date: "",
       leaving_date: "",
       status: "active",
+      image: ""
     })
+
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
 
     useEffect(() => {
       if (employee) {
@@ -80,8 +91,10 @@ export default function EmployeeGrid() {
             password: selected.password,
             joining_date: selected.joining_date,
             leaving_date: selected.leaving_date,
-            status: selected.status
+            status: selected.status,
+            image: selected.image
           })
+          setImagePreviewUrl(selected.image);
         }
       }
     }, [employee, employees])
@@ -96,15 +109,29 @@ export default function EmployeeGrid() {
       }))
     }
 
+    const handleImageChange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        setSelectedImage(file);
+        setImagePreviewUrl(URL.createObjectURL(file));
+      }
+    };
+
     const handleSubmit = () => {
       const method = employee ? 'PUT' : 'POST'
       const url = employee ? `${process.env.NEXT_PUBLIC_APP_URL}/employees/update/${employee}` : `${process.env.NEXT_PUBLIC_APP_URL}/employees/create`;
+
+      const formDataToSend = new FormData();
+      for (const key in formData) {
+        formDataToSend.append(key, formData[key]);
+      }
+      if (selectedImage) {
+        formDataToSend.append('image', selectedImage);
+      }
+
       fetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
+        body: formDataToSend
       })
         .then(response => response.json())
         .then(data => {
@@ -279,22 +306,44 @@ export default function EmployeeGrid() {
 
           <Grid item xs={12} md={6}>
             <FormControl fullWidth>
-              <InputLabel id='demo-simple-select-label'>Select Role</InputLabel>
+              <InputLabel id='designation-select-label'>Select Designation</InputLabel>
               <Select
-                label='Select Role'
-                labelId='demo-simple-select-label'
-                id='demo-simple-select'
-                name='role_priority'
-                value={formData.role_priority}
+                label='Select Designation'
+                labelId='designation-select-label'
+                id='designation-select'
+                name='designation'
+                value={formData.designation}
                 onChange={handleChange}
                 fullWidth
               >
-                <MenuItem value='1'>Admin</MenuItem>
-                <MenuItem value='2'>Manager</MenuItem>
-                <MenuItem value='3'>Employee</MenuItem>
-                <MenuItem value='4'>Channel Partner</MenuItem>
+                <MenuItem value='Software Engineer'>Software Engineer</MenuItem>
+                <MenuItem value='Product Manager'>Product Manager</MenuItem>
+                <MenuItem value='Data Scientist'>Data Scientist</MenuItem>
+                <MenuItem value='UI/UX Designer'>UI/UX Designer</MenuItem>
+                <MenuItem value='Quality Assurance'>Quality Assurance</MenuItem>
+                <MenuItem value='DevOps Engineer'>DevOps Engineer</MenuItem>
+                <MenuItem value='HR Manager'>HR Manager</MenuItem>
+                <MenuItem value='Sales Executive'>Sales Executive</MenuItem>
               </Select>
             </FormControl>
+
+
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <input
+              accept="image/*"
+              style={{ display: 'none' }}
+              id="raised-button-file"
+              type="file"
+              onChange={handleImageChange}
+            />
+            <label htmlFor="raised-button-file">
+              <Button variant="contained" component="span" fullWidth>
+                Upload Image
+              </Button>
+            </label>
+            {imagePreviewUrl && <img src={imagePreviewUrl} alt="Image Preview" style={{ width: '100%', marginTop: '10px' }} />}
           </Grid>
 
           <Grid item xs={12}>
@@ -346,7 +395,7 @@ export default function EmployeeGrid() {
     }
 
     return (
-      <Card>
+      <Card sx={{ height: "100%", borderRadius: "30px" }}>
         <CardContent>
           <Box display='flex' justifyContent='flex-end'>
             <IconButton aria-label='settings' onClick={handleMenuOpen}>
@@ -362,12 +411,22 @@ export default function EmployeeGrid() {
               </MenuItem>
             </Menu>
           </Box>
-          <Avatar alt={employee.first_name} src={employee?.image} sx={{ width: 56, height: 56, margin: '0 auto' }} />
-          <Typography style={{ fontWeight: 'bold', fontSize: '1.2em', textAlign: 'center' }} variant='h6' component='div'>
-            {employee.first_name}
+          <Avatar alt={employee.first_name} src={employee?.image} sx={{ width: 80, height: 80, margin: '0 auto' }} />
+          <Typography style={{ fontWeight: 'bold', fontSize: '1.2em', textAlign: 'center' }} variant='h6' component='div' margin={2}>
+            {capitalizeWords(employee.first_name)} {capitalizeWords(employee.last_name)}
           </Typography>
-          <Typography style={{ fontWeight: 'bold', textAlign: 'center' }} variant='body2' color='text.secondary'>
-            {employee.status}
+          <Typography style={{ fontWeight: 'bold', fontSize: '1em', textAlign: 'center' }} variant='body2' color='text.secondary' margin={2}>
+            {employee.designation}
+          </Typography>
+
+          <Typography style={{ fontWeight: 'bold', textAlign: 'center' }} variant='body2' color='text.secondary' margin={2}>
+            <Chip
+              className='capitalize'
+              variant='tonal'
+              color={employee.status === 'pending' ? 'warning' : employee.status === 'inactive' ? 'secondary' : 'success'}
+              label={employee.status}
+              size='small'
+            />
           </Typography>
         </CardContent>
       </Card>
