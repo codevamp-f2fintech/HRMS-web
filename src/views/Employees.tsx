@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+
 import { useSelector, useDispatch } from 'react-redux';
 import {
   Box,
@@ -21,8 +22,6 @@ import {
   Chip
 } from '@mui/material'
 
-import { fetchEmployees } from '../redux/features/employees/employeesSlice';
-import { RootState, AppDispatch } from '../redux/store';
 
 import InputLabel from '@mui/material/InputLabel'
 import FormControl from '@mui/material/FormControl'
@@ -33,6 +32,9 @@ import ViewModuleIcon from '@mui/icons-material/ViewModule'
 import ViewListIcon from '@mui/icons-material/ViewList'
 import CloseIcon from '@mui/icons-material/Close'
 import EditIcon from '@mui/icons-material/Edit'
+
+import type { RootState, AppDispatch } from '../redux/store';
+import { fetchEmployees } from '../redux/features/employees/employeesSlice';
 
 
 
@@ -78,6 +80,7 @@ export default function EmployeeGrid() {
     useEffect(() => {
       if (employee) {
         const selected = employees.find(t => t._id === employee)
+
         if (selected) {
           setFormData({
             first_name: selected.first_name,
@@ -103,6 +106,7 @@ export default function EmployeeGrid() {
 
     const handleChange = (e) => {
       const { name, value } = e.target
+
       setFormData(prevState => ({
         ...prevState,
         [name]: value
