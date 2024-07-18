@@ -203,36 +203,36 @@ export default function TeamGrid() {
   }
 
   const columns: GridColDef[] = [
-    { field: '_id', headerName: 'ID', width: 90 },
+    { field: '_id', headerName: 'ID', width: 150 },
     {
       field: 'name',
       headerName: 'Name',
-      width: 150,
+      width: 200,
       editable: true,
     },
     {
       field: 'manager_id',
       headerName: 'Manager ID',
-      width: 150,
+      width: 200,
       editable: true,
     },
     {
       field: 'employee_ids',
       headerName: 'Employee IDs',
-      width: 150,
+      width: 200,
       editable: true,
     },
     {
       field: 'code',
       headerName: 'Code',
-      width: 150,
+      width: 200,
       editable: true,
     },
     {
       field: 'edit',
       headerName: 'Edit',
       sortable: false,
-      width: 160,
+      width: 200,
       renderCell: ({ row: { _id } }) => (
         <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
           <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleEditTeamClick(_id)}>
