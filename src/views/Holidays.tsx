@@ -4,7 +4,7 @@
 
 import React, { useEffect, useState } from 'react'
 
-import type { GridColDef } from '@mui/x-data-grid';
+import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { DataGrid, GridToolbar } from '@mui/x-data-grid'
 import {
   Button,
@@ -20,11 +20,14 @@ import {
 import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material'
-import { AppDispatch, RootState } from '@/redux/store';
+
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchHolidays } from '@/redux/features/holidays/holidaysSlice';
 
 import { ToastContainer, toast } from 'react-toastify';
+
+import type { AppDispatch, RootState } from '@/redux/store';
+import { fetchHolidays } from '@/redux/features/holidays/holidaysSlice';
+
 import 'react-toastify/dist/ReactToastify.css';
 
 
@@ -207,17 +210,28 @@ export default function HolidayGrid() {
   }
 
   const columns: GridColDef[] = [
-    { field: '_id', headerName: 'ID', width: 90 },
+    {
+      sortable: true,
+      field: 'lineNo',
+      headerName: '#',
+      headerClassName: 'super-app-theme--header',
+      flex: 0,
+      editable: false,
+      renderCell: (params) => params.api.getAllRowIds().indexOf(params.id) + 1
+    },
     { field: 'title', headerName: 'Title', headerClassName: 'super-app-theme--header', width: 200, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'start_date', headerName: 'Holiday Start Date', headerClassName: 'super-app-theme--header', width: 150, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'end_date', headerName: 'Holiday End Date', headerClassName: 'super-app-theme--header', width: 150, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'note', headerName: 'Note', headerClassName: 'super-app-theme--header', width: 100, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'year', headerName: 'Year', headerClassName: 'super-app-theme--header', width: 100, headerAlign: 'center', align: 'center', sortable: false },
+    { field: 'start_date', headerName: 'Holiday Start Date', headerClassName: 'super-app-theme--header', width: 200, headerAlign: 'center', align: 'center', sortable: false },
+    { field: 'end_date', headerName: 'Holiday End Date', headerClassName: 'super-app-theme--header', width: 200, headerAlign: 'center', align: 'center', sortable: false },
+    { field: 'note', headerName: 'Note', headerClassName: 'super-app-theme--header', width: 200, headerAlign: 'center', align: 'center', sortable: false },
+    { field: 'year', headerName: 'Year', headerClassName: 'super-app-theme--header', width: 200, headerAlign: 'center', align: 'center', sortable: false },
     {
       field: 'edit',
       headerName: 'Edit',
       sortable: false,
-      width: 160,
+      headerAlign: 'center',
+      align: 'center',
+      headerClassName: 'super-app-theme--header',
+      width: 100,
       renderCell: ({ row: { _id } }) => (
         <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
           <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleHolidayEditClick(_id)}>
@@ -277,23 +291,31 @@ export default function HolidayGrid() {
           </Grid>
         </Grid>
       </Box>
-      <Box sx={{ height: 500, width: '100%' }}>
+      <Box sx={{ height: 600, width: '100%' }}>
         <DataGrid
           sx={{
             '& .super-app-theme--header': {
-              fontSize: 15,
+              fontSize: 17,
               color: 'rgba(0, 0, 0, 0.88)',
-              fontWeight: 600
+              fontWeight: 600,
+              alignItems: 'center'
             },
             '& .MuiDataGrid-cell': {
-              fontSize: '1em',
-              color: '#000',
+              fontSize: '10',
+              color: '#1f1d1d',
               align: 'center',
             },
             '& .MuiDataGrid-row': {
               '&:nth-of-type(odd)': {
-                backgroundColor: '#f5f5f5',
+                backgroundColor: 'rgb(46 38 61 / 12%)',
               },
+              '&:nth-of-type(even)': {
+                backgroundColor: '#fffff',
+              },
+              color: '#333',
+              fontWeight: '600',
+              fontSize: '14px',
+              boxSizing: 'border-box'
             },
           }}
           components={{
@@ -308,9 +330,10 @@ export default function HolidayGrid() {
                 pageSize: 10,
               },
             },
-            sorting: {
-              sortModel: [{ field: 'title', sort: 'asc' }],
-            },
+
+            // sorting: {
+            //   sortModel: [{ field: 'title', sort: 'asc' }],
+            // },
           }}
           pageSizeOptions={[10, 20, 30]}
           checkboxSelection

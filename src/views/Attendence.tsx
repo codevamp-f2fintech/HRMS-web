@@ -3,9 +3,9 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
 import type { GridColDef } from '@mui/x-data-grid';
 import { DataGrid, GridToolbar } from '@mui/x-data-grid'
 import {
@@ -22,15 +22,18 @@ import {
   MenuItem,
   Select,
 } from '@mui/material'
-
 import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material'
-import { AppDispatch, RootState } from '@/redux/store';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
+import PauseCircleOutlineIcon from '@mui/icons-material/PauseCircleOutline';
 import { useDispatch, useSelector } from 'react-redux';
+
+import type { AppDispatch, RootState } from '@/redux/store';
 import { fetchAttendances } from '@/redux/features/attendances/attendancesSlice';
 
-export default function AttendenceGrid() {
+export default function AttendanceGrid() {
   const dispatch: AppDispatch = useDispatch()
   const { attendances, loading, error } = useSelector((state: RootState) => state.attendances)
 
@@ -136,7 +139,6 @@ export default function AttendenceGrid() {
               required
             />
           </Grid>
-
           <Grid item xs={12} md={6}>
             <FormControl fullWidth required>
               <InputLabel required id='demo-simple-select-label'>Status</InputLabel>
@@ -154,7 +156,6 @@ export default function AttendenceGrid() {
               </Select>
             </FormControl>
           </Grid>
-
           <Grid item xs={12}>
             <Button
               style={{
@@ -191,28 +192,72 @@ export default function AttendenceGrid() {
     setShowForm(false)
   }
 
-  const columns: GridColDef[] = [
-    { field: '_id', headerName: 'ID', width: 90 },
-    { field: 'employee_id', headerName: 'Employee_id', headerClassName: 'super-app-theme--header', width: 200, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'date', headerName: 'Date', headerClassName: 'super-app-theme--header', width: 150, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'status', headerName: 'Status', headerClassName: 'super-app-theme--header', width: 100, headerAlign: 'center', align: 'center', sortable: false },
-    {
-      field: 'edit',
-      headerName: 'Edit',
-      sortable: false,
-      width: 160,
-      renderCell: ({ row: { _id } }) => (
-        <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
-          <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleAttendanceEditClick(_id)}>
-            <DriveFileRenameOutlineOutlined />
-          </Button>
-        </Box>
-      ),
-    },
-  ]
+  const generateColumns = () => {
+    const daysInMonth = Array.from({ length: 31 }, (_, i) => i + 1);
+    const columns = [
+      { field: 'employee_id', headerName: 'Employee ID', width: 180, headerClassName: 'super-app-theme--header', sortable: true },
+      ...daysInMonth.map(day => ({
+        field: `day_${day}`,
+        headerName: `${day}`,
+        width: 50,
+        headerAlign: 'center',
+        align: 'center',
+        headerClassName: 'super-app-theme--header',
+        renderCell: (params) => {
+          const status = params.row[`day_${day}`];
+          if (status === 'Present') {
+            return <CheckCircleIcon style={{ color: 'green' }} />;
+          } else if (status === 'Absent') {
+            return <CancelIcon style={{ color: 'red' }} />;
+          } else if (status === 'On Leave') {
+            return <PauseCircleOutlineIcon style={{ color: 'orange' }} />;
+          }
+          else {
+            return null;
+          }
+        }
+      })),
+      {
+        field: 'edit',
+        headerName: 'Edit',
+        sortable: false,
+        width: 100,
+        headerAlign: 'center',
+        headerClassName: 'super-app-theme--header',
+        align: 'center',
+        renderCell: ({ row: { _id } }) => (
+          <Box display="flex" justifyContent="center">
+            <Button color="info" variant="contained" onClick={() => handleAttendanceEditClick(_id)}>
+              <DriveFileRenameOutlineOutlined />
+            </Button>
+          </Box>
+        ),
+      },
+    ];
+
+    return columns;
+  };
+
+  const transformData = () => {
+    const groupedData = attendances.reduce((acc, curr) => {
+      const { employee_id, date, status } = curr;
+      const day = new Date(date).getDate();
+
+      if (!acc[employee_id]) {
+        acc[employee_id] = { employee_id, _id: curr._id };
+      }
+      acc[employee_id][`day_${day}`] = status;
+
+      return acc;
+    }, {});
+
+    return Object.values(groupedData);
+  };
+
+  const columns = generateColumns();
+  const rows = transformData();
 
   return (
-
     <Box>
       <ToastContainer />
       <Box sx={{ flexGrow: 1, padding: 2 }}>
@@ -263,28 +308,33 @@ export default function AttendenceGrid() {
       <Box sx={{ height: 500, width: '100%' }}>
         <DataGrid
           sx={{
+            '& .MuiDataGrid-columnHeader .MuiDataGrid-sortIcon': {
+              color: 'white', // Change this to your desired color
+            },
+            '& .MuiDataGrid-columnHeader .MuiDataGrid-menuIconButton': {
+              color: 'white', // Maintain the color on hover
+            },
             '& .super-app-theme--header': {
               fontSize: 15,
-              color: 'rgba(0, 0, 0, 0.88)',
-              fontWeight: 600
+              backgroundColor: '#8C57FF',
+              color: 'white',
+              padding: '4',
+              fontWeight: '20px',
+              alignItems: 'center',
+
             },
             '& .MuiDataGrid-cell': {
-              fontSize: '1em',
-              color: '#000',
+              fontSize: '1.2em',
+              color: '#633030',
               align: 'center',
-            },
-            '& .MuiDataGrid-row': {
-              '&:nth-of-type(odd)': {
-                backgroundColor: '#f5f5f5',
-              },
-            },
+            }
           }}
           components={{
             Toolbar: GridToolbar,
           }}
-          rows={attendances}
+          rows={rows}
           columns={columns}
-          getRowId={(row) => row._id}
+          getRowId={(row) => row.employee_id}
           initialState={{
             pagination: {
               paginationModel: {

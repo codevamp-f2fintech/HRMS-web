@@ -115,6 +115,7 @@ export default function EmployeeGrid() {
 
     const handleImageChange = (e) => {
       const file = e.target.files[0];
+
       if (file) {
         setSelectedImage(file);
         setImagePreviewUrl(URL.createObjectURL(file));
@@ -126,9 +127,11 @@ export default function EmployeeGrid() {
       const url = employee ? `${process.env.NEXT_PUBLIC_APP_URL}/employees/update/${employee}` : `${process.env.NEXT_PUBLIC_APP_URL}/employees/create`;
 
       const formDataToSend = new FormData();
+
       for (const key in formData) {
         formDataToSend.append(key, formData[key]);
       }
+
       if (selectedImage) {
         formDataToSend.append('image', selectedImage);
       }
