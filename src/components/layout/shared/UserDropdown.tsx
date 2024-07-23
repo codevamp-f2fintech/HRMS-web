@@ -1,7 +1,7 @@
 'use client'
 
 // React Imports
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { MouseEvent } from 'react'
 
 // Next Imports
@@ -21,6 +21,8 @@ import Divider from '@mui/material/Divider'
 import MenuItem from '@mui/material/MenuItem'
 import Button from '@mui/material/Button'
 
+import { utility } from '@/utility'
+
 // Styled component for badge content
 const BadgeContentSpan = styled('span')({
   width: 8,
@@ -33,16 +35,18 @@ const BadgeContentSpan = styled('span')({
 
 const UserDropdown = () => {
   // States
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
 
   // Refs
-  const anchorRef = useRef<HTMLDivElement>(null)
+  const anchorRef = useRef<HTMLDivElement>(null);
 
   // Hooks
-  const router = useRouter()
+  const router = useRouter();
+  const { getRole } = utility();
 
   const handleDropdownOpen = () => {
-    !open ? setOpen(true) : setOpen(false)
+    setOpen(prevOpen => !prevOpen)
   }
 
   const handleDropdownClose = (event?: MouseEvent<HTMLLIElement> | (MouseEvent | TouchEvent), url?: string) => {
@@ -53,9 +57,39 @@ const UserDropdown = () => {
     if (anchorRef.current && anchorRef.current.contains(event?.target as HTMLElement)) {
       return
     }
-    localStorage.clear();
+    localStorage.clear()
     setOpen(false)
   }
+
+  const handleAwayClose = (event?: MouseEvent<HTMLLIElement> | (MouseEvent | TouchEvent), url?: string) => {
+    if (anchorRef.current && anchorRef.current.contains(event?.target as HTMLElement)) {
+      return
+    }
+    setOpen(false)
+  }
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user") || '{}')
+
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/employees/get/${user.id}`)
+        const data = await response.json()
+        setUserData(data)
+        console.log("res>>", data)
+      } catch (error) {
+        console.error("Error fetching user data:", error)
+      }
+    }
+
+    if (user.id) {
+      fetchUserData()
+    }
+  }, [])
+
+  if (!userData) return null
+
+  console.log("userdata", userData);
 
   return (
     <>
@@ -67,9 +101,8 @@ const UserDropdown = () => {
         className='mis-2'
       >
         <Avatar
-          ref={anchorRef}
-          alt='John Doe'
-          src='/images/avatars/1.png'
+          alt={userData.first_name}
+          src={userData.image}
           onClick={handleDropdownOpen}
           className='cursor-pointer bs-[38px] is-[38px]'
         />
@@ -90,31 +123,33 @@ const UserDropdown = () => {
             }}
           >
             <Paper className='shadow-lg'>
-              <ClickAwayListener onClickAway={e => handleDropdownClose(e as MouseEvent | TouchEvent)}>
+              <ClickAwayListener onClickAway={e => handleAwayClose(e as MouseEvent | TouchEvent)}>
                 <MenuList>
                   <div className='flex items-center plb-2 pli-4 gap-2' tabIndex={-1}>
-                    <Avatar alt='John Doe' src='/images/avatars/1.png' />
+                    <Avatar alt={userData.first_name} src={userData.image} />
                     <div className='flex items-start flex-col'>
                       <Typography className='font-medium' color='text.primary'>
-                        John Doe
+                        {userData.first_name} {userData.last_name}
                       </Typography>
-                      <Typography variant='caption'>Admin</Typography>
+                      <Typography variant='caption'>
+                        {getRole(userData.role_priority)}
+                      </Typography>
                     </div>
                   </div>
                   <Divider className='mlb-1' />
-                  <MenuItem className='gap-3' onClick={e => handleDropdownClose(e)}>
+                  <MenuItem className='gap-3'>
                     <i className='ri-user-3-line' />
                     <Typography color='text.primary'>My Profile</Typography>
                   </MenuItem>
-                  <MenuItem className='gap-3' onClick={e => handleDropdownClose(e)}>
+                  <MenuItem className='gap-3'>
                     <i className='ri-settings-4-line' />
                     <Typography color='text.primary'>Settings</Typography>
                   </MenuItem>
-                  <MenuItem className='gap-3' onClick={e => handleDropdownClose(e)}>
+                  <MenuItem className='gap-3'>
                     <i className='ri-money-dollar-circle-line' />
                     <Typography color='text.primary'>Pricing</Typography>
                   </MenuItem>
-                  <MenuItem className='gap-3' onClick={e => handleDropdownClose(e)}>
+                  <MenuItem className='gap-3'>
                     <i className='ri-question-line' />
                     <Typography color='text.primary'>FAQ</Typography>
                   </MenuItem>
