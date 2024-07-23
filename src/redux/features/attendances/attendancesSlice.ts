@@ -2,6 +2,12 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 interface Attendance {
   _id: string;
+  employee: {
+    _id: string;
+    first_name: string;
+    last_name: string;
+    image: string;
+  };
   employee_id: string;
   date: Date;
   status: string;
@@ -21,9 +27,12 @@ const initialState: attendancesState = {
 
 export const fetchAttendances = createAsyncThunk('attendances/fetchAttendances', async () => {
   const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/attendence/get`)
+
   if (!response.ok) {
     throw new Error('Failed to fetch attendances')
   }
+
+
   return (await response.json()) as Attendance[]
 })
 
