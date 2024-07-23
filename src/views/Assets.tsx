@@ -3,6 +3,7 @@
 'use client'
 
 import { useEffect, useState } from 'react';
+
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -13,8 +14,10 @@ import { DataGrid } from '@mui/x-data-grid';
 import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material';
-import { AppDispatch, RootState } from '@/redux/store';
+
 import { useDispatch, useSelector } from 'react-redux';
+
+import type { AppDispatch, RootState } from '@/redux/store';
 
 import { fetchAssests } from '@/redux/features/assests/assestsSlice';
 
@@ -233,50 +236,71 @@ export default function AssestsGrid() {
   }
 
   const columns: GridColDef[] = [
-    { field: '_id', headerName: 'ID', width: 90 },
+
     {
       field: 'employee_id',
-      headerName: 'Employee Id',
+      headerName: 'Emp Id',
       width: 150,
       editable: true,
+      headerClassName: 'super-app-theme--header',
+      headerAlign: 'center',
+      align: 'center',
     },
     {
       field: 'name',
       headerName: 'Assests Name',
-      width: 150,
+      width: 180,
       editable: true,
+      headerClassName: 'super-app-theme--header',
+      headerAlign: 'center',
+      align: 'center',
     },
     {
       field: 'model',
       headerName: 'Model Name',
-      width: 110,
+      width: 180,
       editable: true,
+      headerClassName: 'super-app-theme--header',
+      headerAlign: 'center',
+      align: 'center',
     },
     {
       field: 'sno',
-      headerName: 'Sno',
+      headerName: 'SNO',
 
-      width: 110,
+      width: 150,
       editable: true,
+      headerClassName: 'super-app-theme--header',
+      headerAlign: 'center',
+      align: 'center',
     },
     {
       field: 'description',
       headerName: 'Description',
-      width: 130,
+      width: 400,
       editable: true,
+      headerClassName: 'super-app-theme--header',
+      headerAlign: 'center',
+      align: 'center',
     },
     {
       field: 'type',
       headerName: 'Type',
-      width: 110,
+      width: 150,
       editable: true,
+      headerClassName: 'super-app-theme--header',
+      headerAlign: 'center',
+      align: 'center',
     },
     {
       field: 'assignment_date',
-      headerName: 'Assignment Date',
+      headerName: 'Assign Date',
       type: 'string',
-      width: 150,
+      width: 180,
       editable: true,
+      headerClassName: 'super-app-theme--header',
+      headerAlign: 'center',
+      align: 'center',
     },
     {
       field: 'return_date',
@@ -284,12 +308,18 @@ export default function AssestsGrid() {
       type: 'string',
       width: 150,
       editable: true,
+      headerClassName: 'super-app-theme--header',
+      headerAlign: 'center',
+      align: 'center',
     },
     {
       field: 'edit',
       headerName: 'Edit',
       sortable: false,
-      width: 160,
+      width: 120,
+      headerClassName: 'super-app-theme--header',
+      headerAlign: 'center',
+      align: 'center',
       renderCell: ({ row: { _id } }) => (
         <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
           <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleEditAssetClick(_id)}>
@@ -354,8 +384,31 @@ export default function AssestsGrid() {
       </Box>
       <Box sx={{ height: 500, width: '100%' }}>
         <DataGrid
-
-          // getRowHeight={() => 'auto'}
+          sx={{
+            '& .super-app-theme--header': {
+              fontSize: 17,
+              color: 'rgba(0, 0, 0, 0.88)',
+              fontWeight: 600,
+              alignItems: 'center'
+            },
+            '& .MuiDataGrid-cell': {
+              fontSize: '10',
+              color: '#1f1d1d',
+              align: 'center',
+            },
+            '& .MuiDataGrid-row': {
+              '&:nth-of-type(odd)': {
+                backgroundColor: 'rgb(46 38 61 / 12%)',
+              },
+              '&:nth-of-type(even)': {
+                backgroundColor: '#fffff',
+              },
+              color: '#333',
+              fontWeight: '600',
+              fontSize: '14px',
+              boxSizing: 'border-box'
+            },
+          }}
 
           rows={assests}
           columns={columns}
