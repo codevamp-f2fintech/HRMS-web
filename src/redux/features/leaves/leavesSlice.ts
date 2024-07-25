@@ -2,6 +2,12 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 interface Leave {
   _id: string;
+  employee: {
+    _id: string;
+    first_name: string;
+    last_name: string;
+    image: string;
+  };
   employee_id: string;
   start_date: string;
   end_date: string;
@@ -25,9 +31,12 @@ const initialState: leaveState = {
 
 export const fetchLeaves = createAsyncThunk('leaves/fetchLeaves', async () => {
   const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/leaves/get`);
+
   if (!response.ok) {
     throw new Error('Failed to fetch leaves');
   }
+
+
   return (await response.json()) as Leave[]
 })
 

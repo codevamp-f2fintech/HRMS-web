@@ -3,9 +3,9 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
 import type { GridColDef } from '@mui/x-data-grid';
 import { DataGrid, GridToolbar } from '@mui/x-data-grid'
 import {
@@ -21,33 +21,37 @@ import {
   InputLabel,
   MenuItem,
   Select,
+  Avatar,
 } from '@mui/material'
-
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material'
-import { AppDispatch, RootState } from '@/redux/store';
 import { useDispatch, useSelector } from 'react-redux';
+
+import type { AppDispatch, RootState } from '@/redux/store';
 import { fetchLeaves } from '@/redux/features/leaves/leavesSlice';
+import { fetchEmployees } from '@/redux/features/employees/employeesSlice';
 
 export default function LeavesGrid() {
   const dispatch: AppDispatch = useDispatch();
   const { leaves, loading, error } = useSelector((state: RootState) => state.leaves)
-
+  const { employees } = useSelector((state: RootState) => state.employees)
   const [showForm, setShowForm] = useState(false)
   const [selectedLeaves, setSelectedLeaves] = useState(null)
-
 
   useEffect(() => {
     if (leaves.length === 0) {
       dispatch(fetchLeaves())
     }
-  }, [dispatch, leaves.length])
+    if (employees.length === 0) {
+      dispatch(fetchEmployees())
+    }
+  }, [dispatch, leaves.length, employees.length])
 
   function AddLeavesForm({ handleClose, leave }) {
     const [formData, setFormData] = useState({
-      employee_id: '',
+      employee: '',
       start_date: '',
       end_date: '',
       status: '',
@@ -61,7 +65,7 @@ export default function LeavesGrid() {
         const selected = leaves.find(l => l._id === leave)
         if (selected) {
           setFormData({
-            employee_id: selected.employee_id,
+            employee: selected.employee._id,
             start_date: selected.start_date,
             end_date: selected.end_date,
             status: selected.status,
@@ -84,6 +88,8 @@ export default function LeavesGrid() {
     const handleSubmit = () => {
       const method = leave ? 'PUT' : 'POST'
       const url = leave ? `${process.env.NEXT_PUBLIC_APP_URL}/leaves/update/${leave}` : `${process.env.NEXT_PUBLIC_APP_URL}/leaves/create`
+      console.log("submitted form data", formData);
+
       fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -124,16 +130,26 @@ export default function LeavesGrid() {
             <CloseIcon />
           </IconButton>
         </Box>
-        <Grid container spacing={3}>
+        <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Emp Id'
-              name='employee_id'
-              value={formData.employee_id}
-              onChange={handleChange}
-              required
-            />
+            <FormControl fullWidth required>
+              <InputLabel required id='demo-simple-select-label'>Employee</InputLabel>
+              <Select
+                label='Select Employee'
+                labelId='demo-simple-select-label'
+                id='demo-simple-select'
+                name="employee"
+                value={formData.employee}
+                onChange={handleChange}
+                required
+              >
+                {employees.map((employee) => (
+                  <MenuItem key={employee._id} value={employee._id}>
+                    {employee.first_name} {employee.last_name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Grid>
           <Grid item xs={12} md={6}>
             <TextField
@@ -143,6 +159,7 @@ export default function LeavesGrid() {
               value={formData.start_date}
               type='date'
               onChange={handleChange}
+              InputLabelProps={{ shrink: true }}
               required
             />
           </Grid>
@@ -154,6 +171,7 @@ export default function LeavesGrid() {
               type='date'
               value={formData.end_date}
               onChange={handleChange}
+              InputLabelProps={{ shrink: true }}
               required
             />
           </Grid>
@@ -184,7 +202,6 @@ export default function LeavesGrid() {
               required
             />
           </Grid>
-
           <Grid item xs={12} md={6}>
             <FormControl fullWidth required>
               <InputLabel required id='demo-simple-select-label'>Type</InputLabel>
@@ -203,7 +220,6 @@ export default function LeavesGrid() {
               </Select>
             </FormControl>
           </Grid>
-
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
@@ -250,33 +266,89 @@ export default function LeavesGrid() {
     setShowForm(false)
   }
 
-  const columns: GridColDef[] = [
-    { field: '_id', headerName: 'ID', width: 90 },
-    { field: 'employee_id', headerName: 'Employee_id', headerClassName: 'super-app-theme--header', width: 200, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'start_date', headerName: 'Holiday Start Date', headerClassName: 'super-app-theme--header', width: 150, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'end_date', headerName: 'Holiday End Date', headerClassName: 'super-app-theme--header', width: 150, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'status', headerName: 'Status', headerClassName: 'super-app-theme--header', width: 100, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'application', headerName: 'Application', headerClassName: 'super-app-theme--header', width: 100, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'type', headerName: 'Type', headerClassName: 'super-app-theme--header', width: 100, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'day', headerName: 'Day', headerClassName: 'super-app-theme--header', width: 100, headerAlign: 'center', align: 'center', sortable: false },
+  const generateColumns = () => {
+    const columns: GridColDef[] = [
+      {
+        field: 'employee_name',
+        headerName: 'Employee',
+        width: 220,
+        headerClassName: 'super-app-theme--header',
+        sortable: true,
+        align: 'center',
+        renderCell: (params) => {
+          // Define basic styles
+          const textStyle = {
+            fontSize: '1em', // Example styling
+            fontWeight: 'bold', // Example styling
+            color: '#1f1d1d', // Example styling
+          };
 
-    {
-      field: 'edit',
-      headerName: 'Edit',
-      sortable: false,
-      width: 160,
-      renderCell: ({ row: { _id } }) => (
-        <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
-          <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleLeaveEditClick(_id)}>
-            <DriveFileRenameOutlineOutlined />
-          </Button>
-        </Box>
-      ),
-    },
-  ]
+          return (
+            <Box display="flex" alignItems="center">
+              <Avatar src={params.row.employee_image} alt={params.row.employee_name} sx={{ mr: 2 }} />
+              <Typography sx={textStyle}>{params.row.employee_name}</Typography>
+            </Box>
+          );
+        },
+      },
+      { field: 'start_date', headerName: 'Start Date', headerClassName: 'super-app-theme--header', width: 130, sortable: false },
+      { field: 'end_date', headerName: 'End Date', headerClassName: 'super-app-theme--header', width: 130, sortable: false },
+      { field: 'status', headerName: 'Status', headerClassName: 'super-app-theme--header', width: 110, sortable: false },
+      { field: 'application', headerName: 'Application', headerClassName: 'super-app-theme--header', width: 150, sortable: false },
+      { field: 'type', headerName: 'Type', headerClassName: 'super-app-theme--header', width: 100, sortable: false },
+      { field: 'day', headerName: 'Day', headerClassName: 'super-app-theme--header', width: 180, sortable: false },
+      {
+        field: 'edit',
+        headerName: 'Edit',
+        sortable: false,
+        headerAlign: 'center',
+        width: 160,
+        headerClassName: 'super-app-theme--header',
+        renderCell: ({ row: { _id } }) => (
+          <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
+            <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleLeaveEditClick(_id)}>
+              <DriveFileRenameOutlineOutlined />
+            </Button>
+          </Box>
+        ),
+      },
+    ]
+
+    return columns;
+  }
+
+  const transformData = () => {
+    const groupedData = leaves.reduce((acc, curr) => {
+      const { employee, start_date, end_date, status, application, type, day, _id } = curr;
+
+      if (!employee) {
+        // If employee is null or undefined, skip this attendance record
+        return acc;
+      }
+
+      acc.push({
+        _id,
+        employee_id: employee._id,
+        employee_name: `${employee.first_name} ${employee.last_name}`,
+        employee_image: employee.image,
+        start_date,
+        end_date,
+        status,
+        application,
+        type,
+        day,
+      });
+
+      return acc;
+    }, []);
+
+    return groupedData;
+  };
+
+  const columns = generateColumns();
+  const rows = transformData();
 
   return (
-
     <Box>
       <ToastContainer />
       <Box sx={{ flexGrow: 1, padding: 2 }}>
@@ -328,25 +400,30 @@ export default function LeavesGrid() {
         <DataGrid
           sx={{
             '& .super-app-theme--header': {
-              fontSize: 15,
+              fontSize: 17,
               color: 'rgba(0, 0, 0, 0.88)',
-              fontWeight: 600
+              fontWeight: 600,
+              alignItems: 'center'
             },
             '& .MuiDataGrid-cell': {
-              fontSize: '1em',
-              color: '#000',
+              fontSize: '10',
+              color: '#1f1d1d',
               align: 'center',
             },
             '& .MuiDataGrid-row': {
               '&:nth-of-type(odd)': {
-                backgroundColor: '#f5f5f5',
+                backgroundColor: 'rgb(46 38 61 / 12%)',
               },
+              '&:nth-of-type(even)': {
+                backgroundColor: '#fffff',
+              },
+              color: '#333',
+              fontWeight: '600',
+              fontSize: '14px',
+              boxSizing: 'border-box'
             },
           }}
-          components={{
-            Toolbar: GridToolbar,
-          }}
-          rows={leaves}
+          rows={rows}
           columns={columns}
           getRowId={(row) => row._id}
           initialState={{
@@ -356,7 +433,7 @@ export default function LeavesGrid() {
               },
             },
             sorting: {
-              sortModel: [{ field: 'employee_id', sort: 'asc' }],
+              sortModel: [{ field: 'employee_name', sort: 'asc' }],
             },
           }}
           pageSizeOptions={[10, 20, 30]}
