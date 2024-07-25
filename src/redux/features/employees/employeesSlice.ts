@@ -1,6 +1,6 @@
 // features/employees/employeesSlice.ts
 
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 
 interface Employee {
   _id: string;
@@ -20,12 +20,14 @@ interface Employee {
 
 interface EmployeesState {
   employees: Employee[];
+  filteredEmployees: Employee[];
   loading: boolean;
   error: string | null;
 }
 
 const initialState: EmployeesState = {
   employees: [],
+  filteredEmployees: [],
   loading: false,
   error: null,
 };
@@ -46,7 +48,18 @@ const employeesSlice = createSlice({
   name: 'employees',
   initialState,
   reducers: {
-    // You can add more reducers here for additional actions
+    filterEmployees(state, action: PayloadAction<{ name: string; designation: string }>) {
+      const { name, designation } = action.payload;
+      state.filteredEmployees = state.employees.filter(employee => {
+        return (
+          (name ? employee.first_name.toLowerCase().includes(name.toLowerCase()) || employee.last_name.toLowerCase().includes(name.toLowerCase()) : true) &&
+          (designation ? employee.designation === designation : true)
+        );
+      });
+    },
+    resetFilter(state) {
+      state.filteredEmployees = state.employees;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -56,6 +69,7 @@ const employeesSlice = createSlice({
       })
       .addCase(fetchEmployees.fulfilled, (state, action) => {
         state.employees = action.payload;
+        state.filteredEmployees = action.payload;
         state.loading = false;
       })
       .addCase(fetchEmployees.rejected, (state, action) => {
@@ -65,4 +79,5 @@ const employeesSlice = createSlice({
   },
 });
 
+export const { filterEmployees, resetFilter } = employeesSlice.actions;
 export default employeesSlice.reducer;
