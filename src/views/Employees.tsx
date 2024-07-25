@@ -34,18 +34,20 @@ import CloseIcon from '@mui/icons-material/Close'
 import EditIcon from '@mui/icons-material/Edit'
 
 import type { RootState, AppDispatch } from '../redux/store';
-import { fetchEmployees } from '../redux/features/employees/employeesSlice';
+import { fetchEmployees, filterEmployees } from '../redux/features/employees/employeesSlice';
 
 
 
 export default function EmployeeGrid() {
   const dispatch: AppDispatch = useDispatch();
-  const { employees, loading, error } = useSelector((state: RootState) => state.employees);
+  const { employees, filteredEmployees, loading, error } = useSelector((state: RootState) => state.employees);
 
   const [showForm, setShowForm] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState(null)
+  const [searchName, setSearchName] = useState('');
+  const [selectedDesignation, setSelectedDesignation] = useState('');
 
-  const capitalizeWords = (name) => {
+  const capitalizeWords = (name: String) => {
     return name.split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ');
@@ -390,6 +392,11 @@ export default function EmployeeGrid() {
     setShowForm(false)
   }
 
+  const handleSearch = () => {
+    console.log("aayay ither")
+    dispatch(filterEmployees({ name: searchName, designation: selectedDesignation }));
+  };
+
   function EmployeeCard({ employee, id }) {
     const [anchorEl, setAnchorEl] = useState(null)
 
@@ -440,6 +447,11 @@ export default function EmployeeGrid() {
     )
   }
 
+  const handleInputChange = (e) => {
+    setSearchName(e.target.value);
+    handleSearch();
+  };
+
   return (
     <Box sx={{ flexGrow: 1, padding: 2 }}>
       <Dialog open={showForm} onClose={handleClose} fullWidth maxWidth='md'>
@@ -485,11 +497,14 @@ export default function EmployeeGrid() {
         </Box>
       </Box>
       <Grid container spacing={6} alignItems='center' mb={2}>
-        <Grid item xs={12} md={3}>
-          <TextField fullWidth label='Employee ID' variant='outlined' />
-        </Grid>
-        <Grid item xs={12} md={3}>
-          <TextField fullWidth label='Employee Name' variant='outlined' />
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label='Employee Name'
+            variant='outlined'
+            value={searchName}
+            onChange={handleInputChange}
+          />
         </Grid>
         <Grid item xs={12} md={3}>
           <FormControl fullWidth>
@@ -499,8 +514,10 @@ export default function EmployeeGrid() {
               labelId='demo-simple-select-label'
               id='demo-simple-select'
               fullWidth
-              defaultValue=''
+              value={selectedDesignation}
+              onChange={(e) => setSelectedDesignation(e.target.value)}
             >
+              <MenuItem value="">Discard</MenuItem>
               <MenuItem value='1'>Admin</MenuItem>
               <MenuItem value='2'>Manager</MenuItem>
               <MenuItem value='3'>Employee</MenuItem>
@@ -509,17 +526,28 @@ export default function EmployeeGrid() {
           </FormControl>
         </Grid>
         <Grid item xs={12} md={3}>
-          <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>
+          <Button
+            style={{ padding: 15, backgroundColor: '#198754' }}
+            variant='contained'
+            fullWidth
+            onClick={handleSearch}
+          >
             SEARCH
           </Button>
         </Grid>
       </Grid>
       <Grid container spacing={6}>
-        {employees.map(employee => (
-          <Grid item xs={12} sm={6} md={3} key={employee._id}>
-            <EmployeeCard employee={employee} id={employee._id} />
-          </Grid>
-        ))}
+        {loading ? (
+          <Typography>Loading...</Typography>
+        ) : error ? (
+          <Typography>Error: {error}</Typography>
+        ) : (
+          filteredEmployees.map(employee => (
+            <Grid item xs={12} sm={6} md={3} key={employee._id}>
+              <EmployeeCard employee={employee} id={employee._id} />
+            </Grid>
+          ))
+        )}
       </Grid>
     </Box>
   )
