@@ -1,12 +1,13 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable padding-line-between-statements */
-'use client';
+'use client'
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react'
 
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import type { GridColDef } from '@mui/x-data-grid';
-import { DataGrid, GridToolbar } from '@mui/x-data-grid';
+import { DataGrid, GridToolbar } from '@mui/x-data-grid'
 import WeekendIcon from '@mui/icons-material/Weekend';
 import {
   Button,
@@ -22,118 +23,267 @@ import {
   MenuItem,
   Select,
   Avatar,
-} from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import AddIcon from '@mui/icons-material/Add';
-import { DriveFileRenameOutline } from '@mui/icons-material';
+} from '@mui/material'
+import CloseIcon from '@mui/icons-material/Close'
+import AddIcon from '@mui/icons-material/Add'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import PauseCircleOutlineIcon from '@mui/icons-material/PauseCircleOutline';
+
+import { DriveFileRenameOutlineOutlined } from '@mui/icons-material'
 import { useDispatch, useSelector } from 'react-redux';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { StaticDatePicker } from '@mui/x-date-pickers/StaticDatePicker';
+import type { PickersDayProps } from '@mui/x-date-pickers/PickersDay';
+import { PickersDay } from '@mui/x-date-pickers/PickersDay';
+import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
+import { DayCalendarSkeleton } from '@mui/x-date-pickers/DayCalendarSkeleton';
+import type { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 
 import type { AppDispatch, RootState } from '@/redux/store';
 import { fetchAttendances } from '@/redux/features/attendances/attendancesSlice';
 import { fetchEmployees } from '@/redux/features/employees/employeesSlice';
 
-const AttendanceGrid = () => {
-  const dispatch: AppDispatch = useDispatch();
-  const { attendances, loading, error } = useSelector((state: RootState) => state.attendances);
-  const { employees } = useSelector((state: RootState) => state.employees);
+function getRandomNumber(min: number, max: number) {
+  return Math.round(Math.random() * (max - min) + min);
+}
 
-  const [showForm, setShowForm] = useState(false);
-  const [selectedAttendance, setSelectedAttendance] = useState(null);
-  const [month, setMonth] = useState(new Date().getMonth() + 1); // Default to current month
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [userRole, setUserRole] = useState<string>('');
-  const [loggedInUser, setLoggedInUser] = useState<string>(''); // State for logged-in user
+function fakeFetch(date: Dayjs, { signal }: { signal: AbortSignal }) {
+  return new Promise<{ daysToHighlight: number[] }>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      const daysInMonth = date.daysInMonth();
+      const daysToHighlight = [1, 2, 3].map(() => getRandomNumber(1, daysInMonth));
+
+      resolve({ daysToHighlight });
+    }, 500);
+
+    signal.onabort = () => {
+      clearTimeout(timeout);
+      reject(new DOMException('aborted', 'AbortError'));
+    };
+  });
+}
+
+const initialValue = dayjs();
+
+function ServerDay(props: PickersDayProps<Dayjs> & { highlightedDays?: number[], attendanceData?: any }) {
+  const { highlightedDays = [], day, outsideCurrentMonth, attendanceData, ...other } = props;
+
+  const attendanceStatus = attendanceData?.[day.format('YYYY-MM-DD')] || '';
+  const isSunday = day.day() === 0;
+  let backgroundColor;
+  let color;
+
+  if (attendanceStatus === 'Present') {
+    backgroundColor = 'green';
+    color = 'white';
+  } else if (attendanceStatus === 'Absent') {
+    backgroundColor = 'red';
+    color = 'white';
+  } else if (attendanceStatus === 'On Leave') {
+    backgroundColor = 'yellow';
+    color = 'black';
+  }
+  else if (isSunday) {
+    backgroundColor = 'purple';
+    color = 'white';
+  }
+
+  return (
+    <PickersDay
+      {...other}
+      outsideCurrentMonth={outsideCurrentMonth}
+      day={day}
+      sx={{
+        backgroundColor: backgroundColor ? `${backgroundColor} !important` : 'inherit',
+        color: color ? `${color} !important` : 'inherit',
+        fontSize: '1em'
+      }}
+    />
+  );
+}
+
+function DateCalendarServerRequest({ attendanceData }) {
+  const requestAbortController = useRef<AbortController | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [highlightedDays, setHighlightedDays] = useState<number[]>([]);
+
+  const fetchHighlightedDays = (date: Dayjs) => {
+    const controller = new AbortController();
+    fakeFetch(date, {
+      signal: controller.signal,
+    })
+      .then(({ daysToHighlight }) => {
+        setHighlightedDays(daysToHighlight);
+        setIsLoading(false);
+      })
+      .catch((error) => {
+        if (error.name !== 'AbortError') {
+          throw error;
+        }
+      });
+
+    requestAbortController.current = controller;
+  };
+
+  useEffect(() => {
+    fetchHighlightedDays(initialValue);
+
+    return () => requestAbortController.current?.abort();
+  }, []);
+
+  const handleMonthChange = (date: Dayjs) => {
+    if (requestAbortController.current) {
+      requestAbortController.current.abort();
+    }
+
+    setIsLoading(true);
+    setHighlightedDays([]);
+    fetchHighlightedDays(date);
+  };
+
+  return (
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <DateCalendar
+        defaultValue={initialValue}
+        loading={isLoading}
+        onMonthChange={handleMonthChange}
+        renderLoading={() => <DayCalendarSkeleton />}
+        slots={{
+          day: (props) => <ServerDay {...props} attendanceData={attendanceData} />,
+
+        }}
+        slotProps={{
+          day: {
+            highlightedDays,
+          } as any,
+        }}
+        sx={{
+
+          '.MuiPickersCalendarHeader-root': {
+            backgroundColor: '#1976d2', // Change header background color
+            color: 'white', // Change header text color
+          },
+          '.MuiPickersCalendarHeader-label': {
+            color: 'white', // Change month and year text color
+          },
+          '.MuiPickersDay-day': {
+            fontSize: '1.2em', // Increase font size of the days
+          },
+          '.MuiPickersCalendarHeader-switchViewIcon': {
+            color: 'white', // Change the color of the switch view icon
+          },
+          '& .MuiDayCalendar-weekDayLabel': {
+            // Change the color of the weekday labels
+            fontSize: '1.2em', // Increase the font size of the weekday labels
+            fontWeight: 'bold', // Make the weekday labels bold
+          },
+          '.MuiPickersCalendarHeader-iconButton': {
+            color: 'white', // Change the color of the navigation icon buttons
+          },
+        }}
+      />
+    </LocalizationProvider>
+  );
+}
+
+function Legend() {
+  return (
+    <Box>
+      <Typography variant="h6" gutterBottom>
+        Legend
+      </Typography>
+      <Box display="flex" alignItems="center" mb={1}>
+        <Box width={20} height={20} bgcolor="green" mr={1} />
+        <Typography>Present</Typography>
+      </Box>
+      <Box display="flex" alignItems="center" mb={1}>
+        <Box width={20} height={20} bgcolor="red" mr={1} />
+        <Typography>Absent</Typography>
+      </Box>
+      <Box display="flex" alignItems="center" mb={1}>
+        <Box width={20} height={20} bgcolor="yellow" mr={1} />
+        <Typography>Leave</Typography>
+      </Box>
+      <Box display="flex" alignItems="center" mb={1}>
+        <Box width={20} height={20} bgcolor="purple" mr={1} />
+        <Typography>Sunday</Typography>
+      </Box>
+      <Box display="flex" alignItems="center" mb={1}>
+        <Box width={20} height={20} bgcolor="#8c57ff" mr={1} />
+        <Typography>Today</Typography>
+      </Box>
+    </Box>
+  );
+}
+
+export default function AttendanceGrid() {
+  const dispatch: AppDispatch = useDispatch()
+  const { attendances, loading, error } = useSelector((state: RootState) => state.attendances)
+  const { employees } = useSelector((state: RootState) => state.employees)
+
+  const [showForm, setShowForm] = useState(false)
+  const [selectedAttendance, setSelectedAttendance] = useState(null)
+  const [month, setMonth] = useState(new Date().getMonth() + 1)
+  const [daysToShow, setDaysToShow] = useState(7);
+  const [startDayIndex, setStartDayIndex] = useState(0);
+  const [userRole, setUserRole] = useState<string>("");
+  const [userId, setUserId] = useState<string>("");
 
   useEffect(() => {
     if (attendances.length === 0) {
-      dispatch(fetchAttendances());
+      dispatch(fetchAttendances())
     }
-
     if (employees.length === 0) {
-      dispatch(fetchEmployees());
+      dispatch(fetchEmployees())
     }
+  }, [dispatch, attendances.length, employees.length])
 
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-
-    if (user && user.id) {
-      setUserRole(user.role);
-      setLoggedInUser(user.id); // Use id instead of employee_id
-      console.log("Logged in User ID:", user.id);
-    } else {
-      console.error("User data is missing or incomplete in local storage");
-    }
-
-    console.log("Attendance Data:", attendances);
-    console.log("Employees Data:", employees);
-  }, [dispatch, attendances.length, employees.length]);
-
-  const filterAttendances = () => {
-    if (userRole === '1') {
-      // Admin role, return all attendances
-      return attendances;
-    } else if (userRole === '3') {
-      // Employee role, return attendances for the logged-in user
-      return attendances.filter(att => att.employee._id === loggedInUser);
-    }
-
-    return [];
-  };
-
-  const filteredAttendances = filterAttendances();
-
-  console.log("filter attendances", filteredAttendances);
-
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user") || '{}')
+    setUserRole(user.role)
+    setUserId(user.id)
+  }, [])
 
   function AddAttendanceForm({ handleClose, attendance }) {
     const [formData, setFormData] = useState({
       employee: '',
       date: '',
       status: '',
-    });
+    })
 
     useEffect(() => {
       if (attendance) {
-        const selected = attendances.find((attend) => attend._id === attendance);
-
+        const selected = attendances.find(attend => attend._id === attendance)
         if (selected) {
           setFormData({
             employee: selected.employee._id,
             date: selected.date,
             status: selected.status,
-          });
+          })
         }
       }
-    }, [attendance, attendances]);
+    }, [attendance, attendances])
 
     const handleChange = (e) => {
-      const { name, value } = e.target;
-
-      setFormData((prevState) => ({
+      const { name, value } = e.target
+      setFormData(prevState => ({
         ...prevState,
-        [name]: value,
-      }));
-    };
+        [name]: value
+      }))
+    }
 
     const handleSubmit = () => {
-      const method = attendance ? 'PUT' : 'POST';
-
-      const url = attendance
-        ? `${process.env.NEXT_PUBLIC_APP_URL}/attendence/update/${attendance}`
-        : `${process.env.NEXT_PUBLIC_APP_URL}/attendence/create`;
-
+      const method = attendance ? 'PUT' : 'POST'
+      const url = attendance ? `${process.env.NEXT_PUBLIC_APP_URL}/attendence/update/${attendance}` : `${process.env.NEXT_PUBLIC_APP_URL}/attendence/create`
       fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       })
-        .then((response) => response.json())
-        .then((data) => {
+        .then(response => response.json())
+        .then(data => {
           if (data.message) {
             if (data.message.includes('success')) {
               toast.success(data.message, {
@@ -149,19 +299,18 @@ const AttendanceGrid = () => {
               position: 'top-center',
             });
           }
-
           handleClose();
           dispatch(fetchAttendances());
         })
-        .catch((error) => {
+        .catch(error => {
           console.log('Error', error);
         });
     };
 
     return (
       <Box sx={{ flexGrow: 1, padding: 2 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography style={{ fontSize: '2em', color: 'black' }} variant="h5" gutterBottom>
+        <Box display='flex' justifyContent='space-between' alignItems='center'>
+          <Typography style={{ fontSize: '2em', color: 'black' }} variant='h5' gutterBottom>
             {attendance ? 'Edit Attendance' : 'Add Attendance'}
           </Typography>
           <IconButton onClick={handleClose}>
@@ -172,9 +321,9 @@ const AttendanceGrid = () => {
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
-              label="Date"
-              name="date"
-              type="date"
+              label='Date'
+              name='date'
+              type='date'
               value={formData.date}
               onChange={handleChange}
               InputLabelProps={{ shrink: true }}
@@ -183,13 +332,11 @@ const AttendanceGrid = () => {
           </Grid>
           <Grid item xs={12} md={6}>
             <FormControl fullWidth required>
-              <InputLabel required id="demo-simple-select-label">
-                Employee
-              </InputLabel>
+              <InputLabel required id='demo-simple-select-label'>Employee</InputLabel>
               <Select
-                label="Select Employee"
-                labelId="demo-simple-select-label"
-                id="demo-simple-select"
+                label='Select Employee'
+                labelId='demo-simple-select-label'
+                id='demo-simple-select'
                 name="employee"
                 value={formData.employee}
                 onChange={handleChange}
@@ -205,20 +352,18 @@ const AttendanceGrid = () => {
           </Grid>
           <Grid item xs={12} md={6}>
             <FormControl fullWidth required>
-              <InputLabel required id="demo-simple-select-label">
-                Status
-              </InputLabel>
+              <InputLabel required id='demo-simple-select-label'>Status</InputLabel>
               <Select
-                label="Select Status"
-                labelId="demo-simple-select-label"
-                id="demo-simple-select"
-                name="status"
+                label='Select Status'
+                labelId='demo-simple-select-label'
+                id='demo-simple-select'
+                name='status'
                 value={formData.status}
                 onChange={handleChange}
               >
-                <MenuItem value="Present">PRESENT</MenuItem>
-                <MenuItem value="Absent">ABSENT</MenuItem>
-                <MenuItem value="On Leave">ON_LEAVE</MenuItem>
+                <MenuItem value='Present'>PRESENT</MenuItem>
+                <MenuItem value='Absent'>ABSENT</MenuItem>
+                <MenuItem value='On Leave'>ON_LEAVE</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -230,9 +375,9 @@ const AttendanceGrid = () => {
                 color: 'white',
                 padding: 15,
                 backgroundColor: '#ff902f',
-                width: 250,
+                width: 250
               }}
-              variant="contained"
+              variant='contained'
               fullWidth
               onClick={handleSubmit}
             >
@@ -241,25 +386,43 @@ const AttendanceGrid = () => {
           </Grid>
         </Grid>
       </Box>
-    );
+    )
   }
 
   const handleAttendanceAddClick = () => {
-    setSelectedAttendance(null);
-    setShowForm(true);
-  };
+    setSelectedAttendance(null)
+    setShowForm(true)
+  }
 
   const handleAttendanceEditClick = (id) => {
-    setSelectedAttendance(id);
-    setShowForm(true);
-  };
+    setSelectedAttendance(id)
+    setShowForm(true)
+  }
 
   const handleClose = () => {
-    setShowForm(false);
+    setShowForm(false)
+  }
+
+  const handleNextDaysClick = () => {
+    setStartDayIndex((prev) => Math.min(prev + daysToShow, 30 - daysToShow));
   };
 
+  const handlePreviousDaysClick = () => {
+    setStartDayIndex((prev) => Math.max(prev - daysToShow, 0));
+  };
+
+  const attendanceData = attendances
+    .filter(att => att.employee._id === userId)
+    .reduce((acc, { date, status }) => {
+      acc[date] = status;
+
+      return acc;
+    }, {});
+
   const generateColumns = () => {
-    const daysInMonth = new Date(year, month, 0).getDate();
+    const daysInMonth = Array.from({ length: 31 }, (_, i) => i + 1);
+    const visibleDays = daysInMonth.slice(startDayIndex, startDayIndex + daysToShow);
+    const sundays = getSundaysInMonth(month, new Date().getFullYear());
 
     const columns: GridColDef[] = [
       {
@@ -275,7 +438,7 @@ const AttendanceGrid = () => {
           </Box>
         ),
       },
-      ...Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => ({
+      ...visibleDays.map(day => ({
         field: `day_${day}`,
         headerName: `${day}`,
         width: 50,
@@ -283,18 +446,21 @@ const AttendanceGrid = () => {
         align: 'center',
         headerClassName: 'super-app-theme--header',
         renderCell: (params) => {
+          if (sundays.includes(day)) {
+            return <WeekendIcon style={{ color: 'blue' }} />;
+          }
           const status = params.row[`day_${day}`];
-
           if (status === 'Present') {
             return <CheckCircleIcon style={{ color: 'green' }} />;
           } else if (status === 'Absent') {
             return <CancelIcon style={{ color: 'red' }} />;
           } else if (status === 'On Leave') {
             return <PauseCircleOutlineIcon style={{ color: 'orange' }} />;
-          } else {
+          }
+          else {
             return null;
           }
-        },
+        }
       })),
       {
         field: 'edit',
@@ -307,7 +473,7 @@ const AttendanceGrid = () => {
         renderCell: ({ row: { _id } }) => (
           <Box display="flex" justifyContent="center">
             <Button color="info" variant="contained" onClick={() => handleAttendanceEditClick(_id)}>
-              <DriveFileRenameOutline />
+              <DriveFileRenameOutlineOutlined />
             </Button>
           </Box>
         ),
@@ -317,12 +483,25 @@ const AttendanceGrid = () => {
     return columns;
   };
 
+  const getSundaysInMonth = (month, year) => {
+    const date = new Date(year, month - 1, 1);
+    const sundays = [];
+
+    while (date.getMonth() === month - 1) {
+      if (date.getDay() === 0) {
+        sundays.push(date.getDate());
+      }
+      date.setDate(date.getDate() + 1);
+    }
+
+    return sundays;
+  }
+
   const transformData = () => {
-    const groupedData = filteredAttendances.reduce((acc, curr) => {
+    const groupedData = attendances.reduce((acc, curr) => {
       const { employee, date, status, _id } = curr;
 
       if (!employee) {
-        // If employee is null or undefined, skip this attendance record
         return acc;
       }
 
@@ -339,10 +518,9 @@ const AttendanceGrid = () => {
           employee_id: employee._id,
           name: `${employee.first_name} ${employee.last_name}`,
           image: employee.image,
-          _id, // Ensure the _id is included
+          _id,
         };
       }
-
       acc[employee._id][`day_${day}`] = status;
 
       return acc;
@@ -354,39 +532,38 @@ const AttendanceGrid = () => {
   const columns = generateColumns();
   const rows = transformData();
 
-  console.log("Filtered Rows:", rows);
-
   return (
     <Box>
       <ToastContainer />
       <Box sx={{ flexGrow: 1, padding: 2 }}>
-        <Dialog open={showForm} onClose={handleClose} fullWidth maxWidth="md">
+        <Dialog open={showForm} onClose={handleClose} fullWidth maxWidth='md'>
           <DialogContent>
             <AddAttendanceForm attendance={selectedAttendance} handleClose={handleClose} />
           </DialogContent>
         </Dialog>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
           <Box>
-            <Typography style={{ fontSize: '2em', color: 'black' }} variant="h5" gutterBottom>
+            <Typography style={{ fontSize: '2em' }} variant='h5' gutterBottom>
               Attendance
             </Typography>
             <Typography
-              style={{ color: '#212529bf', fontSize: '1em', fontWeight: 'bold' }}
-              variant="subtitle1"
+              style={{ fontSize: '1em', fontWeight: 'bold' }}
+              variant='subtitle1'
               gutterBottom
             >
               Dashboard / Attendance
             </Typography>
           </Box>
-          <Box display="flex" alignItems="center">
+
+          {userRole === "1" && <Box display='flex' alignItems='center'>
             <FormControl fullWidth sx={{ mr: 2 }}>
-              <InputLabel required id="demo-simple-select-label">
+              <InputLabel required id='demo-simple-select-label'>
                 Month
               </InputLabel>
               <Select
-                label="Select Month"
-                labelId="demo-simple-select-label"
-                id="demo-simple-select"
+                label='Select Month'
+                labelId='demo-simple-select-label'
+                id='demo-simple-select'
                 value={month}
                 onChange={(e) => setMonth(e.target.value)}
               >
@@ -404,132 +581,102 @@ const AttendanceGrid = () => {
                 <MenuItem value={12}>December</MenuItem>
               </Select>
             </FormControl>
-            {userRole === '1' && (
-              <Button
-                style={{ borderRadius: 50, backgroundColor: '#ff902f', width: '400px', padding: '15px' }}
-                variant="contained"
-                color="warning"
-                startIcon={<AddIcon />}
-                onClick={handleAttendanceAddClick}
-              >
-                Add Attendance
-              </Button>
-            )}
-          </Box>
+
+            <Button
+              style={{ borderRadius: 50, backgroundColor: '#ff902f', width: '400px', padding: '15px' }}
+              variant='contained'
+              color='warning'
+              startIcon={<AddIcon />}
+              onClick={handleAttendanceAddClick}
+            >
+              Add Attendance
+            </Button>
+            <Button
+              style={{ borderRadius: 50, backgroundColor: '#ff902f', width: '50px', padding: '15px', marginLeft: '10px' }}
+              variant='contained'
+              color='warning'
+              onClick={handlePreviousDaysClick}
+              disabled={startDayIndex === 0}
+            >
+              {'<'}
+            </Button>
+            <Button
+              style={{ borderRadius: 50, backgroundColor: '#ff902f', width: '50px', padding: '15px', marginLeft: '10px' }}
+              variant='contained'
+              color='warning'
+              onClick={handleNextDaysClick}
+              disabled={startDayIndex + daysToShow >= 30}
+            >
+              {'>'}
+            </Button>
+          </Box>}
+
         </Box>
+        {userRole === "1" && <Grid container spacing={6} alignItems='center' mb={2}>
+          <Grid item xs={12} md={3}>
+            <TextField fullWidth label='Employee ID' variant='outlined' />
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <TextField fullWidth label='Employee Name' variant='outlined' />
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>
+              SEARCH
+            </Button>
+          </Grid>
+        </Grid>}
       </Box>
-      <Box sx={{ height: 500, width: '100%' }}>
-        {userRole === '1' ? (
-          <DataGrid
-            sx={{
-              '& .MuiDataGrid-columnHeader .MuiDataGrid-sortIcon': {
-                color: 'white', // Change this to your desired color
-              },
-              '& .MuiDataGrid-columnHeader .MuiDataGrid-menuIconButton': {
-                color: 'white', // Maintain the color on hover
-              },
-              '& .super-app-theme--header': {
-                fontSize: 15,
-                backgroundColor: '#8C57FF',
-                color: 'white',
-                padding: '4',
-                fontWeight: '20px',
-                alignItems: 'center',
-              },
-              '& .MuiDataGrid-cell': {
-                fontSize: '1.2em',
-                color: '#633030',
-                align: 'center',
-              },
-            }}
-            components={{
-              Toolbar: GridToolbar,
-            }}
-            rows={rows}
-            columns={columns}
-            getRowId={(row) => row._id}
-            initialState={{
-              pagination: {
-                paginationModel: {
-                  pageSize: 10,
+      <Box sx={{ display: 'flex' }}>
+        {userRole === '3' && <Legend />}
+        <Box sx={{ height: 500, width: '100%' }}>
+          {userRole === '1' ? (
+            <DataGrid
+              sx={{
+                '& .MuiDataGrid-columnHeader .MuiDataGrid-sortIcon': {
+                  color: 'white',
                 },
-              },
-              sorting: {
-                sortModel: [{ field: 'employee_id', sort: 'asc' }],
-              },
-            }}
-            pageSizeOptions={[10, 20, 30]}
-            checkboxSelection
-            disableRowSelectionOnClick
-          />
-        ) : (
-          <Box>
-            <Typography style={{ fontSize: '2em', color: 'black' }} variant="h5" gutterBottom>
-              Attendance Calendar
-            </Typography>
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <StaticDatePicker
-                displayStaticWrapperAs="desktop"
-                value={new Date(year, month - 1)}
-                onChange={(date) => {
-                  setMonth(date.getMonth() + 1);
-                  setYear(date.getFullYear());
-                }}
-                renderDay={(day, _value, DayComponentProps) => {
-                  console.log("called function")
-                  console.log("Day is ", day);
-                  const date = day.toISOString().split('T')[0];
-
-                  const attendance = filteredAttendances.find(
-                    (att) => new Date(att.date).toISOString().split('T')[0] === date
-                  );
-
-                  // console.log("Attendence is", attendance);
-
-
-                  let backgroundColor = 'inherit';
-                  console.log("status is", attendance.status);
-
-                  if (attendance) {
-
-                    if (attendance.status === 'Present') {
-                      backgroundColor = 'green';
-                    } else if (attendance.status === 'Absent') {
-                      backgroundColor = 'red';
-                    } else if (attendance.status === 'On Leave') {
-                      backgroundColor = 'yellow';
-                    }
-                  }
-
-                  return (
-                    <Box
-                      sx={{
-                        position: 'relative',
-                        backgroundColor: backgroundColor,
-                        borderRadius: '50%',
-                        width: 36,
-                        height: 36,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <Typography
-                        component="span"
-                        color={backgroundColor !== 'inherit' ? 'white' : 'textPrimary'}
-                      >
-                        {day.getDate()}
-                      </Typography>
-                    </Box>
-                  );
-                }}
-              />
-            </LocalizationProvider>
-          </Box>
-        )}
+                '& .MuiDataGrid-columnHeader .MuiDataGrid-menuIconButton': {
+                  color: 'white',
+                },
+                '& .super-app-theme--header': {
+                  fontSize: 15,
+                  backgroundColor: '#8C57FF',
+                  color: 'white',
+                  padding: '4',
+                  fontWeight: '20px',
+                  alignItems: 'center',
+                },
+                '& .MuiDataGrid-cell': {
+                  fontSize: '1.2em',
+                  color: '#633030',
+                  align: 'center',
+                }
+              }}
+              components={{
+                Toolbar: GridToolbar,
+              }}
+              rows={rows}
+              columns={columns}
+              getRowId={(row) => row._id}
+              initialState={{
+                pagination: {
+                  paginationModel: {
+                    pageSize: 10,
+                  },
+                },
+                sorting: {
+                  sortModel: [{ field: 'employee_id', sort: 'asc' }],
+                },
+              }}
+              pageSizeOptions={[10, 20, 30]}
+              checkboxSelection
+              disableRowSelectionOnClick
+            />
+          ) : (
+            <DateCalendarServerRequest attendanceData={attendanceData} />
+          )}
+        </Box>
       </Box>
     </Box>
   );
-};
-
-export default AttendanceGrid;
+}

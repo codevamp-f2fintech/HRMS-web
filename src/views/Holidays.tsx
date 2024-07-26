@@ -254,11 +254,11 @@ export default function HolidayGrid() {
         </Dialog>
         <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
           <Box>
-            <Typography style={{ fontSize: '2em', color: 'black' }} variant='h5' gutterBottom>
+            <Typography style={{ fontSize: '2em' }} variant='h5' gutterBottom>
               Holiday
             </Typography>
             <Typography
-              style={{ color: '#212529bf', fontSize: '1em', fontWeight: 'bold' }}
+              style={{ fontSize: '1em', fontWeight: 'bold' }}
               variant='subtitle1'
               gutterBottom
             >
@@ -296,13 +296,13 @@ export default function HolidayGrid() {
           sx={{
             '& .super-app-theme--header': {
               fontSize: 17,
-              color: 'rgba(0, 0, 0, 0.88)',
+
               fontWeight: 600,
               alignItems: 'center'
             },
             '& .MuiDataGrid-cell': {
               fontSize: '10',
-              color: '#1f1d1d',
+
               align: 'center',
             },
             '& .MuiDataGrid-row': {
@@ -312,7 +312,7 @@ export default function HolidayGrid() {
               '&:nth-of-type(even)': {
                 backgroundColor: '#fffff',
               },
-              color: '#333',
+
               fontWeight: '600',
               fontSize: '14px',
               boxSizing: 'border-box'

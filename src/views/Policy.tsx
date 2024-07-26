@@ -3,6 +3,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -26,8 +27,10 @@ import {
 import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material'
-import { AppDispatch, RootState } from '@/redux/store';
+
 import { useDispatch, useSelector } from 'react-redux';
+
+import type { AppDispatch, RootState } from '@/redux/store';
 import { fetchPolicies } from '@/redux/features/policies/policiesSlice';
 
 export default function PolicyGrid() {
@@ -104,6 +107,7 @@ export default function PolicyGrid() {
           console.log('Error', error);
         });
     };
+
     return (
       <Box sx={{ flexGrow: 1, padding: 2 }}>
         <Box display='flex' justifyContent='space-between' alignItems='center'>
@@ -215,11 +219,11 @@ export default function PolicyGrid() {
         </Dialog>
         <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
           <Box>
-            <Typography style={{ fontSize: '2em', color: 'black' }} variant='h5' gutterBottom>
+            <Typography style={{ fontSize: '2em' }} variant='h5' gutterBottom>
               Policy
             </Typography>
             <Typography
-              style={{ color: '#212529bf', fontSize: '1em', fontWeight: 'bold' }}
+              style={{ fontSize: '1em', fontWeight: 'bold' }}
               variant='subtitle1'
               gutterBottom
             >
@@ -257,12 +261,12 @@ export default function PolicyGrid() {
           sx={{
             '& .super-app-theme--header': {
               fontSize: 15,
-              color: 'rgba(0, 0, 0, 0.88)',
+
               fontWeight: 600
             },
             '& .MuiDataGrid-cell': {
               fontSize: '1em',
-              color: '#000',
+
               align: 'center',
             },
             '& .MuiDataGrid-row': {
