@@ -39,6 +39,8 @@ export default function LeavesGrid() {
   const { employees } = useSelector((state: RootState) => state.employees)
   const [showForm, setShowForm] = useState(false)
   const [selectedLeaves, setSelectedLeaves] = useState(null)
+  const [userRole, setUserRole] = useState<string>("");
+  const [userId, setUserId] = useState<string>("");
 
   useEffect(() => {
     if (leaves.length === 0) {
@@ -48,6 +50,12 @@ export default function LeavesGrid() {
       dispatch(fetchEmployees())
     }
   }, [dispatch, leaves.length, employees.length])
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user") || '{}')
+    setUserRole(user.role)
+    setUserId(user.id)
+  }, [])
 
   function AddLeavesForm({ handleClose, leave }) {
     const [formData, setFormData] = useState({
@@ -123,7 +131,7 @@ export default function LeavesGrid() {
     return (
       <Box sx={{ flexGrow: 1, padding: 2 }}>
         <Box display='flex' justifyContent='space-between' alignItems='center'>
-          <Typography style={{ fontSize: '2em', color: 'black' }} variant='h5' gutterBottom>
+          <Typography style={{ fontSize: '2em' }} variant='h5' gutterBottom>
             {leave ? 'Edit Leave' : 'Add Leave'}
           </Typography>
           <IconButton onClick={handleClose}>
@@ -262,9 +270,12 @@ export default function LeavesGrid() {
     setShowForm(true)
   }
 
+
+
   const handleClose = () => {
     setShowForm(false)
   }
+
 
   const generateColumns = () => {
     const columns: GridColDef[] = [
@@ -297,7 +308,7 @@ export default function LeavesGrid() {
       { field: 'application', headerName: 'Application', headerClassName: 'super-app-theme--header', width: 150, sortable: false },
       { field: 'type', headerName: 'Type', headerClassName: 'super-app-theme--header', width: 100, sortable: false },
       { field: 'day', headerName: 'Day', headerClassName: 'super-app-theme--header', width: 180, sortable: false },
-      {
+      ...(userRole === '1' ? [{
         field: 'edit',
         headerName: 'Edit',
         sortable: false,
@@ -311,14 +322,17 @@ export default function LeavesGrid() {
             </Button>
           </Box>
         ),
-      },
-    ]
+      }] : [])
+    ];
 
     return columns;
   }
 
   const transformData = () => {
-    const groupedData = leaves.reduce((acc, curr) => {
+    const filteredLeaves = userRole === '3'
+      ? leaves.filter(leave => leave.employee._id === userId)
+      : leaves;
+    const groupedData = filteredLeaves.reduce((acc, curr) => {
       const { employee, start_date, end_date, status, application, type, day, _id } = curr;
 
       if (!employee) {
@@ -371,18 +385,31 @@ export default function LeavesGrid() {
             </Typography>
           </Box>
           <Box display='flex' alignItems='center'>
-            <Button
-              style={{ borderRadius: 50, backgroundColor: '#ff902f' }}
-              variant='contained'
-              color='warning'
-              startIcon={<AddIcon />}
-              onClick={handleLeaveAddClick}
-            >
-              Add Leave
-            </Button>
+            {userRole === "1" ? (
+              <Button
+                style={{ borderRadius: 50, backgroundColor: '#ff902f' }}
+                variant='contained'
+                color='warning'
+                startIcon={<AddIcon />}
+                onClick={handleLeaveAddClick}
+              >
+                Add Leave
+              </Button>
+            ) : userRole === "3" ? (
+              <Button
+                style={{ borderRadius: 50, backgroundColor: '#ff902f' }}
+                variant='contained'
+                color='warning'
+                startIcon={<AddIcon />}
+                onClick={handleLeaveAddClick}
+              >
+                Apply Leave
+              </Button>
+            ) : null}
           </Box>
+
         </Box>
-        <Grid container spacing={6} alignItems='center' mb={2}>
+        {userRole === "1" && <Grid container spacing={6} alignItems='center' mb={2}>
           <Grid item xs={12} md={3}>
             <TextField fullWidth label='Employee ID' variant='outlined' />
           </Grid>
@@ -394,7 +421,7 @@ export default function LeavesGrid() {
               SEARCH
             </Button>
           </Grid>
-        </Grid>
+        </Grid>}
       </Box>
       <Box sx={{ height: 500, width: '100%' }}>
         <DataGrid

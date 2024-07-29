@@ -22,6 +22,7 @@ export default function AssestsGrid() {
   const { employees } = useSelector((state: RootState) => state.employees)
   const [showForm, setShowForm] = useState(false)
   const [selectedAsset, setSelectedAsset] = useState(null);
+  const [userRole, setUserRole] = useState<string>("");
 
   useEffect(() => {
     if (assests.length === 0) {
@@ -32,6 +33,12 @@ export default function AssestsGrid() {
       dispatch(fetchEmployees())
     }
   }, [dispatch, assests.length, employees.length])
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user") || '{}')
+
+    setUserRole(user.role)
+  })
 
   function AddAssetForm({ handleClose, asset }) {
     const [formData, setFormData] = useState({
@@ -112,7 +119,7 @@ export default function AssestsGrid() {
     return (
       <Box sx={{ flexGrow: 1, padding: 2 }}>
         <Box display='flex' justifyContent='space-between' alignItems='center'>
-          <Typography style={{ fontSize: '2em', color: 'black' }} variant='h5' gutterBottom>
+          <Typography style={{ fontSize: '2em' }} variant='h5' gutterBottom>
             {asset ? 'Edit Asset' : 'Add Asset'}
           </Typography>
           <IconButton onClick={handleClose}>
@@ -340,16 +347,13 @@ export default function AssestsGrid() {
         headerAlign: 'center',
         align: 'center',
       },
-      {
+      ...(userRole === '1' ? [{
         field: 'edit',
         headerName: 'Edit',
         sortable: false,
-        width: 100,
-        headerClassName: 'super-app-theme--header',
-
         headerAlign: 'center',
-
-        // align: 'center',
+        width: 160,
+        headerClassName: 'super-app-theme--header',
         renderCell: ({ row: { _id } }) => (
           <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
             <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleEditAssetClick(_id)}>
@@ -357,7 +361,7 @@ export default function AssestsGrid() {
             </Button>
           </Box>
         ),
-      },
+      }] : [])
     ];
 
 
@@ -418,7 +422,7 @@ export default function AssestsGrid() {
               Dashboard / Assets
             </Typography>
           </Box>
-          <Box display='flex' alignItems='center'>
+          {userRole === "1" && <Box display='flex' alignItems='center'>
             <Button
               style={{ borderRadius: 50, backgroundColor: '#ff902f' }}
               variant='contained'
@@ -428,9 +432,9 @@ export default function AssestsGrid() {
             >
               Add Asset
             </Button>
-          </Box>
+          </Box>}
         </Box>
-        <Grid container spacing={6} alignItems='center' mb={2}>
+        {userRole === "1" && <Grid container spacing={6} alignItems='center' mb={2}>
           <Grid item xs={12} md={3}>
             <TextField fullWidth label='Employee ID' variant='outlined' />
           </Grid>
@@ -443,7 +447,7 @@ export default function AssestsGrid() {
               SEARCH
             </Button>
           </Grid>
-        </Grid>
+        </Grid>}
       </Box>
       <Box sx={{ height: 500, width: '100%' }}>
         <DataGrid

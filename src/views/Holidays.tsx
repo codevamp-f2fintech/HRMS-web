@@ -36,12 +36,20 @@ export default function HolidayGrid() {
   const { holidays, loading, error } = useSelector((state: RootState) => state.holidays)
   const [showForm, setShowForm] = useState(false)
   const [selectedHoliday, setSelectedHoliday] = useState(null)
+  const [userRole, setUserRole] = useState<string>("");
+  const [userId, setUserId] = useState<string>("");
 
   useEffect(() => {
     if (holidays.length === 0) {
       dispatch(fetchHolidays())
     }
   }, [dispatch, holidays.length]);
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user") || '{}')
+    setUserRole(user.role);
+    setUserId(user.id);
+  })
 
   function AddHolidayForm({ handleClose, holiday }) {
     const [formData, setFormData] = useState({
@@ -113,7 +121,7 @@ export default function HolidayGrid() {
     return (
       <Box sx={{ flexGrow: 1, padding: 2 }}>
         <Box display='flex' justifyContent='space-between' alignItems='center'>
-          <Typography style={{ fontSize: '2em', color: 'black' }} variant='h5' gutterBottom>
+          <Typography style={{ fontSize: '2em' }} variant='h5' gutterBottom>
             {holiday ? 'Edit Holiday' : 'Add Holiday'}
           </Typography>
           <IconButton onClick={handleClose}>
@@ -224,14 +232,13 @@ export default function HolidayGrid() {
     { field: 'end_date', headerName: 'Holiday End Date', headerClassName: 'super-app-theme--header', width: 200, headerAlign: 'center', align: 'center', sortable: false },
     { field: 'note', headerName: 'Note', headerClassName: 'super-app-theme--header', width: 200, headerAlign: 'center', align: 'center', sortable: false },
     { field: 'year', headerName: 'Year', headerClassName: 'super-app-theme--header', width: 200, headerAlign: 'center', align: 'center', sortable: false },
-    {
+    ...(userRole === '1' ? [{
       field: 'edit',
       headerName: 'Edit',
       sortable: false,
       headerAlign: 'center',
-      align: 'center',
+      width: 160,
       headerClassName: 'super-app-theme--header',
-      width: 100,
       renderCell: ({ row: { _id } }) => (
         <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
           <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleHolidayEditClick(_id)}>
@@ -239,8 +246,8 @@ export default function HolidayGrid() {
           </Button>
         </Box>
       ),
-    },
-  ]
+    }] : [])
+  ];
 
   return (
 
@@ -265,7 +272,7 @@ export default function HolidayGrid() {
               Dashboard / Holiday
             </Typography>
           </Box>
-          <Box display='flex' alignItems='center'>
+          {userRole === "1" && <Box display='flex' alignItems='center'>
             <Button
               style={{ borderRadius: 50, backgroundColor: '#ff902f' }}
               variant='contained'
@@ -275,7 +282,7 @@ export default function HolidayGrid() {
             >
               Add Holiday
             </Button>
-          </Box>
+          </Box>}
         </Box>
         <Grid container spacing={6} alignItems='center' mb={2}>
           <Grid item xs={12} md={3}>

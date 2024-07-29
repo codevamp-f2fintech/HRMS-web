@@ -154,7 +154,7 @@ export default function EmployeeGrid() {
     return (
       <Box sx={{ flexGrow: 1, padding: 2 }}>
         <Box display='flex' justifyContent='space-between' alignItems='center'>
-          <Typography style={{ fontSize: '2em', color: 'black' }} variant='h5' gutterBottom>
+          <Typography style={{ fontSize: '2em' }} variant='h5' gutterBottom>
             {employee ? 'Edit Employee' : 'Add Employee'}
           </Typography>
           <IconButton onClick={handleClose}>

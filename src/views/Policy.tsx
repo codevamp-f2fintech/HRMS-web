@@ -39,12 +39,18 @@ export default function PolicyGrid() {
 
   const [showForm, setShowForm] = useState(false)
   const [selectedPolicy, setSelectedPolicy] = useState(null)
+  const [userRole, setUserRole] = useState<string>("");
 
   useEffect(() => {
     if (policies.length === 0) {
       dispatch(fetchPolicies())
     }
   }, [dispatch, policies.length])
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user") || '{}')
+    setUserRole(user.role);
+  })
 
   function AddPolicyForm({ handleClose, policy }) {
     const [formData, setFormData] = useState({
@@ -111,7 +117,7 @@ export default function PolicyGrid() {
     return (
       <Box sx={{ flexGrow: 1, padding: 2 }}>
         <Box display='flex' justifyContent='space-between' alignItems='center'>
-          <Typography style={{ fontSize: '2em', color: 'black' }} variant='h5' gutterBottom>
+          <Typography style={{ fontSize: '2em' }} variant='h5' gutterBottom>
             {policy ? 'Edit Policy' : 'Add Policy'}
           </Typography>
           <IconButton onClick={handleClose}>
@@ -192,11 +198,13 @@ export default function PolicyGrid() {
     { field: 'name', headerName: 'Name', headerClassName: 'super-app-theme--header', width: 200, headerAlign: 'center', align: 'center', sortable: false },
     { field: 'document_url', headerName: 'Document Url', headerClassName: 'super-app-theme--header', width: 150, headerAlign: 'center', align: 'center', sortable: false },
     { field: 'description', headerName: 'Description', headerClassName: 'super-app-theme--header', width: 100, headerAlign: 'center', align: 'center', sortable: false },
-    {
+    ...(userRole === '1' ? [{
       field: 'edit',
       headerName: 'Edit',
       sortable: false,
+      headerAlign: 'center',
       width: 160,
+      headerClassName: 'super-app-theme--header',
       renderCell: ({ row: { _id } }) => (
         <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
           <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handlePolicyEditClick(_id)}>
@@ -204,8 +212,8 @@ export default function PolicyGrid() {
           </Button>
         </Box>
       ),
-    },
-  ]
+    }] : [])
+  ];
 
   return (
 
@@ -230,7 +238,7 @@ export default function PolicyGrid() {
               Dashboard / Policy
             </Typography>
           </Box>
-          <Box display='flex' alignItems='center'>
+          {userRole === "1" && <Box display='flex' alignItems='center'>
             <Button
               style={{ borderRadius: 50, backgroundColor: '#ff902f' }}
               variant='contained'
@@ -240,14 +248,12 @@ export default function PolicyGrid() {
             >
               Add Policy
             </Button>
-          </Box>
+          </Box>}
         </Box>
         <Grid container spacing={6} alignItems='center' mb={2}>
+
           <Grid item xs={12} md={3}>
-            <TextField fullWidth label='Employee ID' variant='outlined' />
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <TextField fullWidth label='Employee Name' variant='outlined' />
+            <TextField fullWidth label='Policy Name' variant='outlined' />
           </Grid>
           <Grid item xs={12} md={3}>
             <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>
@@ -271,7 +277,7 @@ export default function PolicyGrid() {
             },
             '& .MuiDataGrid-row': {
               '&:nth-of-type(odd)': {
-                backgroundColor: '#f5f5f5',
+
               },
             },
           }}
