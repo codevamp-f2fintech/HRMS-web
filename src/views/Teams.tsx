@@ -118,7 +118,7 @@ export default function TeamGrid() {
     return (
       <Box sx={{ flexGrow: 1, padding: 2 }}>
         <Box display='flex' justifyContent='space-between' alignItems='center'>
-          <Typography style={{ fontSize: '2em', color: 'black' }} variant='h5' gutterBottom>
+          <Typography style={{ fontSize: '2em' }} variant='h5' gutterBottom>
             {team ? 'Edit Team' : 'Add Team'}
           </Typography>
           <IconButton onClick={handleClose}>
@@ -253,10 +253,10 @@ export default function TeamGrid() {
       </Dialog>
       <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
         <Box>
-          <Typography style={{ fontSize: '2em', color: 'black' }} variant='h5' gutterBottom>
+          <Typography style={{ fontSize: '2em' }} variant='h5' gutterBottom>
             Team
           </Typography>
-          <Typography style={{ color: '#212529bf', fontSize: '1em', fontWeight: 'bold' }} variant='subtitle1' gutterBottom>
+          <Typography style={{ fontSize: '1em', fontWeight: 'bold' }} variant='subtitle1' gutterBottom>
             Dashboard / Team
           </Typography>
         </Box>

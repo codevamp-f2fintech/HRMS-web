@@ -1,3 +1,4 @@
+/* eslint-disable padding-line-between-statements */
 'use client'
 
 // React Imports
@@ -70,6 +71,8 @@ const UserDropdown = () => {
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user") || '{}')
+    console.log("User", user.role);
+
 
     const fetchUserData = async () => {
       try {
