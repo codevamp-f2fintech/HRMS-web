@@ -4,6 +4,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { MouseEvent } from 'react'
 
+import Link from 'next/link';
+
 // Next Imports
 import { useRouter } from 'next/navigation'
 
@@ -57,6 +59,7 @@ const UserDropdown = () => {
     if (anchorRef.current && anchorRef.current.contains(event?.target as HTMLElement)) {
       return
     }
+
     localStorage.clear()
     setOpen(false)
   }
@@ -65,6 +68,7 @@ const UserDropdown = () => {
     if (anchorRef.current && anchorRef.current.contains(event?.target as HTMLElement)) {
       return
     }
+
     setOpen(false)
   }
 
@@ -75,6 +79,7 @@ const UserDropdown = () => {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/employees/get/${user.id}`)
         const data = await response.json()
+
         setUserData(data)
         console.log("res>>", data)
       } catch (error) {
@@ -137,22 +142,28 @@ const UserDropdown = () => {
                     </div>
                   </div>
                   <Divider className='mlb-1' />
-                  <MenuItem className='gap-3'>
-                    <i className='ri-user-3-line' />
-                    <Typography color='text.primary'>My Profile</Typography>
-                  </MenuItem>
-                  <MenuItem className='gap-3'>
-                    <i className='ri-settings-4-line' />
-                    <Typography color='text.primary'>Settings</Typography>
-                  </MenuItem>
+                  <Link href={'/profile'}>
+                    <MenuItem className='gap-3'>
+                      <i className='ri-user-3-line' />
+                      <Typography color='text.primary'>My Profile</Typography>
+                    </MenuItem>
+                  </Link>
+                  <Link href={'/account-settings'}>
+                    <MenuItem className='gap-3'>
+                      <i className='ri-settings-4-line' />
+                      <Typography color='text.primary'>Setting</Typography>
+                    </MenuItem>
+                  </Link>
                   <MenuItem className='gap-3'>
                     <i className='ri-money-dollar-circle-line' />
                     <Typography color='text.primary'>Pricing</Typography>
                   </MenuItem>
-                  <MenuItem className='gap-3'>
-                    <i className='ri-question-line' />
-                    <Typography color='text.primary'>FAQ</Typography>
-                  </MenuItem>
+                  <Link href={'/faq'}>
+                    <MenuItem className='gap-3'>
+                      <i className='ri-question-line' />
+                      <Typography color='text.primary'>FAQ</Typography>
+                    </MenuItem>
+                  </Link>
                   <div className='flex items-center plb-2 pli-4'>
                     <Button
                       fullWidth
