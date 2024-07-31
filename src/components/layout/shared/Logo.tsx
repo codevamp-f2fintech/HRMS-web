@@ -12,6 +12,8 @@ import MaterioLogo from '@core/svg/Logo'
 // Config Imports
 import themeConfig from '@configs/themeConfig'
 
+import { useTheme } from '@mui/material/styles'
+
 type LogoTextProps = {
   color?: CSSProperties['color']
 }
@@ -27,9 +29,12 @@ const LogoText = styled.span<LogoTextProps>`
 `
 
 const Logo = ({ color }: { color?: CSSProperties['color'] }) => {
+
+  const theme = useTheme();
+
   return (
     <div className='flex items-center min-bs-[24px]'>
-      <MaterioLogo className='text-[22px] text-primary' />
+      <MaterioLogo className='text-[10px] text-primary' fillColor={theme.palette.primary.main} strokeColor={theme.palette.text.primary} />
       <LogoText color={color}>{themeConfig.templateName}</LogoText>
     </div>
   )
