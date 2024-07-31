@@ -8,22 +8,24 @@ import PerfectScrollbar from 'react-perfect-scrollbar'
 // Type Imports
 import HolidayVillageIcon from '@mui/icons-material/HolidayVillage'
 
-import type { VerticalMenuContextProps } from '@menu/components/vertical-menu/Menu'
 
 // Component Imports
-import { Menu, SubMenu, MenuItem, MenuSection } from '@menu/vertical-menu'
 
 // Hook Imports
-import useVerticalNav from '@menu/hooks/useVerticalNav'
 
 // Styled Component Imports
-import StyledVerticalNavExpandIcon from '@menu/styles/vertical/StyledVerticalNavExpandIcon'
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import GroupIcon from '@mui/icons-material/Group';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import EventIcon from '@mui/icons-material/Event';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import DescriptionIcon from '@mui/icons-material/Description';
+import AccessTimeFilledIcon from '@mui/icons-material/AccessTimeFilled';
+
+import StyledVerticalNavExpandIcon from '@menu/styles/vertical/StyledVerticalNavExpandIcon'
+import useVerticalNav from '@menu/hooks/useVerticalNav'
+import { Menu, SubMenu, MenuItem, MenuSection } from '@menu/vertical-menu'
+import type { VerticalMenuContextProps } from '@menu/components/vertical-menu/Menu'
 
 // Style Imports
 import menuItemStyles from '@core/styles/vertical/menuItemStyles'
@@ -155,6 +157,9 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
           </MenuItem>
           <MenuItem href={`/leaves`} icon={<EventAvailableIcon />}>
             Leaves
+          </MenuItem>
+          <MenuItem href={`/timesheets`} icon={<AccessTimeFilledIcon />}>
+            Time Sheet
           </MenuItem>
           <MenuItem href={`/policy`} icon={<DescriptionIcon />}>
             Policy
