@@ -27,6 +27,8 @@ import AddIcon from '@mui/icons-material/Add';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import PauseCircleOutlineIcon from '@mui/icons-material/PauseCircleOutline';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
+import ContrastIcon from '@mui/icons-material/Contrast';
 
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
@@ -82,7 +84,11 @@ function ServerDay(props: PickersDayProps<Dayjs> & { highlightedDays?: number[],
   } else if (attendanceStatus === 'On Leave') {
     backgroundColor = 'yellow';
     color = 'black';
-  } else if (isSunday) {
+  } else if (attendanceStatus === 'On Half') {
+    backgroundColor = '#b7a53a';
+    color = 'white';
+  }
+  else if (isSunday) {
     backgroundColor = 'purple';
     color = 'white';
   }
@@ -199,6 +205,10 @@ function Legend() {
       <Box display="flex" alignItems="center" mb={1}>
         <Box width={15} height={15} bgcolor="red" mr={1} />
         <Typography>Absent</Typography>
+      </Box>
+      <Box display="flex" alignItems="center" mb={1}>
+        <Box width={15} height={15} bgcolor="#b7a53a" mr={1} />
+        <Typography>Half</Typography>
       </Box>
       <Box display="flex" alignItems="center" mb={1}>
         <Box width={15} height={15} bgcolor="yellow" mr={1} />
@@ -392,6 +402,7 @@ export default function AttendanceGrid() {
               >
                 <MenuItem value='Present'>PRESENT</MenuItem>
                 <MenuItem value='Absent'>ABSENT</MenuItem>
+                <MenuItem value='On Half'>ON_HALF</MenuItem>
                 <MenuItem value='On Leave'>ON_LEAVE</MenuItem>
               </Select>
             </FormControl>
@@ -457,31 +468,6 @@ export default function AttendanceGrid() {
     const visibleDays: number[] = Array.from({ length: daysInMonth }, (_, i) => i + 1).slice(startDayIndex, startDayIndex + daysToShow);
     const sundays = getSundaysInMonth(month, new Date().getFullYear());
 
-    const renderDayCell = (day, sundays) => ({ row }) => {
-      if (sundays.includes(day)) {
-        return <WeekendIcon style={{ color: 'blue', marginTop: '20%' }} />;
-      }
-      const status = row[`day_${day}`];
-      switch (status) {
-        case 'Present':
-          return <CheckCircleIcon style={{ color: 'green', marginTop: '20%' }} />;
-        case 'Absent':
-          return <CancelIcon style={{ color: 'red', marginTop: '20%' }} />;
-        case 'On Leave':
-          return <PauseCircleOutlineIcon style={{ color: 'orange', marginTop: '20%' }} />;
-        default:
-          return null;
-      }
-    };
-
-    const dayColumns = visibleDays.map(day => ({
-      field: `day_${day}`,
-      headerName: day,
-      type: 'number',
-      renderCell: renderDayCell(day, sundays),
-    }));
-
-
     const columns: GridColDef[] = [
       {
         field: 'name',
@@ -496,7 +482,35 @@ export default function AttendanceGrid() {
           </Box>
         ),
       },
-      ...dayColumns,
+      ...visibleDays.map(day => ({
+        field: `day_${day}`,
+        headerName: `${day}`,
+
+        // width: 50,
+        headerAlign: 'center',
+        align: 'center',
+        headerClassName: 'super-app-theme--header',
+        renderCell: (params) => {
+          if (sundays.includes(day)) {
+            return <WeekendIcon style={{ color: 'blue', marginTop: '20%' }} />;
+          }
+
+          const status = params.row[`day_${day}`];
+
+          if (status === 'Present') {
+            return <CheckCircleIcon style={{ color: 'green', marginTop: '20%' }} />;
+          } else if (status === 'Absent') {
+            return <CancelIcon style={{ color: 'red', marginTop: '20%' }} />;
+          } else if (status === 'On Leave') {
+            return <PauseCircleOutlineIcon style={{ color: 'orange', marginTop: '20%' }} />;
+          } else if (status === 'On Half') {
+            return <ContrastIcon style={{ color: 'green', fontSize: '1.5em', marginTop: '20%' }} />;
+          }
+          else {
+            return null;
+          }
+        }
+      })),
       {
         field: 'edit',
         headerName: "Edit",
