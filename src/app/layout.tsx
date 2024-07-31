@@ -12,8 +12,10 @@ import ReduxProvider from '@/redux/provider';
 // Generated Icon CSS Imports
 import '@assets/iconify-icons/generated-icons.css'
 
+import NextTopLoader from 'nextjs-toploader';
+
 export const metadata = {
-  title: 'Demo: Materio - NextJS Dashboard Free',
+  title: 'F2-Fintech',
   description:
     'Develop next-level web apps with Materio Dashboard Free - NextJS. Now, updated with lightning-fast routing powered by MUI and App router.'
 }
@@ -26,6 +28,15 @@ const RootLayout = ({ children }: ChildrenType) => {
     <html id='__next' dir={direction}>
       <body className='flex is-full min-bs-full flex-auto flex-col'>
         <ReduxProvider>
+          <NextTopLoader
+            color="red"
+            initialPosition={0.08}
+            height={4}
+            showSpinner={true}
+            easing="ease"
+            speed={300}
+            shadow="0 0 10px #2299DD,0 0 5px #2299DD"
+          />
           {children}
         </ReduxProvider>
       </body>

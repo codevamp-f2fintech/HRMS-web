@@ -289,7 +289,7 @@ export default function AttendanceGrid() {
       }
     }, [attendance, attendances]);
 
-    const handleChange = (e) => {
+    const handleChange = (e: { target: { name: any; value: any; }; }) => {
       const { name, value } = e.target;
 
       setFormData(prevState => ({
@@ -423,7 +423,7 @@ export default function AttendanceGrid() {
     setShowForm(true);
   };
 
-  const handleAttendanceEditClick = (id) => {
+  const handleAttendanceEditClick = (id: React.SetStateAction<null>) => {
     setSelectedAttendance(id);
     setShowForm(true);
   };
@@ -448,23 +448,44 @@ export default function AttendanceGrid() {
       return acc;
     }, {});
 
-  const getDaysInMonth = (month, year) => {
+  const getDaysInMonth = (month: number, year: number) => {
     return new Date(year, month, 0).getDate();
   };
 
   const generateColumns = () => {
     const daysInMonth = getDaysInMonth(month, new Date().getFullYear());
-    const visibleDays = Array.from({ length: daysInMonth }, (_, i) => i + 1).slice(startDayIndex, startDayIndex + daysToShow);
+    const visibleDays: number[] = Array.from({ length: daysInMonth }, (_, i) => i + 1).slice(startDayIndex, startDayIndex + daysToShow);
     const sundays = getSundaysInMonth(month, new Date().getFullYear());
 
-    console.log("Days and month", daysInMonth, visibleDays);
+    const renderDayCell = (day, sundays) => ({ row }) => {
+      if (sundays.includes(day)) {
+        return <WeekendIcon style={{ color: 'blue', marginTop: '20%' }} />;
+      }
+      const status = row[`day_${day}`];
+      switch (status) {
+        case 'Present':
+          return <CheckCircleIcon style={{ color: 'green', marginTop: '20%' }} />;
+        case 'Absent':
+          return <CancelIcon style={{ color: 'red', marginTop: '20%' }} />;
+        case 'On Leave':
+          return <PauseCircleOutlineIcon style={{ color: 'orange', marginTop: '20%' }} />;
+        default:
+          return null;
+      }
+    };
+
+    const dayColumns = visibleDays.map(day => ({
+      field: `day_${day}`,
+      headerName: day,
+      type: 'number',
+      renderCell: renderDayCell(day, sundays),
+    }));
 
 
     const columns: GridColDef[] = [
       {
         field: 'name',
         headerName: 'Employee',
-
         width: 170,
         headerClassName: 'super-app-theme--header',
         sortable: true,
@@ -475,44 +496,15 @@ export default function AttendanceGrid() {
           </Box>
         ),
       },
-      ...visibleDays.map(day => ({
-        field: `day_${day}`,
-        headerName: `${day}`,
-
-        // width: 50,
-        headerAlign: 'center',
-        align: 'center',
-        headerClassName: 'super-app-theme--header',
-        renderCell: (params) => {
-          if (sundays.includes(day)) {
-            return <WeekendIcon style={{ color: 'blue', marginTop: '20%' }} />;
-          }
-
-          const status = params.row[`day_${day}`];
-
-          if (status === 'Present') {
-            return <CheckCircleIcon style={{ color: 'green', marginTop: '20%' }} />;
-          } else if (status === 'Absent') {
-            return <CancelIcon style={{ color: 'red', marginTop: '20%' }} />;
-          } else if (status === 'On Leave') {
-            return <PauseCircleOutlineIcon style={{ color: 'orange', marginTop: '20%' }} />;
-          }
-          else {
-            return null;
-          }
-        }
-      })),
+      ...dayColumns,
       {
         field: 'edit',
-        headerName: 'Edit',
+        headerName: "Edit",
+        headerAlign: "center",
+        align: "center",
         sortable: false,
-
-        // width: 100,
-        headerAlign: 'center',
-        headerClassName: 'super-app-theme--header',
-        align: 'center',
         renderCell: ({ row: { _id } }) => (
-          <Box display="flex" justifyContent="center" mt="10%">
+          <Box display="flex" justifyContent="center" mt="10%" >
             <Button color="info" variant="contained" onClick={() => handleAttendanceEditClick(_id)}>
               <DriveFileRenameOutlineOutlined />
             </Button>
@@ -524,7 +516,7 @@ export default function AttendanceGrid() {
     return columns;
   };
 
-  const getSundaysInMonth = (month, year) => {
+  const getSundaysInMonth = (month: number, year: number) => {
     const date = new Date(year, month - 1, 1);
     const sundays = [];
 
