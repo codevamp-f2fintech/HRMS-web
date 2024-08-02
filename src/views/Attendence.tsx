@@ -49,6 +49,16 @@ function getRandomNumber(min: number, max: number) {
   return Math.round(Math.random() * (max - min) + min);
 }
 
+interface AttendanceRecord {
+  [date: string]: string;
+}
+
+interface AttendanceData {
+  id: string;
+  date: string;
+  status: string;
+}
+
 function fakeFetch(date: Dayjs, { signal }: { signal: AbortSignal }) {
   return new Promise<{ daysToHighlight: number[] }>((resolve, reject) => {
     const timeout = setTimeout(() => {
@@ -451,9 +461,9 @@ export default function AttendanceGrid() {
     setStartDayIndex((prev) => Math.max(prev - daysToShow, 0));
   };
 
-  const attendanceData = attendances
+  const attendanceData: AttendanceRecord = attendances
     .filter(att => att.employee._id === userId)
-    .reduce((acc, { date, status }) => {
+    .reduce<AttendanceRecord>((acc, { date, status }) => {
       acc[date] = status;
 
       return acc;
@@ -485,7 +495,6 @@ export default function AttendanceGrid() {
       ...visibleDays.map(day => ({
         field: `day_${day}`,
         headerName: `${day}`,
-
         // width: 50,
         headerAlign: 'center',
         align: 'center',

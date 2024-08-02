@@ -21,7 +21,7 @@ const FooterContent = () => {
 
   return (
     <Container
-      maxWidth="false"
+      maxWidth={false}
       sx={{
         background: "linear-gradient(270deg, var(--mui-palette-primary-main), rgb(197, 171, 255) 100%)",
         height: "65vh"
