@@ -7,17 +7,9 @@
 // Hook Imports
 import { Container, Box, Typography, Link, Stack, Divider } from "@mui/material";
 
-import useVerticalNav from '@menu/hooks/useVerticalNav'
-
-
-
-
-// Util Imports
-import { verticalLayoutClasses } from '@layouts/utils/layoutClasses'
+import useVerticalNav from '@menu/hooks/useVerticalNav';
 
 const FooterContent = () => {
-  // Hooks
-  const { isBreakpointReached } = useVerticalNav()
 
   return (
     <Container

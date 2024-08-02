@@ -53,10 +53,42 @@ interface AttendanceRecord {
   [date: string]: string;
 }
 
+interface DateCalendarServerRequestProps {
+  attendanceData: AttendanceRecord;
+}
+
+interface AttendenceFormProps {
+  handleClose: () => void;
+  attendance: string;
+}
 interface AttendanceData {
   id: string;
   date: string;
   status: string;
+}
+
+interface Employee {
+  _id: string;
+  first_name: string;
+  last_name: string;
+  image: string;
+}
+
+interface Attendance {
+  employee: Employee;
+  date: string | Date;
+  status: string;
+  _id: string;
+}
+
+interface GroupedData {
+  [key: string]: {
+    employee_id: string;
+    name: string;
+    image: string;
+    _id: string;
+    [key: string]: string;
+  }
 }
 
 function fakeFetch(date: Dayjs, { signal }: { signal: AbortSignal }) {
@@ -117,7 +149,7 @@ function ServerDay(props: PickersDayProps<Dayjs> & { highlightedDays?: number[],
   );
 }
 
-function DateCalendarServerRequest({ attendanceData }) {
+function DateCalendarServerRequest({ attendanceData }: DateCalendarServerRequestProps) {
   const requestAbortController = useRef<AbortController | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [highlightedDays, setHighlightedDays] = useState<number[]>([]);
@@ -236,7 +268,7 @@ function Legend() {
   );
 }
 
-function AttendanceStatusList({ attendanceData }) {
+function AttendanceStatusList({ attendanceData }: DateCalendarServerRequestProps) {
   return (
     <Box sx={{ ml: 20 }}>
       <Typography variant="h5" gutterBottom>
@@ -264,7 +296,7 @@ export default function AttendanceGrid() {
   const { employees } = useSelector((state: RootState) => state.employees);
 
   const [showForm, setShowForm] = useState(false);
-  const [selectedAttendance, setSelectedAttendance] = useState(null);
+  const [selectedAttendance, setSelectedAttendance] = useState<string>("");
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [daysToShow, setDaysToShow] = useState(7);
   const [startDayIndex, setStartDayIndex] = useState(0);
@@ -288,7 +320,7 @@ export default function AttendanceGrid() {
     setUserId(user.id);
   }, []);
 
-  function AddAttendanceForm({ handleClose, attendance }) {
+  const AddAttendanceForm: React.FC<AttendenceFormProps> = ({ handleClose, attendance }) => {
     const [formData, setFormData] = useState({
       employee: '',
       date: '',
@@ -302,7 +334,9 @@ export default function AttendanceGrid() {
         if (selected) {
           setFormData({
             employee: selected.employee._id,
-            date: selected.date,
+            date: selected.date instanceof Date
+              ? selected.date.toISOString().split('T')[0]
+              : selected.date,
             status: selected.status,
           });
         }
@@ -440,11 +474,11 @@ export default function AttendanceGrid() {
   }
 
   const handleAttendanceAddClick = () => {
-    setSelectedAttendance(null);
+    setSelectedAttendance("");
     setShowForm(true);
   };
 
-  const handleAttendanceEditClick = (id: React.SetStateAction<null>) => {
+  const handleAttendanceEditClick = (id: string) => {
     setSelectedAttendance(id);
     setShowForm(true);
   };
@@ -464,7 +498,8 @@ export default function AttendanceGrid() {
   const attendanceData: AttendanceRecord = attendances
     .filter(att => att.employee._id === userId)
     .reduce<AttendanceRecord>((acc, { date, status }) => {
-      acc[date] = status;
+      const dateString = date.toISOString().split('T')[0];
+      acc[dateString] = status;
 
       return acc;
     }, {});
@@ -483,8 +518,8 @@ export default function AttendanceGrid() {
         field: 'name',
         headerName: 'Employee',
         width: 170,
-        headerClassName: 'super-app-theme--header',
         sortable: true,
+        type: 'string',
         renderCell: (params) => (
           <Box display="flex" alignItems="center">
             <Avatar src={params.row.image} alt={params.row.name} sx={{ m: 2 }} />
@@ -498,14 +533,12 @@ export default function AttendanceGrid() {
         // width: 50,
         headerAlign: 'center',
         align: 'center',
-        headerClassName: 'super-app-theme--header',
+        type: 'string',
         renderCell: (params) => {
           if (sundays.includes(day)) {
             return <WeekendIcon style={{ color: 'blue', marginTop: '20%' }} />;
           }
-
           const status = params.row[`day_${day}`];
-
           if (status === 'Present') {
             return <CheckCircleIcon style={{ color: 'green', marginTop: '20%' }} />;
           } else if (status === 'Absent') {
@@ -526,6 +559,7 @@ export default function AttendanceGrid() {
         headerAlign: "center",
         align: "center",
         sortable: false,
+        type: 'actions',
         renderCell: ({ row: { _id } }) => (
           <Box display="flex" justifyContent="center" mt="10%" >
             <Button color="info" variant="contained" onClick={() => handleAttendanceEditClick(_id)}>
@@ -555,7 +589,7 @@ export default function AttendanceGrid() {
   }
 
   const transformData = () => {
-    const groupedData = attendances.reduce((acc, curr) => {
+    const groupedData = attendances.reduce<GroupedData>((acc, curr) => {
       const { employee, date, status, _id } = curr;
 
       if (!employee) {
@@ -623,7 +657,7 @@ export default function AttendanceGrid() {
                 labelId='demo-simple-select-label'
                 id='demo-simple-select'
                 value={month}
-                onChange={(e) => setMonth(e.target.value)}
+                onChange={(e) => setMonth(Number(e.target.value))}
               >
                 <MenuItem value={1}>January</MenuItem>
                 <MenuItem value={2}>February</MenuItem>
