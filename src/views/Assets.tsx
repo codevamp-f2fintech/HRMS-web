@@ -1,11 +1,11 @@
 'use client'
-import { useEffect, useState } from 'react';
+import { useEffect, useState, ChangeEvent, FC } from 'react';
 
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Avatar, Button, Dialog, DialogContent, FormControl, Grid, IconButton, InputLabel, MenuItem, Select, TextField, Typography } from '@mui/material';
+import { Avatar, Button, Dialog, DialogContent, FormControl, Grid, IconButton, InputLabel, MenuItem, Select, SelectChangeEvent, TextField, Typography } from '@mui/material';
 import Box from '@mui/material/Box';
-import type { GridColDef } from '@mui/x-data-grid';
+import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { DataGrid } from '@mui/x-data-grid';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
@@ -16,12 +16,32 @@ import type { AppDispatch, RootState } from '@/redux/store';
 import { fetchAssests } from '@/redux/features/assests/assestsSlice';
 import { fetchEmployees } from '@/redux/features/employees/employeesSlice';
 
+interface AddAssetFormProps {
+  handleClose: () => void;
+  asset: string;
+}
+
+interface TransformedAsset {
+  _id: string;
+  employee_id: string;
+  employee_name: string;
+  employee_image: string;
+  description: string;
+  model: string;
+  name: string;
+  sno: string;
+  type: string;
+  assignment_date: string;
+  return_date: string;
+}
+
+
 export default function AssestsGrid() {
   const dispatch: AppDispatch = useDispatch();
   const { assests, loading, error } = useSelector((state: RootState) => state.assests);
   const { employees } = useSelector((state: RootState) => state.employees)
   const [showForm, setShowForm] = useState(false)
-  const [selectedAsset, setSelectedAsset] = useState(null);
+  const [selectedAsset, setSelectedAsset] = useState<string>("");
   const [userRole, setUserRole] = useState<string>("");
 
   useEffect(() => {
@@ -40,7 +60,7 @@ export default function AssestsGrid() {
     setUserRole(user.role)
   })
 
-  function AddAssetForm({ handleClose, asset }) {
+  const AddAssetForm: React.FC<AddAssetFormProps> = ({ handleClose, asset }) => {
     const [formData, setFormData] = useState({
       employee: '',
       description: '',
@@ -54,7 +74,7 @@ export default function AssestsGrid() {
 
     useEffect(() => {
       if (asset) {
-        const selected = assests.find(ast => ast._id === asset)
+        const selected = assests.find(ast => ast._id === asset);
 
         if (selected) {
           setFormData({
@@ -71,14 +91,21 @@ export default function AssestsGrid() {
       }
     }, [asset, assests])
 
-    const handleChange = (e) => {
-      const { name, value } = e.target
-
+    const handleTextFieldChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const { name, value } = e.target;
       setFormData(prevState => ({
         ...prevState,
-        [name]: value
-      }))
-    }
+        [name]: value,
+      }));
+    };
+
+    const handleSelectChange = (e: SelectChangeEvent<string>) => {
+      const { name, value } = e.target;
+      setFormData(prevState => ({
+        ...prevState,
+        [name as string]: value,
+      }));
+    };
 
     const handleSubmit = () => {
       const method = asset ? 'PUT' : 'POST'
@@ -136,7 +163,7 @@ export default function AssestsGrid() {
                 id='demo-simple-select'
                 name="employee"
                 value={formData.employee}
-                onChange={handleChange}
+                onChange={handleSelectChange}
                 required
               >
                 {employees.map((employee) => (
@@ -153,7 +180,7 @@ export default function AssestsGrid() {
               label='Model'
               name='model'
               value={formData.model}
-              onChange={handleChange}
+              onChange={handleTextFieldChange}
               required
             />
           </Grid>
@@ -163,7 +190,7 @@ export default function AssestsGrid() {
               label='Asset Name'
               name='name'
               value={formData.name}
-              onChange={handleChange}
+              onChange={handleTextFieldChange}
               required
             />
           </Grid>
@@ -173,7 +200,7 @@ export default function AssestsGrid() {
               label='SNO'
               name='sno'
               value={formData.sno}
-              onChange={handleChange}
+              onChange={handleTextFieldChange}
               required
             />
           </Grid>
@@ -183,7 +210,7 @@ export default function AssestsGrid() {
               label='Type'
               name='type'
               value={formData.type}
-              onChange={handleChange}
+              onChange={handleTextFieldChange}
               required
             />
           </Grid>
@@ -193,7 +220,7 @@ export default function AssestsGrid() {
               label='Description'
               name='description'
               value={formData.description}
-              onChange={handleChange}
+              onChange={handleTextFieldChange}
               required
             />
           </Grid>
@@ -204,7 +231,7 @@ export default function AssestsGrid() {
               name='assignment_date'
               value={formData.assignment_date}
               type='date'
-              onChange={handleChange}
+              onChange={handleTextFieldChange}
               InputLabelProps={{ shrink: true }}
               required
             />
@@ -216,7 +243,7 @@ export default function AssestsGrid() {
               name='return_date'
               value={formData.return_date}
               type='date'
-              onChange={handleChange}
+              onChange={handleTextFieldChange}
               InputLabelProps={{ shrink: true }}
               required
             />
@@ -244,11 +271,11 @@ export default function AssestsGrid() {
   }
 
   const handleAssetAddClick = () => {
-    setSelectedAsset(null)
+    setSelectedAsset("")
     setShowForm(true)
   }
 
-  const handleEditAssetClick = (id) => {
+  const handleEditAssetClick = (id: string) => {
     setSelectedAsset(id)
     setShowForm(true)
   }
@@ -347,21 +374,23 @@ export default function AssestsGrid() {
         headerAlign: 'center',
         align: 'center',
       },
-      ...(userRole === '1' ? [{
+      {
         field: 'edit',
-        headerName: 'Edit',
+        headerName: 'Action',
         sortable: false,
         headerAlign: 'center',
         width: 160,
         headerClassName: 'super-app-theme--header',
-        renderCell: ({ row: { _id } }) => (
+        renderCell: (params: GridRenderCellParams) => (
           <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
-            <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleEditAssetClick(_id)}>
-              <DriveFileRenameOutlineOutlined />
-            </Button>
+            {userRole === "1" &&
+              <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleEditAssetClick(params.row._id)}>
+                <DriveFileRenameOutlineOutlined />
+              </Button>
+            }
           </Box>
         ),
-      }] : [])
+      }
     ];
 
 
@@ -369,7 +398,7 @@ export default function AssestsGrid() {
   }
 
   const transformData = () => {
-    const groupedData = assests.reduce((acc, curr) => {
+    const groupedData = assests.reduce<TransformedAsset[]>((acc, curr) => {
       const { employee, description, model, name, sno, type, assignment_date, return_date, _id } = curr;
 
       if (!employee) {

@@ -34,7 +34,13 @@ const initialState: EmployeesState = {
 
 // Thunk for fetching employees
 export const fetchEmployees = createAsyncThunk('employees/fetchEmployees', async () => {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/employees/get`);
+  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/employees/get`, {
+    method: 'GET',
+    credentials: 'include', // Include credentials if needed
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
 
   if (!response.ok) {
     throw new Error('Failed to fetch employees');
