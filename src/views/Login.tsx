@@ -35,6 +35,7 @@ const Login = ({ mode }: { mode: Mode }) => {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/auth/login`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
