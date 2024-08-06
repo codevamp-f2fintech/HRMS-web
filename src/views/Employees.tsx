@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 
+import { debounce } from 'lodash';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   Box,
@@ -40,12 +41,18 @@ import { fetchEmployees, filterEmployees } from '../redux/features/employees/emp
 
 export default function EmployeeGrid() {
   const dispatch: AppDispatch = useDispatch();
-  const { employees, filteredEmployees, loading, error } = useSelector((state: RootState) => state.employees);
+  const { employees, filteredEmployees, hasMore, loading, error } = useSelector((state: RootState) => state.employees);
+
+  console.log('filtered emp', filteredEmployees)
+  console.log('has more', hasMore)
 
   const [showForm, setShowForm] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState(null)
   const [searchName, setSearchName] = useState('');
   const [selectedDesignation, setSelectedDesignation] = useState('');
+  const [page, setPage] = useState(1);
+
+  console.log('set page', page)
 
   const capitalizeWords = (name: String) => {
     return name.split(' ')
@@ -53,11 +60,32 @@ export default function EmployeeGrid() {
       .join(' ');
   };
 
+  // useEffect(() => {
+  //   if (employees.length === 0) {
+  //     dispatch(fetchEmployees());
+  //   }
+  // }, [dispatch, employees.length]);
+
   useEffect(() => {
-    if (employees.length === 0) {
-      dispatch(fetchEmployees());
+    dispatch(fetchEmployees({ page, limit: 12 }));
+  }, [dispatch, employees.length, page]);
+
+  const handleScroll = useCallback(() => {
+    const shouldLoadMore = window.innerHeight + window.scrollY >= document.body.offsetHeight - 500;
+
+    console.log('handleScroll:', shouldLoadMore, window.innerHeight + window.scrollY, document.body.offsetHeight - 500, !loading, hasMore);
+
+    if (shouldLoadMore) {
+      console.log('Loading more employees...');
+      setPage(page + 1);
     }
-  }, [dispatch, employees.length]);
+  }, [!loading, page, hasMore]);
+
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
 
   function AddEmployeeForm({ handleClose, employee }) {
     const [formData, setFormData] = useState({
@@ -392,10 +420,24 @@ export default function EmployeeGrid() {
     setShowForm(false)
   }
 
-  const handleSearch = () => {
-    console.log("aayay ither")
-    dispatch(filterEmployees({ name: searchName, designation: selectedDesignation }));
+  const debouncedSearch = useCallback(
+    debounce(() => {
+      console.log('debounce triggered');
+      dispatch(filterEmployees({ name: searchName, designation: selectedDesignation }));
+    }, 300),
+    [searchName, selectedDesignation]
+  );
+
+  useEffect(() => {
+    debouncedSearch();
+
+    return debouncedSearch.cancel;
+  }, [searchName, selectedDesignation, debouncedSearch]);
+
+  const handleInputChange = (e) => {
+    setSearchName(e.target.value);
   };
+
 
   function EmployeeCard({ employee, id }) {
     const [anchorEl, setAnchorEl] = useState(null)
@@ -447,10 +489,7 @@ export default function EmployeeGrid() {
     )
   }
 
-  const handleInputChange = (e) => {
-    setSearchName(e.target.value);
-    handleSearch();
-  };
+
 
   return (
     <Box sx={{ flexGrow: 1, padding: 2 }}>
@@ -530,7 +569,7 @@ export default function EmployeeGrid() {
             style={{ padding: 15, backgroundColor: '#198754' }}
             variant='contained'
             fullWidth
-            onClick={handleSearch}
+            onClick={debouncedSearch}
           >
             SEARCH
           </Button>

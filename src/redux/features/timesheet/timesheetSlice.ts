@@ -1,4 +1,7 @@
+import type { PayloadAction } from "@reduxjs/toolkit";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+
+import { filterEmployees } from "../employees/employeesSlice";
 
 interface TimeSheet {
   _id: string;
@@ -23,12 +26,14 @@ interface TimeSheet {
 
 interface timesheetState {
   timesheets: TimeSheet[];
+  filteredTimesheet: TimeSheet[];
   loading: boolean;
   error: string | null;
 }
 
 const initialState: timesheetState = {
   timesheets: [],
+  filteredTimesheet: [],
   loading: false,
   error: null,
 };
@@ -47,7 +52,27 @@ export const fetchTimeSheet = createAsyncThunk('timesheets/fetchTimeSheet', asyn
 export const timesheetSlice = createSlice({
   name: 'timesheets',
   initialState,
-  reducers: {},
+  reducers: {
+    filterTimesheet(state, action: PayloadAction<{ name: string; time: string }>) {
+      const { name, time } = action.payload;
+
+      console.log("name is", name);
+
+
+      state.filteredTimesheet = state.timesheets.filter(timesheet => {
+        console.log("time sheet first name", timesheet.employee.first_name)
+
+        return (
+          (name ? timesheet.employee.first_name.toLowerCase().includes(name.toLowerCase()) || timesheet.employee.last_name.toLowerCase().includes(name.toLowerCase()) : true) &&
+          (time ? timesheet.time === time : true)
+
+        );
+      });
+    },
+    resetFilter(state) {
+      state.filteredTimesheet = state.timesheets;
+    },
+  },
   extraReducers: (builder) => {
     builder.addCase(fetchTimeSheet.pending, (state) => {
       state.loading = true;
@@ -64,4 +89,5 @@ export const timesheetSlice = createSlice({
   }
 })
 
+export const { filterTimesheet, resetFilter } = timesheetSlice.actions;
 export default timesheetSlice.reducer;

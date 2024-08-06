@@ -20,33 +20,57 @@ import {
   Select,
   MenuItem,
   IconButton,
-  Pagination
+  Pagination,
+  Grid,
+  FormControl,
+  InputLabel
 } from '@mui/material'
 import { useDispatch, useSelector } from 'react-redux';
 import { Add, Remove } from '@mui/icons-material';
 
 import type { AppDispatch, RootState } from '@/redux/store';
-import { fetchEmployees } from '@/redux/features/employees/employeesSlice';
-import { fetchTimeSheet } from '@/redux/features/timesheet/timesheetSlice';
+import { fetchEmployees, filterEmployees } from '@/redux/features/employees/employeesSlice';
+import { fetchTimeSheet, filterTimesheet } from '@/redux/features/timesheet/timesheetSlice';
 import { fetchAttendances } from '@/redux/features/attendances/attendancesSlice';
+
+console.log("filter time sheet", filterTimesheet);
 
 const ITEMS_PER_PAGE = 6;
 
 export default function TimeSheetGrid() {
   const dispatch: AppDispatch = useDispatch();
 
-  const { timesheets, employees, attendances } = useSelector((state: RootState) => ({
+  const { timesheets, employees, attendances, filteredTimesheet } = useSelector((state: RootState) => ({
     timesheets: state.timesheets.timesheets,
     employees: state.employees.employees,
     attendances: state.attendances.attendances,
+    filteredTimesheet: state.timesheets.filteredTimesheet
   }));
+
+  console.log("filter time sheets", filteredTimesheet)
 
   const [editableRows, setEditableRows] = useState({});
   const [userRole, setUserRole] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
   const [dirty, setDirty] = useState<boolean>(true);
   const [page, setPage] = useState<number>(1);
+  const [searchName, setSearchName] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
+  const [month, setMonth] = useState(new Date().getMonth() + 1);
 
+  useEffect(() => {
+    handleSearch();
+  }, [searchName, selectedStatus]);
+
+  const handleSearch = () => {
+    console.log("aayay ither")
+    dispatch(filterTimesheet({ name: searchName, time: selectedStatus }));
+  };
+
+  const handleInputChange = (e) => {
+    setSearchName(e.target.value);
+    handleSearch()
+  };
 
 
   useEffect(() => {
@@ -170,8 +194,8 @@ export default function TimeSheetGrid() {
 
   const transformData = () => {
     const filteredAttendances = userRole === '3'
-      ? attendances.filter(att => att.employee._id === userId)
-      : attendances
+      ? attendances.filter(att => att.employee._id === userId && new Date(att.date).getMonth() + 1 === month)
+      : attendances.filter(att => new Date(att.date).getMonth() + 1 === month);
 
     const updatedData = filteredAttendances.map(attendance => {
       const timesheet = timesheets.find(ts => ts.attendance._id === attendance._id);
@@ -196,6 +220,8 @@ export default function TimeSheetGrid() {
   };
 
   const rows = transformData();
+
+  console.log("rows", rows)
 
   const pageCount = Math.ceil(rows.length / ITEMS_PER_PAGE);
 
@@ -224,12 +250,33 @@ export default function TimeSheetGrid() {
               Dashboard / Time Sheet
             </Typography>
           </Box>
-        </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-          <Button variant="contained" disabled={dirty} color="primary" onClick={handleSaveAll}>
-            Save
-          </Button>
-          <Box display="flex" justifyContent="center" mt={2}>
+
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'center', alignItems: 'center', mt: 2, gap: 2 }}>
+            <FormControl sx={{ minWidth: 200 }}>
+              <InputLabel required id='demo-simple-select-label'>
+                Month
+              </InputLabel>
+              <Select
+                label='Select Month'
+                labelId='demo-simple-select-label'
+                id='demo-simple-select'
+                value={month}
+                onChange={(e) => setMonth(e.target.value)}
+              >
+                <MenuItem value={1}>January</MenuItem>
+                <MenuItem value={2}>February</MenuItem>
+                <MenuItem value={3}>March</MenuItem>
+                <MenuItem value={4}>April</MenuItem>
+                <MenuItem value={5}>May</MenuItem>
+                <MenuItem value={6}>June</MenuItem>
+                <MenuItem value={7}>July</MenuItem>
+                <MenuItem value={8}>August</MenuItem>
+                <MenuItem value={9}>September</MenuItem>
+                <MenuItem value={10}>October</MenuItem>
+                <MenuItem value={11}>November</MenuItem>
+                <MenuItem value={12}>December</MenuItem>
+              </Select>
+            </FormControl>
             <Pagination
               count={pageCount}
               page={page}
@@ -237,9 +284,53 @@ export default function TimeSheetGrid() {
               variant="outlined"
               shape="rounded"
               color="primary"
+              sx={{ mt: { xs: 2, md: 0 } }}
             />
           </Box>
+
         </Box>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: 2 }}>
+          <Button
+            variant="contained"
+            disabled={dirty}
+            color="primary"
+            onClick={handleSaveAll}
+            sx={{ alignSelf: { xs: 'stretch', md: 'flex-start' }, mb: { xs: 2, md: 0 } }}
+          >
+            Save
+          </Button>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={4}>
+              <TextField
+                fullWidth
+                label='Employee Name'
+                variant='outlined'
+                value={searchName}
+                onChange={handleInputChange}
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <TextField
+                fullWidth
+                label='TimeSheet Status'
+                variant='outlined'
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Button
+                variant='contained'
+                fullWidth
+                onClick={handleSearch}
+                sx={{ padding: 4, backgroundColor: '#198754' }}
+              >
+                SEARCH
+              </Button>
+            </Grid>
+          </Grid>
+        </Box>
+
       </Box>
       <Box sx={{ flexGrow: 1, padding: 2, }}>
         <TableContainer sx={{}} component={Paper}>
@@ -257,16 +348,19 @@ export default function TimeSheetGrid() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {paginatedRows.map((row) => (
+              {(searchName !== '' ? filteredTimesheet : paginatedRows).map((row) => (
                 <TableRow key={row._id || row.attendance_id}>
                   {userRole === "1" && <TableCell sx={{ textAlign: 'center', fontSize: '1em' }}>
                     <Box display="flex" alignItems="center">
-                      <Avatar src={row.employee_image} alt={row.employee_name} sx={{ mr: 2 }} />
-                      {row.employee_name}
+                      <Avatar src={searchName !== '' ? row.employee.image : row.employee_image} alt={row.employee_name} sx={{ mr: 2 }} />
+                      {searchName !== ''
+                        ? `${row.employee.first_name} ${row.employee.last_name}`
+                        : row.employee_name}
+
                     </Box>
                   </TableCell>}
-                  <TableCell sx={{ textAlign: 'center', fontSize: '1em' }} >{row.attendance_date}</TableCell>
-                  <TableCell sx={{ textAlign: 'center', fontSize: '1em' }} >{row.attendance_status}</TableCell>
+                  <TableCell sx={{ textAlign: 'center', fontSize: '1em' }} >{searchName !== '' ? row.attendance.date : row.attendance_date}</TableCell>
+                  <TableCell sx={{ textAlign: 'center', fontSize: '1em' }} >{searchName !== '' ? row.attendance.status : row.attendance_status}</TableCell>
                   <TableCell sx={{ textAlign: 'center', fontSize: '1em' }} >
                     {userRole === "3" && editableRows[row._id || row.attendance_id] ? (
                       <Box display="flex" alignItems="center">
@@ -340,6 +434,6 @@ export default function TimeSheetGrid() {
           </Table>
         </TableContainer>
       </Box>
-    </Box>
+    </Box >
   );
 }
