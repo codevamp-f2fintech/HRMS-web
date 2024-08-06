@@ -1,6 +1,7 @@
 // features/employees/employeesSlice.ts
 
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 interface Employee {
   _id: string;
@@ -23,6 +24,10 @@ interface EmployeesState {
   filteredEmployees: Employee[];
   loading: boolean;
   error: string | null;
+  page: number;
+  limit: number;
+  total: number;
+  hasMore: boolean;
 }
 
 const initialState: EmployeesState = {
@@ -30,19 +35,29 @@ const initialState: EmployeesState = {
   filteredEmployees: [],
   loading: false,
   error: null,
+  page: 1,
+  limit: 10,
+  total: 0,
+  hasMore: true,
 };
 
-// Thunk for fetching employees
-export const fetchEmployees = createAsyncThunk('employees/fetchEmployees', async () => {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/employees/get`);
+export const fetchEmployees = createAsyncThunk(
+  'employees/fetchEmployees',
+  async ({ page = 1, limit = 12 }: { page?: number; limit?: number }) => {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_APP_URL}/employees/get?page=${page}&limit=${limit}`
+    );
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch employees');
+    if (!response.ok) {
+      throw new Error('Failed to fetch employees');
+    }
+
+    const data = await response.json();
+
+
+    return data as { employees: Employee[]; total: number };
   }
-
-
-  return (await response.json()) as Employee[];
-});
+);
 
 const employeesSlice = createSlice({
   name: 'employees',
@@ -50,6 +65,7 @@ const employeesSlice = createSlice({
   reducers: {
     filterEmployees(state, action: PayloadAction<{ name: string; designation: string }>) {
       const { name, designation } = action.payload;
+
       state.filteredEmployees = state.employees.filter(employee => {
         return (
           (name ? employee.first_name.toLowerCase().includes(name.toLowerCase()) || employee.last_name.toLowerCase().includes(name.toLowerCase()) : true) &&
@@ -70,7 +86,9 @@ const employeesSlice = createSlice({
       .addCase(fetchEmployees.fulfilled, (state, action) => {
         state.employees = action.payload;
         state.filteredEmployees = action.payload;
+        state.total = action.payload.total;
         state.loading = false;
+        state.hasMore = state.employees.length < state.total;
       })
       .addCase(fetchEmployees.rejected, (state, action) => {
         state.loading = false;
