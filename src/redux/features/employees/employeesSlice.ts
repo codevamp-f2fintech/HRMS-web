@@ -1,6 +1,6 @@
-// features/employees/employeesSlice.ts
-
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { RootState } from '../../store';
 
 interface Employee {
   _id: string;
@@ -21,6 +21,7 @@ interface Employee {
 interface EmployeesState {
   employees: Employee[];
   filteredEmployees: Employee[];
+  hasMore: boolean;
   loading: boolean;
   error: string | null;
 }
@@ -28,27 +29,49 @@ interface EmployeesState {
 const initialState: EmployeesState = {
   employees: [],
   filteredEmployees: [],
+  hasMore: true,
   loading: false,
   error: null,
 };
 
-// Thunk for fetching employees
-export const fetchEmployees = createAsyncThunk('employees/fetchEmployees', async () => {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/employees/get`, {
-    method: 'GET',
-    credentials: 'include', // Include credentials if needed
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
+let token: string | null = null;
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch employees');
+if (typeof window !== "undefined") {
+  token = localStorage?.getItem("token");
+}
+
+export const fetchEmployees = createAsyncThunk(
+  'employees/fetchEmployees',
+  async ({ page = 1, limit = 12 }: { page?: number; limit?: number }, { getState }) => {
+    const state = getState() as RootState;
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_APP_URL}/employees/get?page=${page}&limit=${limit}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch employees');
+    }
+
+    const data = await response.json();
+
+    // Filter out employees that are already in the state
+    const newEmployees = data.filter((employee: Employee) =>
+      !state.employees.employees.some((existingEmployee: Employee) => existingEmployee._id === employee._id)
+    );
+
+    return {
+      employees: [...state.employees.employees, ...newEmployees],
+      hasMore: data.length === limit,
+    };
   }
-
-
-  return (await response.json()) as Employee[];
-});
+);
 
 const employeesSlice = createSlice({
   name: 'employees',
@@ -56,6 +79,7 @@ const employeesSlice = createSlice({
   reducers: {
     filterEmployees(state, action: PayloadAction<{ name: string; designation: string }>) {
       const { name, designation } = action.payload;
+
       state.filteredEmployees = state.employees.filter(employee => {
         return (
           (name ? employee.first_name.toLowerCase().includes(name.toLowerCase()) || employee.last_name.toLowerCase().includes(name.toLowerCase()) : true) &&
@@ -74,9 +98,10 @@ const employeesSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchEmployees.fulfilled, (state, action) => {
-        state.employees = action.payload;
-        state.filteredEmployees = action.payload;
         state.loading = false;
+        state.employees = action.payload.employees;
+        state.filteredEmployees = action.payload.employees;
+        state.hasMore = action.payload.hasMore;
       })
       .addCase(fetchEmployees.rejected, (state, action) => {
         state.loading = false;

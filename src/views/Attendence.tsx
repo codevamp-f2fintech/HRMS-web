@@ -4,8 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import type { GridColDef } from '@mui/x-data-grid';
-import { DataGrid, GridToolbar } from '@mui/x-data-grid';
+import { DataGrid, GridToolbar, type GridColDef } from '@mui/x-data-grid';
 import WeekendIcon from '@mui/icons-material/Weekend';
 import {
   Button,
@@ -29,13 +28,11 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import PauseCircleOutlineIcon from '@mui/icons-material/PauseCircleOutline';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import ContrastIcon from '@mui/icons-material/Contrast';
-
-import { DriveFileRenameOutlineOutlined } from '@mui/icons-material';
+import DriveFileRenameOutlineOutlined from '@mui/icons-material/DriveFileRenameOutlineOutlined';
 import { useDispatch, useSelector } from 'react-redux';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import type { PickersDayProps } from '@mui/x-date-pickers/PickersDay';
-import { PickersDay } from '@mui/x-date-pickers/PickersDay';
+import { PickersDay, type PickersDayProps } from '@mui/x-date-pickers/PickersDay';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import { DayCalendarSkeleton } from '@mui/x-date-pickers/DayCalendarSkeleton';
 import type { Dayjs } from 'dayjs';
@@ -129,8 +126,7 @@ function ServerDay(props: PickersDayProps<Dayjs> & { highlightedDays?: number[],
   } else if (attendanceStatus === 'On Half') {
     backgroundColor = '#b7a53a';
     color = 'white';
-  }
-  else if (isSunday) {
+  } else if (isSunday) {
     backgroundColor = 'purple';
     color = 'white';
   }
@@ -187,10 +183,11 @@ function DateCalendarServerRequest({ attendanceData }: DateCalendarServerRequest
     setIsLoading(true);
     setHighlightedDays([]);
     fetchHighlightedDays(date);
+    onMonthChange(date);
   };
 
   return (
-    <Box >
+    <Box>
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <DateCalendar
           defaultValue={initialValue}
@@ -199,7 +196,6 @@ function DateCalendarServerRequest({ attendanceData }: DateCalendarServerRequest
           renderLoading={() => <DayCalendarSkeleton />}
           slots={{
             day: (props) => <ServerDay {...props} attendanceData={attendanceData} />,
-
           }}
           slotProps={{
             day: {
@@ -207,27 +203,25 @@ function DateCalendarServerRequest({ attendanceData }: DateCalendarServerRequest
             } as any,
           }}
           sx={{
-
             '.MuiPickersCalendarHeader-root': {
-              backgroundColor: '#1976d2', // Change header background color
-              color: 'white', // Change header text color
+              backgroundColor: '#1976d2',
+              color: 'white',
             },
             '.MuiPickersCalendarHeader-label': {
-              color: 'white', // Change month and year text color
+              color: 'white',
             },
             '.MuiPickersDay-day': {
-              fontSize: '1.2em', // Increase font size of the days
+              fontSize: '1.2em',
             },
             '.MuiPickersCalendarHeader-switchViewIcon': {
-              color: 'white', // Change the color of the switch view icon
+              color: 'white',
             },
             '& .MuiDayCalendar-weekDayLabel': {
-              // Change the color of the weekday labels
-              fontSize: '1.2em', // Increase the font size of the weekday labels
-              fontWeight: 'bold', // Make the weekday labels bold
+              fontSize: '1.2em',
+              fontWeight: 'bold',
             },
             '.MuiPickersCalendarHeader-iconButton': {
-              color: 'white', // Change the color of the navigation icon buttons
+              color: 'white',
             },
           }}
         />
@@ -239,7 +233,6 @@ function DateCalendarServerRequest({ attendanceData }: DateCalendarServerRequest
 function Legend() {
   return (
     <Box display='flex' gap={2}>
-
       <Box display="flex" alignItems="center" mb={1}>
         <Box width={15} height={15} bgcolor="green" mr={1} />
         <Typography>Present</Typography>
@@ -275,20 +268,22 @@ function AttendanceStatusList({ attendanceData }: DateCalendarServerRequestProps
         Attendance Status
       </Typography>
       <Grid container spacing={2}>
-        {Object.entries(attendanceData).map(([date, status]) => (
-          <Grid item xs={12} key={date}>
-            <Box display="flex" justifyContent="flex-start" alignItems="center">
-              <Typography sx={{ width: '50%' }}>{date}</Typography>
-              <Typography sx={{ width: '50%' }}>{status}</Typography>
-
-            </Box>
-          </Grid>
-        ))}
+        {filteredData.length > 0 ? (
+          filteredData.map(([date, status]) => (
+            <Grid item xs={12} sm={6} key={date}>
+              <Box display="flex" justifyContent="flex-start" alignItems="center">
+                <Typography sx={{ width: '50%' }}>{date}</Typography>
+                <Typography sx={{ width: '50%' }}>{status}</Typography>
+              </Box>
+            </Grid>
+          ))
+        ) : (
+          <Typography>No attendance data for this month.</Typography>
+        )}
       </Grid>
     </Box>
   );
 }
-
 
 export default function AttendanceGrid() {
   const dispatch: AppDispatch = useDispatch();
@@ -624,6 +619,12 @@ export default function AttendanceGrid() {
   const columns = generateColumns();
   const rows = transformData();
 
+  const handleMonthChange = (date: Dayjs) => {
+    const newMonth = date.month() + 1;
+
+    setMonth(newMonth);
+  };
+
   return (
     <Box>
       <ToastContainer />
@@ -719,13 +720,10 @@ export default function AttendanceGrid() {
         </Grid>}
       </Box>
       <Box sx={{ display: 'flex' }}>
-        {/* {userRole === '3' && <Legend />} */}
         <Box sx={{ height: 500, width: '100%' }}>
           {userRole === '1' ? (
             <DataGrid
-
               getRowHeight={() => 'auto'}
-
               sx={{
                 '& .MuiDataGrid-columnHeader .MuiDataGrid-sortIcon': {
                   color: 'white',
@@ -739,7 +737,6 @@ export default function AttendanceGrid() {
                 '& .mui-wop1k0-MuiDataGrid-footerContainer': {
                   background: 'linear-gradient(270deg, var(--mui-palette-primary-main), rgb(197, 171, 255) 100%) !important',
                 },
-
                 '& .MuiDataGrid-cell': {
                   fontSize: '1.2em',
                   color: '#633030',
@@ -768,12 +765,22 @@ export default function AttendanceGrid() {
             />
           ) : (
             <>
-              <Box display='flex'>
-                <DateCalendarServerRequest attendanceData={attendanceData} />
-                <AttendanceStatusList attendanceData={attendanceData} />
+              <Box display="flex">
+                <Box display="flex" flexDirection="column" flexShrink={0}>
+                  <DateCalendarServerRequest
+                    attendanceData={attendanceData}
+                    selectedMonth={month}
+                    onMonthChange={handleMonthChange}
+                  />
+                  <Legend />
+                </Box>
+                <AttendanceStatusList
+                  attendanceData={attendanceData}
+                  selectedMonth={month}
+                />
               </Box>
-              <Legend />
             </>
+
           )}
         </Box>
       </Box>
