@@ -58,20 +58,23 @@ export default function TimeSheetGrid() {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [month, setMonth] = useState(new Date().getMonth() + 1);
 
-  useEffect(() => {
-    handleSearch();
-  }, [searchName, selectedStatus]);
 
   const handleSearch = () => {
     console.log("aayay ither")
-    dispatch(filterTimesheet({ name: searchName, time: selectedStatus }));
+    dispatch(filterTimesheet({ name: searchName, status: selectedStatus }));
   };
 
-  const handleInputChange = (e) => {
-    setSearchName(e.target.value);
-    handleSearch()
+  const handleInputChange = (e, field) => {
+    if (field === 'searchName') {
+      setSearchName(e.target.value);
+    } else if (field === 'selectedStatus') {
+      setSelectedStatus(e.target.value === 'All' ? '' : e.target.value); // Set to empty string for "All"
+    }
   };
 
+  useEffect(() => {
+    handleSearch();
+  }, [searchName, selectedStatus]);
 
   useEffect(() => {
     if (timesheets.length === 0) {
@@ -79,7 +82,7 @@ export default function TimeSheetGrid() {
     }
 
     if (employees.length === 0) {
-      dispatch(fetchEmployees())
+      dispatch(fetchEmployees({ page, limit: ITEMS_PER_PAGE }));
     }
 
     if (attendances.length === 0) {
@@ -306,17 +309,25 @@ export default function TimeSheetGrid() {
                 label='Employee Name'
                 variant='outlined'
                 value={searchName}
-                onChange={handleInputChange}
+                onChange={(e) => handleInputChange(e, 'searchName')}
               />
             </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label='TimeSheet Status'
-                variant='outlined'
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-              />
+            <Grid item xs={12} md={3}>
+              <FormControl fullWidth>
+                <InputLabel id='status-select-label'>Status</InputLabel>
+                <Select
+                  labelId='status-select-label'
+                  id='status-select'
+                  value={selectedStatus === '' ? 'All' : selectedStatus}
+                  label='Status'
+                  onChange={(e) => handleInputChange(e, 'selectedStatus')}
+                >
+                  <MenuItem value='All'>All</MenuItem>
+                  <MenuItem value='Pending'>Pending</MenuItem>
+                  <MenuItem value='Approved'>Approved</MenuItem>
+                  <MenuItem value='Rejected'>Rejected</MenuItem>
+                </Select>
+              </FormControl>
             </Grid>
             <Grid item xs={12} md={4}>
               <Button

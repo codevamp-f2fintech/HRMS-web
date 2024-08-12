@@ -2,6 +2,7 @@
 
 // React Imports
 import { useEffect, useState, type ReactElement } from 'react'
+
 import { useRouter } from 'next/navigation'
 
 const LayoutWrapper = ({ verticalLayout }: { verticalLayout: ReactElement }) => {
@@ -10,12 +11,13 @@ const LayoutWrapper = ({ verticalLayout }: { verticalLayout: ReactElement }) => 
 
   useEffect(() => {
     const storedToken = localStorage?.getItem('token')
+
     if (storedToken) {
       setToken(storedToken)
     } else {
       router.push('/login')
     }
-  }, [router])
+  }, [router, token])
 
   // Return the layout based on the layout context
   if (!token) {

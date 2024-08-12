@@ -43,7 +43,7 @@ const initialState: EmployeesState = {
 
 export const fetchEmployees = createAsyncThunk(
   'employees/fetchEmployees',
-  async ({ page = 1, limit = 12 }: { page?: number; limit?: number }) => {
+  async ({ page = 1, limit = 0 }: { page?: number; limit?: number }) => {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_APP_URL}/employees/get?page=${page}&limit=${limit}`
     );

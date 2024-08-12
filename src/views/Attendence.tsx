@@ -1,6 +1,8 @@
 'use client'
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+
+import { debounce } from 'lodash';
 
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -39,8 +41,9 @@ import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 
 import type { AppDispatch, RootState } from '@/redux/store';
-import { fetchAttendances } from '@/redux/features/attendances/attendancesSlice';
+import { fetchAttendances, filterAttendance } from '@/redux/features/attendances/attendancesSlice';
 import { fetchEmployees } from '@/redux/features/employees/employeesSlice';
+import { apiResponse } from '@/utility/apiResponse/employeesResponse';
 
 function getRandomNumber(min: number, max: number) {
   return Math.round(Math.random() * (max - min) + min);
@@ -252,8 +255,9 @@ function AttendanceStatusList({ attendanceData, selectedMonth }) {
 
 export default function AttendanceGrid() {
   const dispatch: AppDispatch = useDispatch();
-  const { attendances, loading, error } = useSelector((state: RootState) => state.attendances);
-  const { employees } = useSelector((state: RootState) => state.employees);
+  const { attendances, loading, error, filteredAttendance } = useSelector((state: RootState) => state.attendances);
+
+  // const { employees } = useSelector((state: RootState) => state.employees);
 
   const [showForm, setShowForm] = useState(false);
   const [selectedAttendance, setSelectedAttendance] = useState(null);
@@ -262,16 +266,44 @@ export default function AttendanceGrid() {
   const [startDayIndex, setStartDayIndex] = useState(0);
   const [userRole, setUserRole] = useState<string>('');
   const [userId, setUserId] = useState<string>('');
+  const [searchName, setSearchName] = useState('');
+
+
+  const [employees, setEmployees] = useState([])
+
+
+  const debouncedSearch = useCallback(
+    debounce(() => {
+      console.log('debounce triggered');
+      dispatch(filterAttendance({ name: searchName }));
+    }, 300),
+    [searchName]
+  );
+
+  useEffect(() => {
+    debouncedSearch();
+
+    return debouncedSearch.cancel;
+  }, [searchName, debouncedSearch]);
+
+  const handleInputChange = (e) => {
+    setSearchName(e.target.value);
+  };
+
 
   useEffect(() => {
     if (attendances.length === 0) {
       dispatch(fetchAttendances());
     }
 
-    if (employees.length === 0) {
-      dispatch(fetchEmployees());
-    }
-  }, [dispatch, attendances.length, employees.length]);
+    const fetchEmployees = async () => {
+      const data = await apiResponse();
+
+      setEmployees(data);
+    };
+
+    fetchEmployees();
+  }, [dispatch, attendances.length]);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -546,7 +578,9 @@ export default function AttendanceGrid() {
   }
 
   const transformData = () => {
-    const groupedData = attendances.reduce((acc, curr) => {
+    const attendanceSource = filteredAttendance.length > 0 ? filteredAttendance : attendances;
+
+    const groupedData = attendanceSource.reduce((acc, curr) => {
       const { employee, date, status, _id } = curr;
 
       if (!employee) {
@@ -668,11 +702,17 @@ export default function AttendanceGrid() {
 
         </Box>
         {userRole === "1" && <Grid container spacing={6} alignItems='center' mb={2}>
-          <Grid item xs={12} md={3}>
+          {/* <Grid item xs={12} md={3}>
             <TextField fullWidth label='Employee ID' variant='outlined' />
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <TextField fullWidth label='Employee Name' variant='outlined' />
+          </Grid> */}
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label='Employee Name'
+              variant='outlined'
+              value={searchName}
+              onChange={handleInputChange}
+            />
           </Grid>
           <Grid item xs={12} md={3}>
             <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>

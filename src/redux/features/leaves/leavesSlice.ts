@@ -1,4 +1,7 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import type { PayloadAction } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+
+import type { RootState } from '@/redux/store';
 
 interface Leave {
   _id: string;
@@ -19,45 +22,85 @@ interface Leave {
 
 interface leaveState {
   leaves: Leave[];
+  filteredLeave: Leave[];
   loading: boolean;
   error: string | null;
+  total: number; // Track the total number of leaves
 }
 
 const initialState: leaveState = {
   leaves: [],
+  filteredLeave: [],
   loading: false,
   error: null,
+  total: 0, // Initialize total as 0
 };
 
-export const fetchLeaves = createAsyncThunk('leaves/fetchLeaves', async () => {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/leaves/get`);
+let token: string | null = null;
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch leaves');
+if (typeof window !== "undefined") {
+  token = localStorage?.getItem('token');
+}
+
+export const fetchLeaves = createAsyncThunk<{
+  leaves: Leave[];
+  total: number;
+}, { page?: number; limit?: number }, { state: RootState }>(
+  'leaves/fetchLeaves',
+  async ({ page = 1, limit = 10 }: { page?: number; limit?: number }) => {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/leaves/get?page=${page}&limit=${limit}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch leaves');
+    }
+
+    return (await response.json()) as { leaves: Leave[], total: number };
   }
+);
 
-
-  return (await response.json()) as Leave[]
-})
-
-export const leaveSlice = createSlice({
+const leaveSlice = createSlice({
   name: 'leaves',
   initialState,
-  reducers: {},
+  reducers: {
+    filterLeave(state, action: PayloadAction<{ name: string; status: string }>) {
+      const { name, status } = action.payload;
+
+      state.filteredLeave = state.leaves.filter((leave) => {
+        return (
+          (name
+            ? leave.employee.first_name.toLowerCase().includes(name.toLowerCase()) ||
+            leave.employee.last_name.toLowerCase().includes(name.toLowerCase())
+            : true) && (status ? leave.status === status : true)
+        );
+      });
+    },
+    resetFilter(state) {
+      state.filteredLeave = state.leaves;
+    },
+  },
   extraReducers: (builder) => {
-    builder.addCase(fetchLeaves.pending, (state) => {
-      state.loading = true;
-      state.error = null;
-    })
+    builder
+      .addCase(fetchLeaves.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(fetchLeaves.fulfilled, (state, action) => {
-        state.leaves = action.payload;
+        state.leaves = action.payload.leaves;
+        state.total = action.payload.total; // Set total number of records
         state.loading = false;
       })
       .addCase(fetchLeaves.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Something went wrong'
-      })
-  }
-})
+        state.error = action.error.message || 'Something went wrong';
+      });
+  },
+});
 
+export const { filterLeave, resetFilter } = leaveSlice.actions;
 export default leaveSlice.reducer;
