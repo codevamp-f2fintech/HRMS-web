@@ -7,21 +7,13 @@
 // Hook Imports
 import { Container, Box, Typography, Link, Stack, Divider } from "@mui/material";
 
-import useVerticalNav from '@menu/hooks/useVerticalNav'
-
-
-
-
-// Util Imports
-import { verticalLayoutClasses } from '@layouts/utils/layoutClasses'
+import useVerticalNav from '@menu/hooks/useVerticalNav';
 
 const FooterContent = () => {
-  // Hooks
-  const { isBreakpointReached } = useVerticalNav()
 
   return (
     <Container
-      maxWidth="false"
+      maxWidth={false}
       sx={{
         background: "linear-gradient(270deg, var(--mui-palette-primary-main), rgb(197, 171, 255) 100%)",
         height: "65vh"

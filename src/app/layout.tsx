@@ -1,6 +1,7 @@
 // Third-party Imports
 import 'react-perfect-scrollbar/dist/css/styles.css'
 
+import NextTopLoader from 'nextjs-toploader';
 // Type Imports
 import type { ChildrenType } from '@core/types'
 
@@ -12,7 +13,6 @@ import ReduxProvider from '@/redux/provider';
 // Generated Icon CSS Imports
 import '@assets/iconify-icons/generated-icons.css'
 
-import NextTopLoader from 'nextjs-toploader';
 
 export const metadata = {
   title: 'F2-Fintech',

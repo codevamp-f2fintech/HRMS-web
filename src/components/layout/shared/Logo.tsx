@@ -6,13 +6,14 @@ import type { CSSProperties } from 'react'
 // Third-party Imports
 import styled from '@emotion/styled'
 
+import { useTheme } from '@mui/material/styles'
+
 // Component Imports
 import MaterioLogo from '@core/svg/Logo'
 
 // Config Imports
 import themeConfig from '@configs/themeConfig'
 
-import { useTheme } from '@mui/material/styles'
 
 type LogoTextProps = {
   color?: CSSProperties['color']
