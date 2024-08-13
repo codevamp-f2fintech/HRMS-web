@@ -25,7 +25,7 @@ interface leaveState {
   filteredLeave: Leave[];
   loading: boolean;
   error: string | null;
-  total: number; // Track the total number of leaves
+  total: number;
 }
 
 const initialState: leaveState = {
@@ -33,22 +33,23 @@ const initialState: leaveState = {
   filteredLeave: [],
   loading: false,
   error: null,
-  total: 0, // Initialize total as 0
+  total: 0,
 };
 
-let token: string | null = null;
-
-if (typeof window !== "undefined") {
-  token = localStorage?.getItem('token');
-}
 
 export const fetchLeaves = createAsyncThunk<{
   leaves: Leave[];
   total: number;
-}, { page?: number; limit?: number }, { state: RootState }>(
+}, { page?: number; limit?: number; keyword?: string }, { state: RootState }>(
   'leaves/fetchLeaves',
-  async ({ page = 1, limit = 10 }: { page?: number; limit?: number }) => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/leaves/get?page=${page}&limit=${limit}`, {
+  async ({ page, limit, keyword }: { page: number; limit: number; keyword: string }) => {
+    let token: string | null = null;
+
+    if (typeof window !== "undefined") {
+      token = localStorage?.getItem('token');
+    }
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/leaves/get?page=${page}&limit=${limit}&keyword=${encodeURIComponent(keyword)}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
