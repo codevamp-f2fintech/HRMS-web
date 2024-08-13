@@ -48,34 +48,41 @@ export default function LeavesGrid() {
   const [searchName, setSearchName] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [employees, setEmployees] = useState([])
+  const [selectedKeyword, setSelectedKeyword] = useState('');
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
 
   // const limit = 10;
 
-  const debouncedSearch = useCallback(
+  const debouncedFetch = useCallback(
     debounce(() => {
-      console.log('debounce triggered');
-      dispatch(filterLeave({ name: searchName, status: selectedStatus }));
+      dispatch(fetchLeaves({ page, limit, keyword: selectedKeyword }));
     }, 300),
-    [searchName, selectedStatus]
+    [page, limit, selectedKeyword]
   );
 
   useEffect(() => {
-    debouncedSearch();
+    debouncedFetch();
 
-    return debouncedSearch.cancel;
-  }, [searchName, selectedStatus, debouncedSearch]);
+    return debouncedFetch.cancel;
+  }, [page, limit, selectedKeyword, debouncedFetch]);
 
-
-
-  const handleInputChange = (e, field) => {
-    if (field === 'searchName') {
-      setSearchName(e.target.value);
-    } else if (field === 'selectedStatus') {
-      setSelectedStatus(e.target.value === 'All' ? '' : e.target.value); // Set to empty string for "All"
-    }
+  const handleInputChange = (e) => {
+    setSelectedKeyword(e.target.value);
   };
+
+  const handlePageChange = (newPage: number, newPageSize: number) => {
+    setPage(newPage + 1);
+    setLimit(newPageSize);
+
+  };
+  console.log('limit', setLimit)
+
+  const handlePaginationModelChange = (params: { page: number; pageSize: number }) => {
+    handlePageChange(params.page, params.pageSize);
+    debouncedFetch();
+  };
+
 
   // useEffect(() => {
   //   dispatch(fetchLeaves({ page, limit }))
@@ -84,7 +91,7 @@ export default function LeavesGrid() {
 
   useEffect(() => {
     if (leaves.length === 0) {
-      dispatch(fetchLeaves({ page, limit }))
+      dispatch(fetchLeaves({ page, limit, keyword: selectedKeyword }))
     }
 
     // Fetch employees and set the state
@@ -96,17 +103,6 @@ export default function LeavesGrid() {
 
     fetchEmployees();
   }, [dispatch, leaves.length, page])
-
-  const handlePageChange = (newPage, newPageSize) => {
-    setPage(newPage + 1); // Page index starts from 0, so increment by 1
-    setLimit(newPageSize); // Update the limit with the new page size
-    dispatch(fetchLeaves({ page: newPage + 1, limit: newPageSize })); // Dispatch the action with the updated page and limit
-  };
-
-  const handlePaginationModelChange = (params) => {
-    handlePageChange(params.page, params.pageSize); // Pass page and pageSize to the handler
-  };
-
 
 
   // useEffect(() => {
@@ -190,7 +186,7 @@ export default function LeavesGrid() {
             });
           }
           handleClose();
-          dispatch(fetchLeaves({ page, limit }));
+          dispatch(fetchLeaves({ page, limit, keyword: selectedKeyword }));
         })
         .catch(error => {
           console.log('Error', error);
@@ -481,7 +477,7 @@ export default function LeavesGrid() {
 
         </Box>
         <Grid container spacing={6} alignItems='center' mb={2}>
-          <Grid item xs={12} md={3}>
+          {/* <Grid item xs={12} md={3}>
             <FormControl fullWidth>
               <InputLabel id='status-select-label'>Status</InputLabel>
               <Select
@@ -497,15 +493,15 @@ export default function LeavesGrid() {
                 <MenuItem value='Rejected'>Rejected</MenuItem>
               </Select>
             </FormControl>
-          </Grid>
+          </Grid> */}
           {userRole === "1" && (
             <Grid item xs={12} md={3}>
               <TextField
                 fullWidth
                 label='Employee Name'
                 variant='outlined'
-                value={searchName}
-                onChange={(e) => handleInputChange(e, 'searchName')}
+                value={selectedKeyword}
+                onChange={handleInputChange}
               />
             </Grid>
           )}
@@ -546,11 +542,11 @@ export default function LeavesGrid() {
           rows={rows}
           columns={columns}
           getRowId={(row) => row._id}
-          paginationMode="server" // Ensure server-side pagination
-          rowCount={total} // Total number of records
-          onPaginationModelChange={handlePaginationModelChange} // Use onPaginationModelChange instead of onPageChange
-          pageSizeOptions={[10, 20, 30]} // Options for page size
-          paginationModel={{ page: page - 1, pageSize: limit }} // Update to use paginationModel
+          paginationMode="server"
+          rowCount={total}
+          onPaginationModelChange={handlePaginationModelChange}
+          pageSizeOptions={[10, 20, 30]}
+          paginationModel={{ page: page - 1, pageSize: limit }}
           checkboxSelection
           disableRowSelectionOnClick
         />

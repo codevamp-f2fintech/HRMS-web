@@ -343,14 +343,29 @@ export default function EmployeeGrid() {
                 onChange={handleChange}
                 fullWidth
               >
-                <MenuItem value='Software Engineer'>Software Engineer</MenuItem>
+                <MenuItem value='Assistant Manager Hr'>Assistant Manager Hr</MenuItem>
+                <MenuItem value='Assistant Sales Manager'>Assistant Sales Manager</MenuItem>
+                <MenuItem value='Back end Developer'>Back end Developer</MenuItem>
+                <MenuItem value='Channel Partner'>Channel Partner</MenuItem>
+                <MenuItem value='Credit Manager'>Credit Manager</MenuItem>
+                <MenuItem value='Digital Marketing Executive'>Digital Marketing Executive</MenuItem>
+                <MenuItem value='Financial Sales Intern'>Financial Sales Intern</MenuItem>
+                <MenuItem value='Front end Developer'>Front end Developer</MenuItem>
+                <MenuItem value='Growth Manager'>Growth Manager</MenuItem>
+                <MenuItem value='Hr Interns'>Hr Interns</MenuItem>
+                <MenuItem value='IT Infra & QA Tester'>IT Infra & QA Tester</MenuItem>
+                <MenuItem value='Marketing Executive'>Marketing Executive</MenuItem>
+                <MenuItem value='Marketing Intern'>Marketing Intern</MenuItem>
+                <MenuItem value='Marketing Manager'>Marketing Manager</MenuItem>
+                <MenuItem value='Ops Executive'>Ops Executive</MenuItem>
+                <MenuItem value='Ops Manager'>Ops Manager</MenuItem>
                 <MenuItem value='Product Manager'>Product Manager</MenuItem>
-                <MenuItem value='Data Scientist'>Data Scientist</MenuItem>
-                <MenuItem value='UI/UX Designer'>UI/UX Designer</MenuItem>
-                <MenuItem value='Quality Assurance'>Quality Assurance</MenuItem>
-                <MenuItem value='DevOps Engineer'>DevOps Engineer</MenuItem>
-                <MenuItem value='HR Manager'>HR Manager</MenuItem>
-                <MenuItem value='Sales Executive'>Sales Executive</MenuItem>
+                <MenuItem value='Relationship Executive'>Relationship Executive</MenuItem>
+                <MenuItem value='Sales Manager'>Sales Manager</MenuItem>
+                <MenuItem value='Software Developer'>Software Developer</MenuItem>
+                <MenuItem value='Sourcer'>Sourcer</MenuItem>
+                <MenuItem value='Web Developer and Infra Intern'>Web Developer and Infra Intern</MenuItem>
+                <MenuItem value='Web Developer Intern'>Web Developer Intern</MenuItem>
               </Select>
             </FormControl>
 

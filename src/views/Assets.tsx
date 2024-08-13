@@ -5,7 +5,8 @@ import { debounce } from 'lodash';
 
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Avatar, Button, Dialog, DialogContent, FormControl, Grid, IconButton, InputLabel, MenuItem, Select, SelectChangeEvent, TextField, Typography } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material';
+import { Avatar, Button, Dialog, DialogContent, FormControl, Grid, IconButton, InputLabel, MenuItem, Select, TextField, Typography } from '@mui/material';
 import Box from '@mui/material/Box';
 import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { DataGrid } from '@mui/x-data-grid';
@@ -29,7 +30,6 @@ export default function AssestsGrid() {
   const [showForm, setShowForm] = useState(false)
   const [selectedAsset, setSelectedAsset] = useState<string>("");
   const [userRole, setUserRole] = useState<string>("");
-  const [searchName, setSearchName] = useState('');
   const [employees, setEmployees] = useState([])
   const [selectedKeyword, setSelectedKeyword] = useState('');
   const [page, setPage] = useState(1)
@@ -140,6 +140,7 @@ export default function AssestsGrid() {
 
     const handleTextFieldChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const { name, value } = e.target;
+
       setFormData(prevState => ({
         ...prevState,
         [name]: value,
@@ -148,6 +149,7 @@ export default function AssestsGrid() {
 
     const handleSelectChange = (e: SelectChangeEvent<string>) => {
       const { name, value } = e.target;
+
       setFormData(prevState => ({
         ...prevState,
         [name as string]: value,
@@ -183,7 +185,7 @@ export default function AssestsGrid() {
           }
 
           handleClose();
-          dispatch(fetchAssests(page, limit));
+          dispatch(fetchAssests({ page, limit, keyword: selectedKeyword }));
         })
         .catch(error => {
           console.log('Error', error);
