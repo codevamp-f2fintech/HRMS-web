@@ -16,21 +16,24 @@ interface TeamsState {
   teams: Team[];
   loading: boolean;
   error: string | null;
+  total: number
 }
 
 const initialState: TeamsState = {
   teams: [],
   loading: false,
   error: null,
+  total: 0
 };
 
 // Thunk for fetching teams
-export const fetchTeams = createAsyncThunk('teams/fetchTeams', async () => {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/teams/get`);
+export const fetchTeams = createAsyncThunk('teams/fetchTeams', async ({ page, limit, keyword }: { page: number; limit: number; keyword: string }) => {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/teams/get?page=${page}&limit=${limit}&keyword=${encodeURIComponent(keyword)}`);
+
   if (!response.ok) {
     throw new Error('Failed to fetch teams');
   }
-  return (await response.json()) as Team[];
+  return (await response.json()) as { teams: Team[], total: number };
 });
 
 const teamsSlice = createSlice({
@@ -46,7 +49,8 @@ const teamsSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchTeams.fulfilled, (state, action) => {
-        state.teams = action.payload;
+        state.teams = action.payload.teams;
+        state.total = action.payload.total; // Set total number of records
         state.loading = false;
       })
       .addCase(fetchTeams.rejected, (state, action) => {
