@@ -1,3 +1,4 @@
+import type { PayloadAction } from "@reduxjs/toolkit";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 interface Attendance {
@@ -15,18 +16,32 @@ interface Attendance {
 
 interface attendancesState {
   attendances: Attendance[];
+  filteredAttendance: Attendance[];
   loading: boolean;
   error: string | null;
 }
 
 const initialState: attendancesState = {
   attendances: [],
+  filteredAttendance: [],
   loading: false,
   error: null,
 };
 
+let token: string | null = null;
+
+if (typeof window !== 'undefined') {
+  token = localStorage.getItem('token');
+}
+
 export const fetchAttendances = createAsyncThunk('attendances/fetchAttendances', async () => {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/attendence/get`)
+  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/attendence/get`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  })
 
   if (!response.ok) {
     throw new Error('Failed to fetch attendances')
@@ -39,7 +54,20 @@ export const fetchAttendances = createAsyncThunk('attendances/fetchAttendances',
 export const attendancesSlice = createSlice({
   name: 'attendances',
   initialState,
-  reducers: {},
+  reducers: {
+    filterAttendance(state, action: PayloadAction<{ name: string }>) {
+      const { name } = action.payload
+
+      state.filteredAttendance = state.attendances.filter(attendance => {
+        return (
+          (name ? attendance.employee.first_name.toLowerCase().includes(name.toLowerCase()) || attendance.employee.last_name.toLowerCase().includes(name.toLowerCase()) : true)
+        );
+      })
+    },
+    resetFilter(state) {
+      state.filteredAttendance = state.attendances;
+    }
+  },
   extraReducers: (builder) => {
     builder.addCase(fetchAttendances.pending, (state) => {
       state.loading = true
@@ -55,5 +83,7 @@ export const attendancesSlice = createSlice({
       })
   },
 })
+
+export const { filterAttendance, resetFilter } = attendancesSlice.actions;
 
 export default attendancesSlice.reducer;

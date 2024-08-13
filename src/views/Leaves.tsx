@@ -2,7 +2,9 @@
 /* eslint-disable padding-line-between-statements */
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
+
+import { debounce } from 'lodash';
 
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -30,26 +32,93 @@ import { DriveFileRenameOutlineOutlined } from '@mui/icons-material'
 import { useDispatch, useSelector } from 'react-redux';
 
 import type { AppDispatch, RootState } from '@/redux/store';
-import { fetchLeaves } from '@/redux/features/leaves/leavesSlice';
+import { fetchLeaves, filterLeave } from '@/redux/features/leaves/leavesSlice';
 import { fetchEmployees } from '@/redux/features/employees/employeesSlice';
+import { apiResponse } from '@/utility/apiResponse/employeesResponse';
 
 export default function LeavesGrid() {
   const dispatch: AppDispatch = useDispatch();
-  const { leaves, loading, error } = useSelector((state: RootState) => state.leaves)
-  const { employees } = useSelector((state: RootState) => state.employees)
+  const { leaves, loading, error, filteredLeave, total } = useSelector((state: RootState) => state.leaves)
+
+  // const { employees } = useSelector((state: RootState) => state.employees)
   const [showForm, setShowForm] = useState(false)
   const [selectedLeaves, setSelectedLeaves] = useState(null)
   const [userRole, setUserRole] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
+  const [searchName, setSearchName] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
+  const [employees, setEmployees] = useState([])
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(10)
+
+  // const limit = 10;
+
+  const debouncedSearch = useCallback(
+    debounce(() => {
+      console.log('debounce triggered');
+      dispatch(filterLeave({ name: searchName, status: selectedStatus }));
+    }, 300),
+    [searchName, selectedStatus]
+  );
+
+  useEffect(() => {
+    debouncedSearch();
+
+    return debouncedSearch.cancel;
+  }, [searchName, selectedStatus, debouncedSearch]);
+
+
+
+  const handleInputChange = (e, field) => {
+    if (field === 'searchName') {
+      setSearchName(e.target.value);
+    } else if (field === 'selectedStatus') {
+      setSelectedStatus(e.target.value === 'All' ? '' : e.target.value); // Set to empty string for "All"
+    }
+  };
+
+  // useEffect(() => {
+  //   dispatch(fetchLeaves({ page, limit }))
+  //   console.log('page', page, limit)
+  // }, [dispatch, page])
 
   useEffect(() => {
     if (leaves.length === 0) {
-      dispatch(fetchLeaves())
+      dispatch(fetchLeaves({ page, limit }))
     }
-    if (employees.length === 0) {
-      dispatch(fetchEmployees())
-    }
-  }, [dispatch, leaves.length, employees.length])
+
+    // Fetch employees and set the state
+    const fetchEmployees = async () => {
+      const data = await apiResponse();
+
+      setEmployees(data);
+    };
+
+    fetchEmployees();
+  }, [dispatch, leaves.length, page])
+
+  const handlePageChange = (newPage, newPageSize) => {
+    setPage(newPage + 1); // Page index starts from 0, so increment by 1
+    setLimit(newPageSize); // Update the limit with the new page size
+    dispatch(fetchLeaves({ page: newPage + 1, limit: newPageSize })); // Dispatch the action with the updated page and limit
+  };
+
+  const handlePaginationModelChange = (params) => {
+    handlePageChange(params.page, params.pageSize); // Pass page and pageSize to the handler
+  };
+
+
+
+  // useEffect(() => {
+  //   // Fetch employees and set the state
+  //   const fetchEmployees = async () => {
+  //     const data = await apiResponse();
+
+  //     setEmployees(data);
+  //   };
+
+  //   fetchEmployees();
+  // }, [dispatch])
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user") || '{}')
@@ -121,7 +190,7 @@ export default function LeavesGrid() {
             });
           }
           handleClose();
-          dispatch(fetchLeaves());
+          dispatch(fetchLeaves({ page, limit }));
         })
         .catch(error => {
           console.log('Error', error);
@@ -329,9 +398,11 @@ export default function LeavesGrid() {
   }
 
   const transformData = () => {
+
+    const dataToUse = searchName || selectedStatus ? filteredLeave : leaves;
     const filteredLeaves = userRole === '3'
-      ? leaves.filter(leave => leave.employee._id === userId)
-      : leaves;
+      ? dataToUse.filter(leave => leave.employee._id === userId)
+      : dataToUse;
     const groupedData = filteredLeaves.reduce((acc, curr) => {
       const { employee, start_date, end_date, status, application, type, day, _id } = curr;
 
@@ -409,19 +480,41 @@ export default function LeavesGrid() {
           </Box>
 
         </Box>
-        {userRole === "1" && <Grid container spacing={6} alignItems='center' mb={2}>
+        <Grid container spacing={6} alignItems='center' mb={2}>
           <Grid item xs={12} md={3}>
-            <TextField fullWidth label='Employee ID' variant='outlined' />
+            <FormControl fullWidth>
+              <InputLabel id='status-select-label'>Status</InputLabel>
+              <Select
+                labelId='status-select-label'
+                id='status-select'
+                value={selectedStatus === '' ? 'All' : selectedStatus}
+                label='Status'
+                onChange={(e) => handleInputChange(e, 'selectedStatus')}
+              >
+                <MenuItem value='All'>All</MenuItem>
+                <MenuItem value='Pending'>Pending</MenuItem>
+                <MenuItem value='Approved'>Approved</MenuItem>
+                <MenuItem value='Rejected'>Rejected</MenuItem>
+              </Select>
+            </FormControl>
           </Grid>
-          <Grid item xs={12} md={3}>
-            <TextField fullWidth label='Employee Name' variant='outlined' />
-          </Grid>
+          {userRole === "1" && (
+            <Grid item xs={12} md={3}>
+              <TextField
+                fullWidth
+                label='Employee Name'
+                variant='outlined'
+                value={searchName}
+                onChange={(e) => handleInputChange(e, 'searchName')}
+              />
+            </Grid>
+          )}
           <Grid item xs={12} md={3}>
             <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>
               SEARCH
             </Button>
           </Grid>
-        </Grid>}
+        </Grid>
       </Box>
       <Box sx={{ height: 500, width: '100%' }}>
         <DataGrid
@@ -453,19 +546,14 @@ export default function LeavesGrid() {
           rows={rows}
           columns={columns}
           getRowId={(row) => row._id}
-          initialState={{
-            pagination: {
-              paginationModel: {
-                pageSize: 10,
-              },
-            },
-            sorting: {
-              sortModel: [{ field: 'employee_name', sort: 'asc' }],
-            },
-          }}
-          pageSizeOptions={[10, 20, 30]}
+          paginationMode="server" // Ensure server-side pagination
+          rowCount={total} // Total number of records
+          onPaginationModelChange={handlePaginationModelChange} // Use onPaginationModelChange instead of onPageChange
+          pageSizeOptions={[10, 20, 30]} // Options for page size
+          paginationModel={{ page: page - 1, pageSize: limit }} // Update to use paginationModel
           checkboxSelection
-          disableRowSelectionOnClick />
+          disableRowSelectionOnClick
+        />
       </Box>
     </Box>
   );

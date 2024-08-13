@@ -1,6 +1,8 @@
 'use client'
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+
+import { debounce } from 'lodash';
 
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -39,53 +41,12 @@ import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 
 import type { AppDispatch, RootState } from '@/redux/store';
-import { fetchAttendances } from '@/redux/features/attendances/attendancesSlice';
+import { fetchAttendances, filterAttendance } from '@/redux/features/attendances/attendancesSlice';
 import { fetchEmployees } from '@/redux/features/employees/employeesSlice';
+import { apiResponse } from '@/utility/apiResponse/employeesResponse';
 
 function getRandomNumber(min: number, max: number) {
   return Math.round(Math.random() * (max - min) + min);
-}
-
-interface AttendanceRecord {
-  [date: string]: string;
-}
-
-interface DateCalendarServerRequestProps {
-  attendanceData: AttendanceRecord;
-}
-
-interface AttendenceFormProps {
-  handleClose: () => void;
-  attendance: string;
-}
-interface AttendanceData {
-  id: string;
-  date: string;
-  status: string;
-}
-
-interface Employee {
-  _id: string;
-  first_name: string;
-  last_name: string;
-  image: string;
-}
-
-interface Attendance {
-  employee: Employee;
-  date: string | Date;
-  status: string;
-  _id: string;
-}
-
-interface GroupedData {
-  [key: string]: {
-    employee_id: string;
-    name: string;
-    image: string;
-    _id: string;
-    [key: string]: string;
-  }
 }
 
 function fakeFetch(date: Dayjs, { signal }: { signal: AbortSignal }) {
@@ -145,7 +106,7 @@ function ServerDay(props: PickersDayProps<Dayjs> & { highlightedDays?: number[],
   );
 }
 
-function DateCalendarServerRequest({ attendanceData }: DateCalendarServerRequestProps) {
+function DateCalendarServerRequest({ attendanceData, selectedMonth, onMonthChange }) {
   const requestAbortController = useRef<AbortController | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [highlightedDays, setHighlightedDays] = useState<number[]>([]);
@@ -261,7 +222,14 @@ function Legend() {
   );
 }
 
-function AttendanceStatusList({ attendanceData }: DateCalendarServerRequestProps) {
+function AttendanceStatusList({ attendanceData, selectedMonth }) {
+  const filteredData = Object.entries(attendanceData).filter(([date]) => {
+    const month = dayjs(date).month() + 1;
+
+
+    return month === selectedMonth;
+  });
+
   return (
     <Box sx={{ ml: 20 }}>
       <Typography variant="h5" gutterBottom>
@@ -287,26 +255,55 @@ function AttendanceStatusList({ attendanceData }: DateCalendarServerRequestProps
 
 export default function AttendanceGrid() {
   const dispatch: AppDispatch = useDispatch();
-  const { attendances, loading, error } = useSelector((state: RootState) => state.attendances);
-  const { employees } = useSelector((state: RootState) => state.employees);
+  const { attendances, loading, error, filteredAttendance } = useSelector((state: RootState) => state.attendances);
+
+  // const { employees } = useSelector((state: RootState) => state.employees);
 
   const [showForm, setShowForm] = useState(false);
-  const [selectedAttendance, setSelectedAttendance] = useState<string>("");
+  const [selectedAttendance, setSelectedAttendance] = useState(null);
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [daysToShow, setDaysToShow] = useState(7);
   const [startDayIndex, setStartDayIndex] = useState(0);
   const [userRole, setUserRole] = useState<string>('');
   const [userId, setUserId] = useState<string>('');
+  const [searchName, setSearchName] = useState('');
+
+
+  const [employees, setEmployees] = useState([])
+
+
+  const debouncedSearch = useCallback(
+    debounce(() => {
+      console.log('debounce triggered');
+      dispatch(filterAttendance({ name: searchName }));
+    }, 300),
+    [searchName]
+  );
+
+  useEffect(() => {
+    debouncedSearch();
+
+    return debouncedSearch.cancel;
+  }, [searchName, debouncedSearch]);
+
+  const handleInputChange = (e) => {
+    setSearchName(e.target.value);
+  };
+
 
   useEffect(() => {
     if (attendances.length === 0) {
       dispatch(fetchAttendances());
     }
 
-    if (employees.length === 0) {
-      dispatch(fetchEmployees());
-    }
-  }, [dispatch, attendances.length, employees.length]);
+    const fetchEmployees = async () => {
+      const data = await apiResponse();
+
+      setEmployees(data);
+    };
+
+    fetchEmployees();
+  }, [dispatch, attendances.length]);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -315,7 +312,7 @@ export default function AttendanceGrid() {
     setUserId(user.id);
   }, []);
 
-  const AddAttendanceForm: React.FC<AttendenceFormProps> = ({ handleClose, attendance }) => {
+  function AddAttendanceForm({ handleClose, attendance }) {
     const [formData, setFormData] = useState({
       employee: '',
       date: '',
@@ -329,9 +326,7 @@ export default function AttendanceGrid() {
         if (selected) {
           setFormData({
             employee: selected.employee._id,
-            date: selected.date instanceof Date
-              ? selected.date.toISOString().split('T')[0]
-              : selected.date,
+            date: selected.date,
             status: selected.status,
           });
         }
@@ -469,11 +464,11 @@ export default function AttendanceGrid() {
   }
 
   const handleAttendanceAddClick = () => {
-    setSelectedAttendance("");
+    setSelectedAttendance(null);
     setShowForm(true);
   };
 
-  const handleAttendanceEditClick = (id: string) => {
+  const handleAttendanceEditClick = (id: React.SetStateAction<null>) => {
     setSelectedAttendance(id);
     setShowForm(true);
   };
@@ -490,11 +485,10 @@ export default function AttendanceGrid() {
     setStartDayIndex((prev) => Math.max(prev - daysToShow, 0));
   };
 
-  const attendanceData: AttendanceRecord = attendances
+  const attendanceData = attendances
     .filter(att => att.employee._id === userId)
-    .reduce<AttendanceRecord>((acc, { date, status }) => {
-      const dateString = date.toISOString().split('T')[0];
-      acc[dateString] = status;
+    .reduce((acc, { date, status }) => {
+      acc[date] = status;
 
       return acc;
     }, {});
@@ -513,8 +507,8 @@ export default function AttendanceGrid() {
         field: 'name',
         headerName: 'Employee',
         width: 170,
+        headerClassName: 'super-app-theme--header',
         sortable: true,
-        type: 'string',
         renderCell: (params) => (
           <Box display="flex" alignItems="center">
             <Avatar src={params.row.image} alt={params.row.name} sx={{ m: 2 }} />
@@ -525,15 +519,16 @@ export default function AttendanceGrid() {
       ...visibleDays.map(day => ({
         field: `day_${day}`,
         headerName: `${day}`,
-        // width: 50,
         headerAlign: 'center',
         align: 'center',
-        type: 'string',
+        headerClassName: 'super-app-theme--header',
         renderCell: (params) => {
           if (sundays.includes(day)) {
             return <WeekendIcon style={{ color: 'blue', marginTop: '20%' }} />;
           }
+
           const status = params.row[`day_${day}`];
+
           if (status === 'Present') {
             return <CheckCircleIcon style={{ color: 'green', marginTop: '20%' }} />;
           } else if (status === 'Absent') {
@@ -554,7 +549,6 @@ export default function AttendanceGrid() {
         headerAlign: "center",
         align: "center",
         sortable: false,
-        type: 'actions',
         renderCell: ({ row: { _id } }) => (
           <Box display="flex" justifyContent="center" mt="10%" >
             <Button color="info" variant="contained" onClick={() => handleAttendanceEditClick(_id)}>
@@ -584,7 +578,9 @@ export default function AttendanceGrid() {
   }
 
   const transformData = () => {
-    const groupedData = attendances.reduce<GroupedData>((acc, curr) => {
+    const attendanceSource = filteredAttendance.length > 0 ? filteredAttendance : attendances;
+
+    const groupedData = attendanceSource.reduce((acc, curr) => {
       const { employee, date, status, _id } = curr;
 
       if (!employee) {
@@ -658,7 +654,7 @@ export default function AttendanceGrid() {
                 labelId='demo-simple-select-label'
                 id='demo-simple-select'
                 value={month}
-                onChange={(e) => setMonth(Number(e.target.value))}
+                onChange={(e) => setMonth(e.target.value)}
               >
                 <MenuItem value={1}>January</MenuItem>
                 <MenuItem value={2}>February</MenuItem>
@@ -706,11 +702,17 @@ export default function AttendanceGrid() {
 
         </Box>
         {userRole === "1" && <Grid container spacing={6} alignItems='center' mb={2}>
-          <Grid item xs={12} md={3}>
+          {/* <Grid item xs={12} md={3}>
             <TextField fullWidth label='Employee ID' variant='outlined' />
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <TextField fullWidth label='Employee Name' variant='outlined' />
+          </Grid> */}
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label='Employee Name'
+              variant='outlined'
+              value={searchName}
+              onChange={handleInputChange}
+            />
           </Grid>
           <Grid item xs={12} md={3}>
             <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>

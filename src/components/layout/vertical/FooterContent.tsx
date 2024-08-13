@@ -34,8 +34,7 @@ const FooterContent = () => {
             F2-FINTECH
           </Typography>
           <Typography variant="h6" sx={{ color: "white", lineHeight: "3rem" }}>
-            Open Financial Technologies Pvt Ltd, Tower 2, 3rd floor, RGA Tech
-            Park, Sarjapur Road, Bengaluru Karnataka - 560035
+            A-25, M-1 Arv Park, A-Block, Sector-63, Noida Uttar Pradesh - 201301
           </Typography>
         </Box>
         <Box

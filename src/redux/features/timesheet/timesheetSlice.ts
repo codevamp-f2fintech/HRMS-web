@@ -1,7 +1,7 @@
 import type { PayloadAction } from "@reduxjs/toolkit";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-import { filterEmployees } from "../employees/employeesSlice";
+
 
 interface TimeSheet {
   _id: string;
@@ -31,6 +31,12 @@ interface timesheetState {
   error: string | null;
 }
 
+let token: string | null = null;
+
+if (typeof window !== "undefined") {
+  token = localStorage?.getItem('token');
+}
+
 const initialState: timesheetState = {
   timesheets: [],
   filteredTimesheet: [],
@@ -39,7 +45,14 @@ const initialState: timesheetState = {
 };
 
 export const fetchTimeSheet = createAsyncThunk('timesheets/fetchTimeSheet', async () => {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/timesheets/get`);
+
+  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/timesheets/get`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
 
   if (!response.ok) {
     throw new Error('Failed to fetch time sheets');
@@ -53,8 +66,8 @@ export const timesheetSlice = createSlice({
   name: 'timesheets',
   initialState,
   reducers: {
-    filterTimesheet(state, action: PayloadAction<{ name: string; time: string }>) {
-      const { name, time } = action.payload;
+    filterTimesheet(state, action: PayloadAction<{ name: string; status: string }>) {
+      const { name, status } = action.payload;
 
       console.log("name is", name);
 
@@ -64,7 +77,7 @@ export const timesheetSlice = createSlice({
 
         return (
           (name ? timesheet.employee.first_name.toLowerCase().includes(name.toLowerCase()) || timesheet.employee.last_name.toLowerCase().includes(name.toLowerCase()) : true) &&
-          (time ? timesheet.time === time : true)
+          (status ? timesheet.status === status : true)
 
         );
       });

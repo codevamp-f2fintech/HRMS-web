@@ -1,8 +1,10 @@
 'use client'
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
@@ -13,6 +15,7 @@ import Checkbox from '@mui/material/Checkbox';
 import Button from '@mui/material/Button';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Divider from '@mui/material/Divider';
+
 import type { Mode } from '@core/types'
 import { useImageVariant } from '@core/hooks/useImageVariant';
 import Logo from '@components/layout/shared/Logo';
@@ -32,6 +35,7 @@ const Login = ({ mode }: { mode: Mode }) => {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/auth/login`, {
         method: 'POST',
@@ -41,6 +45,7 @@ const Login = ({ mode }: { mode: Mode }) => {
         },
         body: JSON.stringify({ email, password }),
       });
+
       console.log("response", response);
 
       if (!response.ok) {
@@ -48,11 +53,13 @@ const Login = ({ mode }: { mode: Mode }) => {
       }
 
       const data = await response.json();
+
       localStorage.setItem("token", data.token);
       localStorage.setItem('user', JSON.stringify({
         id: data.payload.id,
         role: data.payload.role,
       }));
+
       // Handle successful login
       console.log("data", data);
       router.push('/');

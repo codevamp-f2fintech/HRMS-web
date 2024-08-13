@@ -1,6 +1,7 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { RootState } from '../../store';
+
+import type { RootState } from '../../store';
 
 interface Employee {
   _id: string;
@@ -44,6 +45,7 @@ export const fetchEmployees = createAsyncThunk(
   'employees/fetchEmployees',
   async ({ page = 1, limit = 12 }: { page?: number; limit?: number }, { getState }) => {
     const state = getState() as RootState;
+
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_APP_URL}/employees/get?page=${page}&limit=${limit}`,
       {

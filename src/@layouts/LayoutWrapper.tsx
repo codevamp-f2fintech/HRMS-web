@@ -18,7 +18,7 @@ const LayoutWrapper = ({ verticalLayout }: { verticalLayout: ReactElement }) => 
     } else {
       router.push('/login')
     }
-  }, [router])
+  }, [router, token])
 
   // Return the layout based on the layout context
   if (!token) {

@@ -1,5 +1,7 @@
 'use client'
-import { useEffect, useState, ChangeEvent, FC } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+
+import { debounce } from 'lodash';
 
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -13,46 +15,91 @@ import { DriveFileRenameOutlineOutlined } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 
 import type { AppDispatch, RootState } from '@/redux/store';
-import { fetchAssests } from '@/redux/features/assests/assestsSlice';
+import { fetchAssests, filterAssest } from '@/redux/features/assests/assestsSlice';
 import { fetchEmployees } from '@/redux/features/employees/employeesSlice';
+import { apiResponse } from '@/utility/apiResponse/employeesResponse';
 
-interface AddAssetFormProps {
-  handleClose: () => void;
-  asset: string;
-}
-
-interface TransformedAsset {
-  _id: string;
-  employee_id: string;
-  employee_name: string;
-  employee_image: string;
-  description: string;
-  model: string;
-  name: string;
-  sno: string;
-  type: string;
-  assignment_date: string;
-  return_date: string;
-}
 
 
 export default function AssestsGrid() {
   const dispatch: AppDispatch = useDispatch();
-  const { assests, loading, error } = useSelector((state: RootState) => state.assests);
-  const { employees } = useSelector((state: RootState) => state.employees)
+  const { assests, loading, error, filteredAssest, total } = useSelector((state: RootState) => state.assests);
+
+  // const { employees } = useSelector((state: RootState) => state.employees)
   const [showForm, setShowForm] = useState(false)
   const [selectedAsset, setSelectedAsset] = useState<string>("");
   const [userRole, setUserRole] = useState<string>("");
+  const [searchName, setSearchName] = useState('');
+  const [employees, setEmployees] = useState([])
+  const [selectedKeyword, setSelectedKeyword] = useState('');
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(10)
+
+  console.log('assests', assests);
+
+  const debouncedFetch = useCallback(
+    debounce(() => {
+      dispatch(fetchAssests({ page, limit, keyword: selectedKeyword }));
+    }, 300),
+    [page, limit, selectedKeyword]
+  );
+
+  useEffect(() => {
+    debouncedFetch();
+
+    return debouncedFetch.cancel;
+  }, [page, limit, selectedKeyword, debouncedFetch]);
+
+  const handleInputChange = (e) => {
+    setSelectedKeyword(e.target.value);
+  };
+
+  const handlePageChange = (newPage: number, newPageSize: number) => {
+    setPage(newPage + 1);
+    setLimit(newPageSize);
+  };
+
+  const handlePaginationModelChange = (params: { page: number; pageSize: number }) => {
+    handlePageChange(params.page, params.pageSize);
+    debouncedFetch();
+  };
+
+  // const apiResponse = async () => {
+  //   const response = await fetch(
+  //     `${process.env.NEXT_PUBLIC_APP_URL}/employees/get?page=${page}&limit=${limit}`
+  //   );
+
+  //   const employees = await response.json();
+
+  //   console.log('employees is ', employees)
+
+  //   setEmployees(employees)
+  // }
 
   useEffect(() => {
     if (assests.length === 0) {
-      dispatch(fetchAssests())
+      dispatch(fetchAssests({ page, limit, keyword: selectedKeyword }))
     }
 
-    if (employees.length === 0) {
-      dispatch(fetchEmployees())
-    }
-  }, [dispatch, assests.length, employees.length])
+    // Fetch employees and set the state
+    const fetchEmployees = async () => {
+      const data = await apiResponse();
+
+      setEmployees(data);
+    };
+
+    fetchEmployees();
+  }, [dispatch, assests?.length, page, limit, selectedKeyword]);
+
+  // const handlePageChange = (newPage, newPageSize) => {
+  //   setPage(newPage + 1); // Page index starts from 0, so increment by 1
+  //   setLimit(newPageSize); // Update the limit with the new page size
+  //   dispatch(fetchAssests({ page: newPage + 1, limit: newPageSize })); // Dispatch the action with the updated page and limit
+  // };
+
+  // const handlePaginationModelChange = (params) => {
+  //   handlePageChange(params.page, params.pageSize); // Pass page and pageSize to the handler
+  // };
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user") || '{}')
@@ -136,7 +183,7 @@ export default function AssestsGrid() {
           }
 
           handleClose();
-          dispatch(fetchAssests());
+          dispatch(fetchAssests(page, limit));
         })
         .catch(error => {
           console.log('Error', error);
@@ -398,7 +445,9 @@ export default function AssestsGrid() {
   }
 
   const transformData = () => {
-    const groupedData = assests.reduce<TransformedAsset[]>((acc, curr) => {
+    const assestSource = filteredAssest.length > 0 ? filteredAssest : assests;
+
+    const groupedData = assestSource.reduce((acc, curr) => {
       const { employee, description, model, name, sno, type, assignment_date, return_date, _id } = curr;
 
       if (!employee) {
@@ -464,11 +513,17 @@ export default function AssestsGrid() {
           </Box>}
         </Box>
         {userRole === "1" && <Grid container spacing={6} alignItems='center' mb={2}>
-          <Grid item xs={12} md={3}>
+          {/* <Grid item xs={12} md={3}>
             <TextField fullWidth label='Employee ID' variant='outlined' />
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <TextField fullWidth label='Employee Name' variant='outlined' />
+          </Grid> */}
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label='Employee Name'
+              variant='outlined'
+              value={selectedKeyword}
+              onChange={handleInputChange}
+            />
           </Grid>
 
           <Grid item xs={12} md={3}>
@@ -508,20 +563,15 @@ export default function AssestsGrid() {
           rows={rows}
           columns={columns}
           getRowId={(row) => row._id}
-          initialState={{
-            pagination: {
-              paginationModel: {
-                pageSize: 10,
-              },
-            },
-            sorting: {
-              sortModel: [{ field: 'employee_name', sort: 'asc' }],
-            },
-          }}
+          paginationMode="server"
+          rowCount={total}
+          onPaginationModelChange={handlePaginationModelChange}
           pageSizeOptions={[10, 20, 30]}
+          paginationModel={{ page: page - 1, pageSize: limit }}
           checkboxSelection
           disableRowSelectionOnClick
         />
+
       </Box>
     </>
   );
