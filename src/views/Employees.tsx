@@ -164,7 +164,7 @@ export default function EmployeeGrid() {
         .then(data => {
           console.log('Success:', data)
           handleClose()
-          dispatch(fetchEmployees());
+          dispatch(fetchEmployees({ page, limit: 12 }));
         })
         .catch(error => {
           console.error('Error:', error)
