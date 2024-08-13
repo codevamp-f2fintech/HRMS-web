@@ -1,7 +1,7 @@
-// features/employees/employeesSlice.ts
-
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+
+import type { RootState } from '../../store';
 
 interface Employee {
   _id: string;
@@ -22,30 +22,39 @@ interface Employee {
 interface EmployeesState {
   employees: Employee[];
   filteredEmployees: Employee[];
+  hasMore: boolean;
   loading: boolean;
   error: string | null;
-  page: number;
-  limit: number;
-  total: number;
-  hasMore: boolean;
 }
 
 const initialState: EmployeesState = {
   employees: [],
   filteredEmployees: [],
+  hasMore: true,
   loading: false,
   error: null,
-  page: 1,
-  limit: 10,
-  total: 0,
-  hasMore: true,
 };
+
+let token: string | null = null;
+
+if (typeof window !== "undefined") {
+  token = localStorage?.getItem("token");
+}
 
 export const fetchEmployees = createAsyncThunk(
   'employees/fetchEmployees',
-  async ({ page = 1, limit = 0 }: { page?: number; limit?: number }) => {
+  async ({ page = 1, limit = 12 }: { page?: number; limit?: number }, { getState }) => {
+    const state = getState() as RootState;
+
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL}/employees/get?page=${page}&limit=${limit}`
+      `${process.env.NEXT_PUBLIC_APP_URL}/employees/get?page=${page}&limit=${limit}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      }
     );
 
     if (!response.ok) {
@@ -54,8 +63,15 @@ export const fetchEmployees = createAsyncThunk(
 
     const data = await response.json();
 
+    // Filter out employees that are already in the state
+    const newEmployees = data.filter((employee: Employee) =>
+      !state.employees.employees.some((existingEmployee: Employee) => existingEmployee._id === employee._id)
+    );
 
-    return data as { employees: Employee[]; total: number };
+    return {
+      employees: [...state.employees.employees, ...newEmployees],
+      hasMore: data.length === limit,
+    };
   }
 );
 
@@ -84,11 +100,10 @@ const employeesSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchEmployees.fulfilled, (state, action) => {
-        state.employees = action.payload;
-        state.filteredEmployees = action.payload;
-        state.total = action.payload.total;
         state.loading = false;
-        state.hasMore = state.employees.length < state.total;
+        state.employees = action.payload.employees;
+        state.filteredEmployees = action.payload.employees;
+        state.hasMore = action.payload.hasMore;
       })
       .addCase(fetchEmployees.rejected, (state, action) => {
         state.loading = false;

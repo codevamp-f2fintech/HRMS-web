@@ -10,7 +10,8 @@ const LayoutWrapper = ({ verticalLayout }: { verticalLayout: ReactElement }) => 
   const [token, setToken] = useState<string | null>(null)
 
   useEffect(() => {
-    const storedToken = localStorage?.getItem('token')
+
+    const storedToken = localStorage?.getItem('token');
 
     if (storedToken) {
       setToken(storedToken)

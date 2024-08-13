@@ -65,7 +65,7 @@ const UserDropdown = () => {
     setOpen(false)
   }
 
-  const handleAwayClose = (event?: MouseEvent<HTMLLIElement> | (MouseEvent | TouchEvent), url?: string) => {
+  const handleAwayClose = (event?: MouseEvent<HTMLLIElement> | (MouseEvent | TouchEvent)) => {
     if (anchorRef.current && anchorRef.current.contains(event?.target as HTMLElement)) {
       return
     }

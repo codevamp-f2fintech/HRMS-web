@@ -7,7 +7,6 @@ import { useSelector, useDispatch } from 'react-redux';
 import {
   Box,
   Grid,
-  Paper,
   Typography,
   TextField,
   Button,
@@ -26,7 +25,6 @@ import {
 
 import InputLabel from '@mui/material/InputLabel'
 import FormControl from '@mui/material/FormControl'
-import { styled } from '@mui/material/styles'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import AddIcon from '@mui/icons-material/Add'
 import ViewModuleIcon from '@mui/icons-material/ViewModule'
@@ -37,7 +35,7 @@ import EditIcon from '@mui/icons-material/Edit'
 import type { RootState, AppDispatch } from '../redux/store';
 import { fetchEmployees, filterEmployees } from '../redux/features/employees/employeesSlice';
 
-
+import Loader from "../components/loader/loader"
 
 export default function EmployeeGrid() {
   const dispatch: AppDispatch = useDispatch();
@@ -46,13 +44,13 @@ export default function EmployeeGrid() {
   console.log('filtered emp', filteredEmployees)
   console.log('has more', hasMore)
 
-  const [showForm, setShowForm] = useState(false)
-  const [selectedEmployee, setSelectedEmployee] = useState(null)
+  const [showForm, setShowForm] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [searchName, setSearchName] = useState('');
   const [selectedDesignation, setSelectedDesignation] = useState('');
   const [page, setPage] = useState(1);
 
-  console.log('set page', page)
+  console.log('set page', page);
 
   const capitalizeWords = (name: String) => {
     return name.split(' ')
@@ -60,26 +58,18 @@ export default function EmployeeGrid() {
       .join(' ');
   };
 
-  // useEffect(() => {
-  //   if (employees.length === 0) {
-  //     dispatch(fetchEmployees());
-  //   }
-  // }, [dispatch, employees.length]);
-
   useEffect(() => {
     dispatch(fetchEmployees({ page, limit: 12 }));
-  }, [dispatch, employees.length, page]);
+  }, [dispatch, page]);
 
   const handleScroll = useCallback(() => {
-    const shouldLoadMore = window.innerHeight + window.scrollY >= document.body.offsetHeight - 500;
+    console.log("condition", window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 && !loading && hasMore);
+    console.log("handleScroll:", window.innerHeight + window.scrollY, document.body.offsetHeight - 500, window.innerHeight + window.scrollY >= document.body.offsetHeight, !loading, hasMore);
 
-    console.log('handleScroll:', shouldLoadMore, window.innerHeight + window.scrollY, document.body.offsetHeight - 500, !loading, hasMore);
-
-    if (shouldLoadMore) {
-      console.log('Loading more employees...');
-      setPage(page + 1);
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 && !loading && hasMore) {
+      setPage(prevPage => prevPage + 1);
     }
-  }, [!loading, page, hasMore]);
+  }, [loading, hasMore]);
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll);
@@ -489,7 +479,9 @@ export default function EmployeeGrid() {
     )
   }
 
-
+  const uniqueFilteredEmployees = filteredEmployees.filter((employee, index, self) =>
+    index === self.findIndex((e) => e._id === employee._id)
+  );
 
   return (
     <Box sx={{ flexGrow: 1, padding: 2 }}>
@@ -576,9 +568,7 @@ export default function EmployeeGrid() {
         </Grid>
       </Grid>
       <Grid container spacing={6}>
-        {loading ? (
-          <Typography>Loading...</Typography>
-        ) : error ? (
+        {error ? (
           <Typography>Error: {error}</Typography>
         ) : (
           filteredEmployees.map(employee => (
@@ -588,6 +578,7 @@ export default function EmployeeGrid() {
           ))
         )}
       </Grid>
+      {loading ? <Loader /> : <div></div>}
     </Box>
   )
 }
