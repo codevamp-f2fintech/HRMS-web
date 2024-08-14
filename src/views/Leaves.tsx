@@ -393,12 +393,29 @@ export default function LeavesGrid() {
     return columns;
   }
 
-  const transformData = () => {
+  const transformData = async () => {
+    let token: string | null = null;
 
-    const dataToUse = searchName || selectedStatus ? filteredLeave : leaves;
+    if (typeof window !== "undefined") {
+      token = localStorage?.getItem('token');
+    }
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/leaves/gets/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+
+
+    const data = await response.json();
+
     const filteredLeaves = userRole === '3'
-      ? dataToUse.filter(leave => leave.employee._id === userId)
-      : dataToUse;
+      ? data : leaves;
+
+    console.log("filtered leave isss", filteredLeaves, data)
     const groupedData = filteredLeaves.reduce((acc, curr) => {
       const { employee, start_date, end_date, status, application, type, day, _id } = curr;
 
