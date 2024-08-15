@@ -289,7 +289,10 @@ export default function LeavesGrid() {
                 <MenuItem value='Annual'>ANNUAL</MenuItem>
                 <MenuItem value='Sick'>SICK</MenuItem>
                 <MenuItem value='Unpaid'>UNPAID</MenuItem>
-                <MenuItem value='Other'>OTHER</MenuItem>
+                <MenuItem value='Casual'>CASUAL</MenuItem>
+                <MenuItem value='Complimentary'>COMPLIMENTARY</MenuItem>
+                <MenuItem value='Maternity'>MATERNITY</MenuItem>
+                <MenuItem value='Optional'>OPTIONAL</MenuItem>
               </Select>
             </FormControl>
           </Grid>
