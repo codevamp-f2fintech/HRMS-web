@@ -2,8 +2,9 @@
 /* eslint-disable padding-line-between-statements */
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
+import { debounce } from 'lodash';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -35,22 +36,51 @@ import { fetchPolicies } from '@/redux/features/policies/policiesSlice';
 
 export default function PolicyGrid() {
   const dispatch: AppDispatch = useDispatch()
-  const { policies, loading, error } = useSelector((state: RootState) => state.policies)
+  const { policies, loading, error, filteredPolicies, total } = useSelector((state: RootState) => state.policies)
 
   const [showForm, setShowForm] = useState(false)
   const [selectedPolicy, setSelectedPolicy] = useState(null)
   const [userRole, setUserRole] = useState<string>("");
+  const [userId, setUserId] = useState<string>("");
+  const [selectedKeyword, setSelectedKeyword] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+
+  console.log('fetchpolicy', policies)
+
+  const debouncedFetch = useCallback(
+    debounce(() => {
+      dispatch(fetchPolicies({ page, limit, keyword: selectedKeyword }));
+    }, 300),
+    [page, limit, selectedKeyword]
+  );
 
   useEffect(() => {
-    if (policies.length === 0) {
-      dispatch(fetchPolicies())
-    }
-  }, [dispatch, policies.length])
+    debouncedFetch();
+
+    return debouncedFetch.cancel;
+  }, [page, limit, selectedKeyword, debouncedFetch]);
+
+  const handleInputChange = (e) => {
+    setSelectedKeyword(e.target.value);
+  };
+
+  const handlePageChange = (newPage: number, newPageSize: number) => {
+    setPage(newPage + 1);
+    setLimit(newPageSize);
+  };
+
+  const handlePaginationModelChange = (params: { page: number; pageSize: number }) => {
+    handlePageChange(params.page, params.pageSize);
+    debouncedFetch();
+  };
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user") || '{}')
+    const user = JSON.parse(localStorage.getItem("user") || '{}');
+
     setUserRole(user.role);
-  })
+    setUserId(user.id);
+  }, []);
 
   function AddPolicyForm({ handleClose, policy }) {
     const [formData, setFormData] = useState({
@@ -107,7 +137,7 @@ export default function PolicyGrid() {
             });
           }
           handleClose();
-          dispatch(fetchPolicies());
+          debouncedFetch();
         })
         .catch(error => {
           console.log('Error', error);
@@ -194,16 +224,16 @@ export default function PolicyGrid() {
   }
 
   const columns: GridColDef[] = [
-    { field: '_id', headerName: 'ID', width: 90 },
-    { field: 'name', headerName: 'Name', headerClassName: 'super-app-theme--header', width: 200, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'document_url', headerName: 'Document Url', headerClassName: 'super-app-theme--header', width: 150, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'description', headerName: 'Description', headerClassName: 'super-app-theme--header', width: 100, headerAlign: 'center', align: 'center', sortable: false },
+    { field: '_id', headerName: 'ID', flex: 1 },
+    { field: 'name', headerName: 'Name', headerClassName: 'super-app-theme--header', flex: 2, headerAlign: 'center', align: 'center', sortable: false },
+    { field: 'document_url', headerName: 'Document Url', headerClassName: 'super-app-theme--header', flex: 2, headerAlign: 'center', align: 'center', sortable: false },
+    { field: 'description', headerName: 'Description', headerClassName: 'super-app-theme--header', flex: 2, headerAlign: 'center', align: 'center', sortable: false },
     ...(userRole === '1' ? [{
       field: 'edit',
       headerName: 'Edit',
       sortable: false,
       headerAlign: 'center',
-      width: 160,
+      flex: 1,
       headerClassName: 'super-app-theme--header',
       renderCell: ({ row: { _id } }) => (
         <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
@@ -253,7 +283,7 @@ export default function PolicyGrid() {
         <Grid container spacing={6} alignItems='center' mb={2}>
 
           <Grid item xs={12} md={3}>
-            <TextField fullWidth label='Policy Name' variant='outlined' />
+            <TextField fullWidth label='Policy Name' variant='outlined' value={selectedKeyword} onChange={handleInputChange} />
           </Grid>
           <Grid item xs={12} md={3}>
             <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>
@@ -284,22 +314,17 @@ export default function PolicyGrid() {
           components={{
             Toolbar: GridToolbar,
           }}
-          rows={policies}
+          rows={filteredPolicies.length > 0 ? filteredPolicies : policies}
           columns={columns}
           getRowId={(row) => row._id}
-          initialState={{
-            pagination: {
-              paginationModel: {
-                pageSize: 10,
-              },
-            },
-            sorting: {
-              sortModel: [{ field: 'employee_id', sort: 'asc' }],
-            },
-          }}
+          paginationMode="server"
+          rowCount={total}
+          onPaginationModelChange={handlePaginationModelChange}
           pageSizeOptions={[10, 20, 30]}
+          paginationModel={{ page: page - 1, pageSize: limit }}
           checkboxSelection
-          disableRowSelectionOnClick />
+          disableRowSelectionOnClick
+        />
       </Box>
     </Box>
   );
