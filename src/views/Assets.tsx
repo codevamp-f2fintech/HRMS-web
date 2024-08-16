@@ -12,6 +12,8 @@ import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { DataGrid } from '@mui/x-data-grid';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
+import SearchIcon from '@mui/icons-material/Search';
+import InputAdornment from '@mui/material/InputAdornment';
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -425,23 +427,23 @@ export default function AssestsGrid() {
         headerAlign: 'center',
         align: 'center',
       },
-      {
-        field: 'edit',
-        headerName: 'Action',
-        sortable: false,
-        headerAlign: 'center',
-        width: 160,
-        headerClassName: 'super-app-theme--header',
-        renderCell: (params: GridRenderCellParams) => (
-          <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
-            {userRole === "1" &&
+      ...(userRole === '1'
+        ? [{
+          field: 'edit',
+          headerName: 'Action',
+          sortable: false,
+          headerAlign: 'center',
+          width: 160,
+          headerClassName: 'super-app-theme--header',
+          renderCell: (params: GridRenderCellParams) => (
+            <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
               <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleEditAssetClick(params.row._id)}>
                 <DriveFileRenameOutlineOutlined />
               </Button>
-            }
-          </Box>
-        ),
-      }
+            </Box>
+          ),
+        }]
+        : [])
     ];
 
 
@@ -526,18 +528,25 @@ export default function AssestsGrid() {
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
-              label='Employee Name'
-              variant='outlined'
+              label="search"
+              variant="outlined"
               value={selectedKeyword}
               onChange={handleInputChange}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
             />
           </Grid>
 
-          <Grid item xs={12} md={3}>
+          {/* <Grid item xs={12} md={3}>
             <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>
               SEARCH
             </Button>
-          </Grid>
+          </Grid> */}
         </Grid>}
       </Box>
       <Box sx={{ height: 500, width: '100%' }}>

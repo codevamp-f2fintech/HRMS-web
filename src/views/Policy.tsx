@@ -27,6 +27,8 @@ import {
 
 import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
+import SearchIcon from '@mui/icons-material/Search';
+import InputAdornment from '@mui/material/InputAdornment';
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material'
 
 import { useDispatch, useSelector } from 'react-redux';
@@ -275,6 +277,7 @@ export default function PolicyGrid() {
               color='warning'
               startIcon={<AddIcon />}
               onClick={handlePolicyAddClick}
+
             >
               Add Policy
             </Button>
@@ -283,13 +286,19 @@ export default function PolicyGrid() {
         <Grid container spacing={6} alignItems='center' mb={2}>
 
           <Grid item xs={12} md={3}>
-            <TextField fullWidth label='Policy Name' variant='outlined' value={selectedKeyword} onChange={handleInputChange} />
+            <TextField fullWidth label='Policy Name' variant='outlined' value={selectedKeyword} onChange={handleInputChange} InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }} />
           </Grid>
-          <Grid item xs={12} md={3}>
+          {/* <Grid item xs={12} md={3}>
             <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>
               SEARCH
             </Button>
-          </Grid>
+          </Grid> */}
         </Grid>
       </Box>
       <Box sx={{ height: 500, width: '100%' }}>

@@ -62,6 +62,8 @@ const theme = createTheme({
 
 const getManagerNameById = (id, employees) => {
   const manager = employees.find(employee => employee._id === id);
+
+
   return manager ? `${manager.first_name} ${manager.last_name}` : '';
 };
 
@@ -72,10 +74,15 @@ const getEmployeeCountByIds = (ids) => {
 const getEmployeeNamesByIds = (ids, employees) => {
   if (!ids) return '';
   const idArray = ids.split(',');
+
   const names = idArray.map(id => {
     const employee = employees.find(emp => emp._id === id);
+
+
     return employee ? `${employee.first_name} ${employee.last_name}` : '';
   });
+
+
   return names.join(', ');
 };
 
@@ -90,6 +97,13 @@ export default function TeamGrid() {
   const [selectedKeyword, setSelectedKeyword] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [userRole, setUserRole] = useState<string>('');
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user") || '{}')
+
+    setUserRole(user.role)
+  }, [])
 
   const debouncedFetch = useCallback(
     debounce(() => {
@@ -107,6 +121,7 @@ export default function TeamGrid() {
   const handleInputChange = (e) => {
     setSelectedKeyword(e.target.value);
   };
+
   const handlePageChange = (newPage: number, newPageSize: number) => {
     setPage(newPage + 1);
     setLimit(newPageSize);
@@ -127,6 +142,7 @@ export default function TeamGrid() {
       name: '',
       code: ''
     });
+
     const [selectedEmployees, setSelectedEmployees] = useState([]);
 
     useEffect(() => {
@@ -156,6 +172,7 @@ export default function TeamGrid() {
 
     const handleEmployeeChange = (event, value) => {
       const employeeIds = value.map(emp => emp._id).join(',');
+
       setSelectedEmployees(value);
       setFormData(prevState => ({
         ...prevState,
@@ -298,6 +315,7 @@ export default function TeamGrid() {
     if (teams.length === 0) {
       dispatch(fetchTeams({ page, limit, keyword: selectedKeyword }));
     }
+
     if (employees.length === 0) {
       dispatch(fetchEmployees({ page: 1, limit: 0 }));
     }
@@ -453,6 +471,8 @@ export default function TeamGrid() {
                     <CardContent sx={{ padding: '20px' }}>
                       {(() => {
                         const manager = employees.find(emp => emp._id === viewDetails.manager_id);
+
+
                         return manager ? (
                           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                             <Avatar
@@ -529,6 +549,8 @@ export default function TeamGrid() {
                       <Grid container spacing={2}>
                         {viewDetails.employee_ids.split(',').map(id => {
                           const employee = employees.find(emp => emp._id === id);
+
+
                           return employee ? (
                             <Grid item xs={6} sm={4} key={id}>
                               <Box sx={{
@@ -602,7 +624,7 @@ export default function TeamGrid() {
             <IconButton style={{ backgroundColor: '#fff', color: '#4d5154', borderRadius: 10, marginRight: 10 }} aria-label='list view'>
               <ViewListIcon />
             </IconButton>
-            <Button
+            {userRole === "1" && <Button
               style={{ borderRadius: 50, backgroundColor: '#ff902f' }}
               variant='contained'
               color='warning'
@@ -610,7 +632,7 @@ export default function TeamGrid() {
               onClick={handleAddTeamClick}
             >
               Add Team
-            </Button>
+            </Button>}
           </Box>
         </Box>
         <Grid container spacing={6} alignItems='center' mb={2}>
@@ -618,16 +640,16 @@ export default function TeamGrid() {
           <Grid item xs={12} md={3}>
             <TextField
               fullWidth
-              label="Search by any rows value"
+              label="search"
               variant="outlined" value={selectedKeyword}
               onChange={handleInputChange} />
           </Grid>
 
-          <Grid item xs={12} md={3}>
+          {/* <Grid item xs={12} md={3}>
             <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>
               SEARCH
             </Button>
-          </Grid>
+          </Grid> */}
         </Grid>
         <Grid container spacing={6}>
           <Grid item xs={12} sm={6} md={12}>
