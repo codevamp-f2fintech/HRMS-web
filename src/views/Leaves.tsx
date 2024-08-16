@@ -45,9 +45,8 @@ export default function LeavesGrid() {
   const [selectedLeaves, setSelectedLeaves] = useState(null)
   const [userRole, setUserRole] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
-  const [searchName, setSearchName] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
   const [employees, setEmployees] = useState([])
+  const [rows, setRows] = useState([]); // Store rows in state
   const [selectedKeyword, setSelectedKeyword] = useState('');
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
@@ -76,7 +75,7 @@ export default function LeavesGrid() {
     setLimit(newPageSize);
 
   };
-  console.log('limit', setLimit)
+
 
   const handlePaginationModelChange = (params: { page: number; pageSize: number }) => {
     handlePageChange(params.page, params.pageSize);
@@ -393,6 +392,18 @@ export default function LeavesGrid() {
     return columns;
   }
 
+  // Fetch and transform data
+  useEffect(() => {
+    const fetchData = async () => {
+      if (userId) {
+        const transformedData = await transformData();
+        setRows(transformedData);
+      }
+    };
+
+    fetchData();
+  }, [userId, leaves, userRole]);
+
   const transformData = async () => {
     let token: string | null = null;
 
@@ -415,7 +426,7 @@ export default function LeavesGrid() {
     const filteredLeaves = userRole === '3'
       ? data : leaves;
 
-    console.log("filtered leave isss", filteredLeaves, data)
+
     const groupedData = filteredLeaves.reduce((acc, curr) => {
       const { employee, start_date, end_date, status, application, type, day, _id } = curr;
 
@@ -444,7 +455,8 @@ export default function LeavesGrid() {
   };
 
   const columns = generateColumns();
-  const rows = transformData();
+
+  // const rows = transformData();
 
   return (
     <Box>

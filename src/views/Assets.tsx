@@ -34,6 +34,7 @@ export default function AssestsGrid() {
   const [selectedKeyword, setSelectedKeyword] = useState('');
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
+  const [userId, setUserId] = useState<string>("");
 
   console.log('assests', assests);
 
@@ -105,6 +106,7 @@ export default function AssestsGrid() {
     const user = JSON.parse(localStorage.getItem("user") || '{}')
 
     setUserRole(user.role)
+    setUserId(user.id);
   })
 
   const AddAssetForm: React.FC<AddAssetFormProps> = ({ handleClose, asset }) => {
@@ -447,9 +449,12 @@ export default function AssestsGrid() {
   }
 
   const transformData = () => {
-    const assestSource = filteredAssest.length > 0 ? filteredAssest : assests;
+    // Apply filtering based on userRole
+    const filteredAssests = userRole === '3'
+      ? assests.filter(assest => assest.employee && assest.employee._id === userId)
+      : assests;
 
-    const groupedData = assestSource.reduce((acc, curr) => {
+    const groupedData = filteredAssests.reduce((acc, curr) => {
       const { employee, description, model, name, sno, type, assignment_date, return_date, _id } = curr;
 
       if (!employee) {
