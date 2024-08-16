@@ -303,7 +303,7 @@ export default function TimeSheetGrid() {
             Save
           </Button>
           <Grid container spacing={2}>
-            <Grid item xs={12} md={4}>
+            {userRole !== '3' && <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
                 label='Employee Name'
@@ -311,7 +311,7 @@ export default function TimeSheetGrid() {
                 value={searchName}
                 onChange={(e) => handleInputChange(e, 'searchName')}
               />
-            </Grid>
+            </Grid>}
             <Grid item xs={12} md={3}>
               <FormControl fullWidth>
                 <InputLabel id='status-select-label'>Status</InputLabel>
@@ -329,7 +329,7 @@ export default function TimeSheetGrid() {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={4}>
+            {userRole !== '3' && <Grid item xs={12} md={4}>
               <Button
                 variant='contained'
                 fullWidth
@@ -338,7 +338,7 @@ export default function TimeSheetGrid() {
               >
                 SEARCH
               </Button>
-            </Grid>
+            </Grid>}
           </Grid>
         </Box>
 
