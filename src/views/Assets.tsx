@@ -6,7 +6,7 @@ import { debounce } from 'lodash';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import type { SelectChangeEvent } from '@mui/material';
-import { Avatar, Button, Dialog, DialogContent, FormControl, Grid, IconButton, InputLabel, MenuItem, Select, TextField, Typography } from '@mui/material';
+import { Avatar, Button, Dialog, DialogContent, FormControl, Grid, IconButton, InputLabel, MenuItem, Select, TextField, Typography, FormHelperText } from '@mui/material';
 import Box from '@mui/material/Box';
 import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { DataGrid } from '@mui/x-data-grid';
@@ -119,6 +119,17 @@ export default function AssestsGrid() {
       return_date: '',
     })
 
+    const [errors, setErrors] = useState({
+      employee: '',
+      description: '',
+      model: '',
+      name: '',
+      sno: '',
+      type: '',
+      assignment_date: '',
+      return_date: ''
+    });
+
     useEffect(() => {
       if (asset) {
         const selected = assests.find(ast => ast._id === asset);
@@ -137,6 +148,63 @@ export default function AssestsGrid() {
         }
       }
     }, [asset, assests])
+
+    const validateForm = () => {
+      let isValid = true;
+      const newErrors = {
+        employee: '',
+        description: '',
+        model: '',
+        name: '',
+        sno: '',
+        type: '',
+        assignment_date: '',
+        return_date: ''
+      };
+
+      if (!formData.employee.trim()) {
+        newErrors.employee = 'Employee is not selected';
+        isValid = false;
+      }
+
+      if (!formData.description.trim()) {
+        newErrors.description = 'Required';
+        isValid = false;
+      }
+
+      if (!formData.model.trim()) {
+        newErrors.model = 'Required';
+        isValid = false;
+      }
+
+      if (!formData.name.trim()) {
+        newErrors.name = 'Required';
+        isValid = false;
+      }
+
+      if (!formData.sno.trim()) {
+        newErrors.sno = 'Required';
+        isValid = false;
+      }
+
+      if (!formData.type.trim()) {
+        newErrors.type = 'Type is not defined';
+        isValid = false;
+      }
+
+      if (!formData.assignment_date.trim()) {
+        newErrors.assignment_date = 'Date is required';
+        isValid = false;
+      }
+
+      if (!formData.return_date.trim()) {
+        newErrors.return_date = 'Date is required';
+        isValid = false;
+      }
+
+      setErrors(newErrors);
+      return isValid;
+    };
 
     const handleTextFieldChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const { name, value } = e.target;
@@ -157,39 +225,41 @@ export default function AssestsGrid() {
     };
 
     const handleSubmit = () => {
-      const method = asset ? 'PUT' : 'POST'
-      const url = asset ? `${process.env.NEXT_PUBLIC_APP_URL}/assests/update/${asset}` : `${process.env.NEXT_PUBLIC_APP_URL}/assests/create`
+      if (validateForm()) {
+        const method = asset ? 'PUT' : 'POST'
+        const url = asset ? `${process.env.NEXT_PUBLIC_APP_URL}/assests/update/${asset}` : `${process.env.NEXT_PUBLIC_APP_URL}/assests/create`
 
-      console.log('Submitting form data:', formData);
-      fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.message) {
-            if (data.message.includes('success')) {
-              toast.success(data.message, {
-                position: 'top-center',
-              });
+        console.log('Submitting form data:', formData);
+        fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.message) {
+              if (data.message.includes('success')) {
+                toast.success(data.message, {
+                  position: 'top-center',
+                });
+              } else {
+                toast.error('Error: ' + data.message, {
+                  position: 'top-center',
+                });
+              }
             } else {
-              toast.error('Error: ' + data.message, {
+              toast.error('Unexpected error occurred', {
                 position: 'top-center',
               });
             }
-          } else {
-            toast.error('Unexpected error occurred', {
-              position: 'top-center',
-            });
-          }
 
-          handleClose();
-          dispatch(fetchAssests({ page, limit, keyword: selectedKeyword }));
-        })
-        .catch(error => {
-          console.log('Error', error);
-        });
+            handleClose();
+            dispatch(fetchAssests({ page, limit, keyword: selectedKeyword }));
+          })
+          .catch(error => {
+            console.log('Error', error);
+          });
+      }
     };
 
     return (
@@ -214,6 +284,7 @@ export default function AssestsGrid() {
                 value={formData.employee}
                 onChange={handleSelectChange}
                 required
+                error={!!errors.employee}
               >
                 {employees.map((employee) => (
                   <MenuItem key={employee._id} value={employee._id}>
@@ -221,6 +292,7 @@ export default function AssestsGrid() {
                   </MenuItem>
                 ))}
               </Select>
+              {errors.employee && <FormHelperText error>{errors.employee}</FormHelperText>}
             </FormControl>
           </Grid>
           <Grid item xs={12} md={6}>
@@ -231,6 +303,8 @@ export default function AssestsGrid() {
               value={formData.model}
               onChange={handleTextFieldChange}
               required
+              error={!!errors.name}
+              helperText={errors.name}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -241,6 +315,8 @@ export default function AssestsGrid() {
               value={formData.name}
               onChange={handleTextFieldChange}
               required
+              error={!!errors.name}
+              helperText={errors.name}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -251,6 +327,8 @@ export default function AssestsGrid() {
               value={formData.sno}
               onChange={handleTextFieldChange}
               required
+              error={!!errors.name}
+              helperText={errors.name}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -261,6 +339,8 @@ export default function AssestsGrid() {
               value={formData.type}
               onChange={handleTextFieldChange}
               required
+              error={!!errors.name}
+              helperText={errors.name}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -271,6 +351,8 @@ export default function AssestsGrid() {
               value={formData.description}
               onChange={handleTextFieldChange}
               required
+              error={!!errors.name}
+              helperText={errors.name}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -283,6 +365,8 @@ export default function AssestsGrid() {
               onChange={handleTextFieldChange}
               InputLabelProps={{ shrink: true }}
               required
+              error={!!errors.name}
+              helperText={errors.name}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -295,6 +379,8 @@ export default function AssestsGrid() {
               onChange={handleTextFieldChange}
               InputLabelProps={{ shrink: true }}
               required
+              error={!!errors.name}
+              helperText={errors.name}
             />
           </Grid>
           <Grid item xs={12}>

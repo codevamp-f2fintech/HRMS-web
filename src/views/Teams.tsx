@@ -26,7 +26,8 @@ import {
   DialogContent,
   InputLabel,
   FormControl,
-  CardHeader
+  CardHeader,
+  FormHelperText
 } from '@mui/material'
 import type { GridColDef } from '@mui/x-data-grid';
 import { DataGrid } from '@mui/x-data-grid';
@@ -127,6 +128,13 @@ export default function TeamGrid() {
       name: '',
       code: ''
     });
+    const [errors, setErrors] = useState({
+      name: '',
+      manager_id: '',
+      employee_ids: '',
+      code: ''
+    });
+
     const [selectedEmployees, setSelectedEmployees] = useState([]);
 
     useEffect(() => {
@@ -144,6 +152,39 @@ export default function TeamGrid() {
         }
       }
     }, [team, teams, employees]);
+
+    const validateForm = () => {
+      let isValid = true;
+      const newErrors = {
+        name: '',
+        manager_id: '',
+        employee_ids: '',
+        code: ''
+      };
+
+      if (!formData.name.trim()) {
+        newErrors.name = 'Team name is required';
+        isValid = false;
+      }
+
+      if (!formData.manager_id) {
+        newErrors.manager_id = 'Manager selection is required';
+        isValid = false;
+      }
+
+      if (!formData.employee_ids) {
+        newErrors.employee_ids = 'At least one employee must be selected';
+        isValid = false;
+      }
+
+      if (!formData.code.trim()) {
+        newErrors.code = 'Team code is required';
+        isValid = false;
+      }
+
+      setErrors(newErrors);
+      return isValid;
+    };
 
     const handleChange = (e) => {
       const { name, value } = e.target;
@@ -164,40 +205,42 @@ export default function TeamGrid() {
     };
 
     const handleSubmit = () => {
-      const method = team ? 'PUT' : 'POST';
-      const url = team ? `${process.env.NEXT_PUBLIC_APP_URL}/teams/update/${team}` : `${process.env.NEXT_PUBLIC_APP_URL}/teams/create`;
+      if (validateForm()) {
+        const method = team ? 'PUT' : 'POST';
+        const url = team ? `${process.env.NEXT_PUBLIC_APP_URL}/teams/update/${team}` : `${process.env.NEXT_PUBLIC_APP_URL}/teams/create`;
 
-      fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.message) {
-            if (data.message.includes('success')) {
-              toast.success(data.message, {
-                position: 'top-center',
-              });
+        fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.message) {
+              if (data.message.includes('success')) {
+                toast.success(data.message, {
+                  position: 'top-center',
+                });
+              } else {
+                toast.error('Error: ' + data.message, {
+                  position: 'top-center',
+                });
+              }
             } else {
-              toast.error('Error: ' + data.message, {
+              toast.error('Unexpected error occurred', {
                 position: 'top-center',
               });
             }
-          } else {
-            toast.error('Unexpected error occurred', {
-              position: 'top-center',
-            });
-          }
 
-          handleClose();
-          debouncedFetch();
-        })
-        .catch(error => {
-          console.log('Error', error);
-        });
+            handleClose();
+            debouncedFetch();
+          })
+          .catch(error => {
+            console.log('Error', error);
+          });
+      }
     };
 
     return (
@@ -219,19 +262,22 @@ export default function TeamGrid() {
               value={formData.name}
               onChange={handleChange}
               required
+              error={!!errors.name}
+              helperText={errors.name}
             />
           </Grid>
           <Grid item xs={12} md={6}>
-            <FormControl fullWidth required>
+            <FormControl fullWidth error={!!errors.manager_id}>
               <InputLabel required id='demo-simple-select-label'>Select Manager</InputLabel>
               <Select
-                label='Select Employee'
+                label='Select Manager'
                 labelId='demo-simple-select-label'
                 id='demo-simple-select'
                 name="manager_id"
                 value={formData.manager_id}
                 onChange={handleChange}
                 required
+                error={!!errors.manager_id}
               >
                 {employees
                   .filter((employee) => employee.role_priority === "2")
@@ -241,6 +287,7 @@ export default function TeamGrid() {
                     </MenuItem>
                   ))}
               </Select>
+              {errors.manager_id && <FormHelperText error>{errors.manager_id}</FormHelperText>}
             </FormControl>
           </Grid>
           <Grid item xs={12} md={6}>
@@ -258,7 +305,10 @@ export default function TeamGrid() {
                 </li>
               )}
               renderInput={(params) => (
-                <TextField {...params} label="Select Employees" placeholder="Favorites" />
+                <TextField {...params} label="Select Employees" placeholder="Favorites"
+                  error={!!errors.employee_ids}
+                  helperText={errors.employee_ids}
+                />
               )}
             />
           </Grid>
@@ -270,6 +320,8 @@ export default function TeamGrid() {
               value={formData.code}
               onChange={handleChange}
               required
+              error={!!errors.code}
+              helperText={errors.code}
             />
           </Grid>
           <Grid item xs={12}>

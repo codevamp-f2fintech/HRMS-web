@@ -24,6 +24,7 @@ import {
   MenuItem,
   Select,
   Avatar,
+  FormHelperText
 } from '@mui/material'
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close'
@@ -132,6 +133,16 @@ export default function LeavesGrid() {
       type: '',
       day: ''
     })
+    const [errors, setErrors] = useState({
+      employee: '',
+      start_date: '',
+      end_date: '',
+      status: '',
+      application: '',
+      type: '',
+      day: ''
+    });
+
 
     useEffect(() => {
       if (leave) {
@@ -150,6 +161,59 @@ export default function LeavesGrid() {
       }
     }, [leave, leaves])
 
+    const validateForm = () => {
+      let isValid = true;
+      const newErrors = {
+        employee: '',
+        start_date: '',
+        end_date: '',
+        status: '',
+        application: '',
+        type: '',
+        day: ''
+      };
+
+      if (!formData.employee) {
+        newErrors.employee = 'Employee selection is required';
+        isValid = false;
+      }
+
+      if (!formData.start_date) {
+        newErrors.start_date = 'Start date is required';
+        isValid = false;
+      }
+
+      if (!formData.end_date) {
+        newErrors.end_date = 'End date is required';
+        isValid = false;
+      }
+
+      if (!formData.status) {
+        newErrors.status = 'Status selection is required';
+        isValid = false;
+      }
+
+      if (!formData.application.trim()) {
+        newErrors.application = 'Application is required';
+        isValid = false;
+      }
+
+      if (!formData.type) {
+        newErrors.type = 'Leave type is required';
+        isValid = false;
+      }
+
+      if (!formData.day.trim()) {
+        newErrors.day = 'Day is required';
+        isValid = false;
+      }
+
+      setErrors(newErrors);
+      return isValid;
+    };
+
+
+
     const handleChange = (e) => {
       const { name, value } = e.target
       setFormData(prevState => ({
@@ -159,38 +223,40 @@ export default function LeavesGrid() {
     }
 
     const handleSubmit = () => {
-      const method = leave ? 'PUT' : 'POST'
-      const url = leave ? `${process.env.NEXT_PUBLIC_APP_URL}/leaves/update/${leave}` : `${process.env.NEXT_PUBLIC_APP_URL}/leaves/create`
-      console.log("submitted form data", formData);
+      if (validateForm()) {
+        const method = leave ? 'PUT' : 'POST'
+        const url = leave ? `${process.env.NEXT_PUBLIC_APP_URL}/leaves/update/${leave}` : `${process.env.NEXT_PUBLIC_APP_URL}/leaves/create`
+        console.log("submitted form data", formData);
 
-      fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.message) {
-            if (data.message.includes('success')) {
-              toast.success(data.message, {
-                position: 'top-center',
-              });
+        fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.message) {
+              if (data.message.includes('success')) {
+                toast.success(data.message, {
+                  position: 'top-center',
+                });
+              } else {
+                toast.error('Error: ' + data.message, {
+                  position: 'top-center',
+                });
+              }
             } else {
-              toast.error('Error: ' + data.message, {
+              toast.error('Unexpected error occurred', {
                 position: 'top-center',
               });
             }
-          } else {
-            toast.error('Unexpected error occurred', {
-              position: 'top-center',
-            });
-          }
-          handleClose();
-          dispatch(fetchLeaves({ page, limit, keyword: selectedKeyword }));
-        })
-        .catch(error => {
-          console.log('Error', error);
-        });
+            handleClose();
+            dispatch(fetchLeaves({ page, limit, keyword: selectedKeyword }));
+          })
+          .catch(error => {
+            console.log('Error', error);
+          });
+      }
     };
 
     return (
@@ -215,6 +281,7 @@ export default function LeavesGrid() {
                 value={formData.employee}
                 onChange={handleChange}
                 required
+                error={!!errors.employee}
               >
                 {employees.map((employee) => (
                   <MenuItem key={employee._id} value={employee._id}>
@@ -222,6 +289,7 @@ export default function LeavesGrid() {
                   </MenuItem>
                 ))}
               </Select>
+              {errors.employee && <FormHelperText error>{errors.employee}</FormHelperText>}
             </FormControl>
           </Grid>
           <Grid item xs={12} md={6}>
@@ -234,6 +302,8 @@ export default function LeavesGrid() {
               onChange={handleChange}
               InputLabelProps={{ shrink: true }}
               required
+              error={!!errors.start_date}
+              helperText={errors.start_date}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -246,10 +316,12 @@ export default function LeavesGrid() {
               onChange={handleChange}
               InputLabelProps={{ shrink: true }}
               required
+              error={!!errors.end_date}
+              helperText={errors.end_date}
             />
           </Grid>
           <Grid item xs={12} md={6}>
-            <FormControl fullWidth required>
+            <FormControl fullWidth required error={!!errors.status}>
               <InputLabel required id='demo-simple-select-label'>Status</InputLabel>
               <Select
                 label='Select Status'
@@ -263,8 +335,10 @@ export default function LeavesGrid() {
                 <MenuItem value='Approved'>Approved</MenuItem>
                 <MenuItem value='Rejected'>Rejected</MenuItem>
               </Select>
+              {errors.status && <Typography color="error">{errors.status}</Typography>}
             </FormControl>
           </Grid>
+
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
@@ -273,10 +347,12 @@ export default function LeavesGrid() {
               value={formData.application}
               onChange={handleChange}
               required
+              error={!!errors.application}
+              helperText={errors.application}
             />
           </Grid>
           <Grid item xs={12} md={6}>
-            <FormControl fullWidth required>
+            <FormControl fullWidth required error={!!errors.type}>
               <InputLabel required id='demo-simple-select-label'>Type</InputLabel>
               <Select
                 label='Select Type'
@@ -294,8 +370,10 @@ export default function LeavesGrid() {
                 <MenuItem value='Maternity'>MATERNITY</MenuItem>
                 <MenuItem value='Optional'>OPTIONAL</MenuItem>
               </Select>
+              {errors.type && <Typography color="error">{errors.type}</Typography>}
             </FormControl>
           </Grid>
+
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
@@ -304,6 +382,8 @@ export default function LeavesGrid() {
               value={formData.day}
               onChange={handleChange}
               required
+              error={!!errors.day}
+              helperText={errors.day}
             />
           </Grid>
           <Grid item xs={12}>
