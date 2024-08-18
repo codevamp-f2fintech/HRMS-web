@@ -34,6 +34,7 @@ export default function AssestsGrid() {
   const [selectedKeyword, setSelectedKeyword] = useState('');
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
+  const [userId, setUserId] = useState<string>("");
 
   console.log('assests', assests);
 
@@ -105,6 +106,7 @@ export default function AssestsGrid() {
     const user = JSON.parse(localStorage.getItem("user") || '{}')
 
     setUserRole(user.role)
+    setUserId(user.id);
   })
 
   const AddAssetForm: React.FC<AddAssetFormProps> = ({ handleClose, asset }) => {
