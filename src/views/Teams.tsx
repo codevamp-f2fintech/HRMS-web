@@ -299,7 +299,7 @@ export default function TeamGrid() {
       dispatch(fetchTeams({ page, limit, keyword: selectedKeyword }));
     }
     if (employees.length === 0) {
-      dispatch(fetchEmployees({ page: 1, limit: 0 }));
+      dispatch(fetchEmployees({ page: 1, limit: 0, search: '' }));
     }
   }, [dispatch, teams.length, employees.length]);
 

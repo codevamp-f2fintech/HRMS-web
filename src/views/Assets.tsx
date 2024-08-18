@@ -343,11 +343,10 @@ export default function AssestsGrid() {
         sortable: true,
         align: 'center',
         renderCell: (params) => {
-          // Define basic styles
-          const textStyle = {
-            fontSize: '1em', // Example styling
-            fontWeight: 'bold', // Example styling
 
+          const textStyle = {
+            fontSize: '1em',
+            fontWeight: 'bold',
           };
 
           return (
@@ -370,7 +369,6 @@ export default function AssestsGrid() {
         width: 180,
         editable: true,
         headerClassName: 'super-app-theme--header',
-
       },
       {
         field: 'sno',
@@ -378,9 +376,6 @@ export default function AssestsGrid() {
         width: 180,
         editable: true,
         headerClassName: 'super-app-theme--header',
-
-        // headerAlign: 'center',
-        // align: 'center',
       },
       {
         field: 'description',
@@ -388,10 +383,6 @@ export default function AssestsGrid() {
         width: 250,
         editable: true,
         headerClassName: 'super-app-theme--header',
-
-        // headerAlign: 'center',
-
-        // align: 'center',
       },
       {
         field: 'type',
@@ -399,9 +390,6 @@ export default function AssestsGrid() {
         width: 150,
         editable: true,
         headerClassName: 'super-app-theme--header',
-
-        // headerAlign: 'center',
-        // align: 'center',
       },
       {
         field: 'assignment_date',
@@ -442,18 +430,34 @@ export default function AssestsGrid() {
       }
     ];
 
-
     return columns;
   }
 
-  const transformData = () => {
-    const assestSource = filteredAssest.length > 0 ? filteredAssest : assests;
+  interface GroupedData {
+    _id: string;
+    employee_id: string;
+    employee_name: string;
+    employee_image: string;
+    description: string;
+    model: string;
+    name: string;
+    sno: string;
+    type: string;
+    assignment_date: string;
+    return_date: string;
+  }
 
-    const groupedData = assestSource.reduce((acc, curr) => {
+  const transformData = (): GroupedData[] => {
+    const assestSource = Array.isArray(filteredAssest) && filteredAssest.length > 0 ? filteredAssest : Array.isArray(assests) ? assests : [];
+
+    if (!Array.isArray(assestSource) || assestSource.length === 0) {
+      return [];
+    }
+
+    const groupedData = assestSource.reduce<GroupedData[]>((acc, curr) => {
       const { employee, description, model, name, sno, type, assignment_date, return_date, _id } = curr;
 
       if (!employee) {
-        // If employee is null or undefined, skip this attendance record
         return acc;
       }
 
