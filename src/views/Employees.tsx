@@ -10,47 +10,36 @@ import {
   Typography,
   TextField,
   Button,
-  Avatar,
-  Card,
-  CardContent,
   Select,
   MenuItem,
   IconButton,
   Dialog,
   DialogContent,
-  Menu,
-  Chip
 } from '@mui/material'
 
 
 import InputLabel from '@mui/material/InputLabel'
 import FormControl from '@mui/material/FormControl'
-import MoreVertIcon from '@mui/icons-material/MoreVert'
 import AddIcon from '@mui/icons-material/Add'
 import ViewModuleIcon from '@mui/icons-material/ViewModule'
 import ViewListIcon from '@mui/icons-material/ViewList'
-import CloseIcon from '@mui/icons-material/Close'
-import EditIcon from '@mui/icons-material/Edit'
 
 import type { RootState, AppDispatch } from '../redux/store';
-import { fetchEmployees, filterEmployees } from '../redux/features/employees/employeesSlice';
+import { fetchEmployees, resetEmployees } from '../redux/features/employees/employeesSlice';
 
 import Loader from "../components/loader/loader"
+import EmployeeForm from '@/components/employee/EmployeeForm';
+import EmployeeCard from '@/components/employee/EmployeeCard';
 
 export default function EmployeeGrid() {
   const dispatch: AppDispatch = useDispatch();
-  const { employees, filteredEmployees, hasMore, loading, error } = useSelector((state: RootState) => state.employees);
-
-  console.log('filtered emp', filteredEmployees)
-  console.log('has more', hasMore)
+  const { employees, hasMore, loading, error } = useSelector((state: RootState) => state.employees);
 
   const [showForm, setShowForm] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [searchName, setSearchName] = useState('');
   const [selectedDesignation, setSelectedDesignation] = useState('');
   const [page, setPage] = useState(1);
-
-  console.log('set page', page);
 
   const capitalizeWords = (name: String) => {
     return name.split(' ')
@@ -59,12 +48,10 @@ export default function EmployeeGrid() {
   };
 
   useEffect(() => {
-    dispatch(fetchEmployees({ page, limit: 12 }));
+    dispatch(fetchEmployees({ page, limit: 12, search: searchName }));
   }, [dispatch, page]);
 
   const handleScroll = useCallback(() => {
-    console.log("condition", window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 && !loading && hasMore);
-    console.log("handleScroll:", window.innerHeight + window.scrollY, document.body.offsetHeight - 500, window.innerHeight + window.scrollY >= document.body.offsetHeight, !loading, hasMore);
 
     if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 && !loading && hasMore) {
       setPage(prevPage => prevPage + 1);
@@ -77,346 +64,12 @@ export default function EmployeeGrid() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
-  function AddEmployeeForm({ handleClose, employee }) {
-    const [formData, setFormData] = useState({
-      first_name: "",
-      last_name: "",
-      email: "",
-      contact: "",
-      role_priority: "",
-      dob: "",
-      gender: "",
-      designation: "",
-      password: "",
-      joining_date: "",
-      leaving_date: "",
-      status: "active",
-      image: ""
-    })
-
-    const [selectedImage, setSelectedImage] = useState(null);
-    const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
-
-    useEffect(() => {
-      if (employee) {
-        const selected = employees.find(t => t._id === employee)
-
-        if (selected) {
-          setFormData({
-            first_name: selected.first_name,
-            last_name: selected.last_name,
-            email: selected.email,
-            contact: selected.contact,
-            role_priority: selected.role_priority,
-            dob: selected.dob,
-            gender: selected.gender,
-            designation: selected.designation,
-            password: selected.password,
-            joining_date: selected.joining_date,
-            leaving_date: selected.leaving_date,
-            status: selected.status,
-            image: selected.image
-          })
-          setImagePreviewUrl(selected.image);
-        }
-      }
-    }, [employee, employees])
-
-    console.log("formData>>>employee>>>", employee, formData);
-
-    const handleChange = (e) => {
-      const { name, value } = e.target
-
-      setFormData(prevState => ({
-        ...prevState,
-        [name]: value
-      }))
-    }
-
-    const handleImageChange = (e) => {
-      const file = e.target.files[0];
-
-      if (file) {
-        setSelectedImage(file);
-        setImagePreviewUrl(URL.createObjectURL(file));
-      }
-    };
-
-    const handleSubmit = () => {
-      const method = employee ? 'PUT' : 'POST'
-      const url = employee ? `${process.env.NEXT_PUBLIC_APP_URL}/employees/update/${employee}` : `${process.env.NEXT_PUBLIC_APP_URL}/employees/create`;
-
-      const formDataToSend = new FormData();
-
-      for (const key in formData) {
-        formDataToSend.append(key, formData[key]);
-      }
-
-      if (selectedImage) {
-        formDataToSend.append('image', selectedImage);
-      }
-
-      fetch(url, {
-        method,
-        body: formDataToSend
-      })
-        .then(response => response.json())
-        .then(data => {
-          console.log('Success:', data)
-          handleClose()
-          dispatch(fetchEmployees({ page, limit: 12 }));
-        })
-        .catch(error => {
-          console.error('Error:', error)
-        })
-    }
-
-    return (
-      <Box sx={{ flexGrow: 1, padding: 2 }}>
-        <Box display='flex' justifyContent='space-between' alignItems='center'>
-          <Typography style={{ fontSize: '2em' }} variant='h5' gutterBottom>
-            {employee ? 'Edit Employee' : 'Add Employee'}
-          </Typography>
-          <IconButton onClick={handleClose}>
-            <CloseIcon />
-          </IconButton>
-        </Box>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='First Name'
-              name='first_name'
-              value={formData.first_name}
-              onChange={handleChange}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Last Name'
-              name='last_name'
-              value={formData.last_name}
-              onChange={handleChange}
-              required />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Contact'
-              name='contact'
-              value={formData.contact}
-              onChange={handleChange}
-              required />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Email'
-              name='email'
-              value={formData.email}
-              onChange={handleChange}
-              required />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              type='date'
-              label='DOB'
-              name="dob"
-              value={formData.dob}
-              onChange={handleChange}
-              InputLabelProps={{ shrink: true }}
-              required />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <FormControl fullWidth>
-              <InputLabel required id='demo-simple-select-label'>
-                Select Gender
-              </InputLabel>
-              <Select
-                label='Select Gender'
-                labelId='demo-simple-select-label'
-                id='demo-simple-select'
-                name="gender"
-                value={formData.gender}
-                onChange={handleChange}
-                fullWidth
-              >
-                <MenuItem value='Male'>Male</MenuItem>
-                <MenuItem value='Female'>Female</MenuItem>
-                <MenuItem value='Other'>Other</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Password'
-              type='password'
-              name='password'
-              value={formData.password}
-              onChange={handleChange}
-              required />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Confirm Password'
-              type='password'
-              name='password'
-              value={formData.password}
-              onChange={handleChange}
-              required />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Joining Date'
-              type='date'
-              name='joining_date'
-              value={formData.joining_date}
-              onChange={handleChange}
-              InputLabelProps={{ shrink: true }}
-              required />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Leaving Date'
-              type='date'
-              name='leaving_date'
-              value={formData.leaving_date}
-              onChange={handleChange}
-              InputLabelProps={{ shrink: true }}
-              required />
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <FormControl fullWidth>
-              <InputLabel id='demo-simple-select-label'>Select Status</InputLabel>
-              <Select
-                label='Select Status'
-                labelId='demo-simple-select-label'
-                id='demo-simple-select'
-                name='status'
-                value={formData.status}
-                onChange={handleChange}
-                fullWidth
-              >
-                <MenuItem value='active'>Active</MenuItem>
-                <MenuItem value='inactive'>In Active</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <FormControl fullWidth>
-              <InputLabel id='demo-simple-select-label'>Select Role</InputLabel>
-              <Select
-                label='Select Role'
-                labelId='demo-simple-select-label'
-                id='demo-simple-select'
-                name='role_priority'
-                value={formData.role_priority}
-                onChange={handleChange}
-                fullWidth
-              >
-                <MenuItem value='1'>Admin</MenuItem>
-                <MenuItem value='2'>Manager</MenuItem>
-                <MenuItem value='3'>Employee</MenuItem>
-                <MenuItem value='4'>Channel Partner</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <FormControl fullWidth>
-              <InputLabel id='designation-select-label'>Select Designation</InputLabel>
-              <Select
-                label='Select Designation'
-                labelId='designation-select-label'
-                id='designation-select'
-                name='designation'
-                value={formData.designation}
-                onChange={handleChange}
-                fullWidth
-              >
-                <MenuItem value='Assistant Manager Hr'>Assistant Manager Hr</MenuItem>
-                <MenuItem value='Assistant Sales Manager'>Assistant Sales Manager</MenuItem>
-                <MenuItem value='Back end Developer'>Back end Developer</MenuItem>
-                <MenuItem value='Channel Partner'>Channel Partner</MenuItem>
-                <MenuItem value='Credit Manager'>Credit Manager</MenuItem>
-                <MenuItem value='Digital Marketing Executive'>Digital Marketing Executive</MenuItem>
-                <MenuItem value='Financial Sales Intern'>Financial Sales Intern</MenuItem>
-                <MenuItem value='Front end Developer'>Front end Developer</MenuItem>
-                <MenuItem value='Growth Manager'>Growth Manager</MenuItem>
-                <MenuItem value='Hr Interns'>Hr Interns</MenuItem>
-                <MenuItem value='IT Infra & QA Tester'>IT Infra & QA Tester</MenuItem>
-                <MenuItem value='Marketing Executive'>Marketing Executive</MenuItem>
-                <MenuItem value='Marketing Intern'>Marketing Intern</MenuItem>
-                <MenuItem value='Marketing Manager'>Marketing Manager</MenuItem>
-                <MenuItem value='Ops Executive'>Ops Executive</MenuItem>
-                <MenuItem value='Ops Manager'>Ops Manager</MenuItem>
-                <MenuItem value='Product Manager'>Product Manager</MenuItem>
-                <MenuItem value='Relationship Executive'>Relationship Executive</MenuItem>
-                <MenuItem value='Sales Manager'>Sales Manager</MenuItem>
-                <MenuItem value='Software Developer'>Software Developer</MenuItem>
-                <MenuItem value='Sourcer'>Sourcer</MenuItem>
-                <MenuItem value='Web Developer and Infra Intern'>Web Developer and Infra Intern</MenuItem>
-                <MenuItem value='Web Developer Intern'>Web Developer Intern</MenuItem>
-              </Select>
-            </FormControl>
-
-
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <input
-              accept="image/*"
-              style={{ display: 'none' }}
-              id="raised-button-file"
-              type="file"
-              onChange={handleImageChange}
-            />
-            <label htmlFor="raised-button-file">
-              <Button variant="contained" component="span" fullWidth>
-                Upload Image
-              </Button>
-            </label>
-            {imagePreviewUrl && <img src={imagePreviewUrl} alt="Image Preview" style={{ width: '100%', marginTop: '10px' }} />}
-          </Grid>
-
-          <Grid item xs={12}>
-            <Button
-              style={{
-                fontSize: '18px',
-                fontWeight: 600,
-                color: 'white',
-                padding: 15,
-                backgroundColor: '#ff902f',
-                width: 200
-              }}
-              variant='contained'
-              fullWidth
-              onClick={handleSubmit}
-            >
-              {employee ? "UPDATE EMPLOYEE" : "ADD EMPLOYEE"}
-            </Button>
-          </Grid>
-        </Grid>
-      </Box>
-    )
-  }
-
   const handleAddEmployeeClick = () => {
     setSelectedEmployee(null)
     setShowForm(true)
   }
 
   const handleEditEmployeeClick = (id) => {
-    console.log("id>>>", id)
     setSelectedEmployee(id)
     setShowForm(true)
   }
@@ -427,8 +80,7 @@ export default function EmployeeGrid() {
 
   const debouncedSearch = useCallback(
     debounce(() => {
-      console.log('debounce triggered');
-      dispatch(filterEmployees({ name: searchName, designation: selectedDesignation }));
+      dispatch(fetchEmployees({ page: 1, limit: searchName !== '' ? 0 : 12, search: searchName }));
     }, 300),
     [searchName, selectedDesignation]
   );
@@ -440,69 +92,21 @@ export default function EmployeeGrid() {
   }, [searchName, selectedDesignation, debouncedSearch]);
 
   const handleInputChange = (e) => {
-    setSearchName(e.target.value);
+    const searchValue = e.target.value;
+    setSearchName(searchValue);
+
+    if (searchValue === '') {
+      setPage(1);
+      dispatch(resetEmployees());
+      dispatch(fetchEmployees({ page: 1, limit: 12, search: '' }));
+    }
   };
-
-
-  function EmployeeCard({ employee, id }) {
-    const [anchorEl, setAnchorEl] = useState(null)
-
-    const handleMenuOpen = event => {
-      setAnchorEl(event.currentTarget)
-    }
-
-    const handleMenuClose = () => {
-      setAnchorEl(null)
-    }
-
-    return (
-      <Card sx={{ height: "100%", borderRadius: "30px" }}>
-        <CardContent>
-          <Box display='flex' justifyContent='flex-end'>
-            <IconButton aria-label='settings' onClick={handleMenuOpen}>
-              <MoreVertIcon />
-            </IconButton>
-            <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-              <MenuItem
-                onClick={() => {
-                  handleMenuClose()
-                }}
-              >
-                <Button onClick={() => handleEditEmployeeClick(id)}><EditIcon fontSize='small' style={{ marginRight: 8 }} />Edit</Button>
-              </MenuItem>
-            </Menu>
-          </Box>
-          <Avatar alt={employee.first_name} src={employee?.image} sx={{ width: 80, height: 80, margin: '0 auto' }} />
-          <Typography style={{ fontWeight: 'bold', fontSize: '1.2em', textAlign: 'center' }} variant='h6' component='div' margin={2}>
-            {capitalizeWords(employee.first_name)} {capitalizeWords(employee.last_name)}
-          </Typography>
-          <Typography style={{ fontWeight: 'bold', fontSize: '1em', textAlign: 'center' }} variant='body2' color='text.secondary' margin={2}>
-            {employee.designation}
-          </Typography>
-
-          <Typography style={{ fontWeight: 'bold', textAlign: 'center' }} variant='body2' color='text.secondary' margin={2}>
-            <Chip
-              className='capitalize'
-              variant='tonal'
-              color={employee.status === 'pending' ? 'warning' : employee.status === 'inactive' ? 'secondary' : 'success'}
-              label={employee.status}
-              size='small'
-            />
-          </Typography>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  const uniqueFilteredEmployees = filteredEmployees.filter((employee, index, self) =>
-    index === self.findIndex((e) => e._id === employee._id)
-  );
 
   return (
     <Box sx={{ flexGrow: 1, padding: 2 }}>
       <Dialog open={showForm} onClose={handleClose} fullWidth maxWidth='md'>
         <DialogContent>
-          <AddEmployeeForm employee={selectedEmployee} handleClose={handleClose} />
+          <EmployeeForm employee={selectedEmployee} handleClose={handleClose} employees={employees} fetchEmployees={fetchEmployees} page={page} />
         </DialogContent>
       </Dialog>
       <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
@@ -586,9 +190,9 @@ export default function EmployeeGrid() {
         {error ? (
           <Typography>Error: {error}</Typography>
         ) : (
-          filteredEmployees.map(employee => (
+          employees.map(employee => (
             <Grid item xs={12} sm={6} md={3} key={employee._id}>
-              <EmployeeCard employee={employee} id={employee._id} />
+              <EmployeeCard employee={employee} id={employee._id} handleEditEmployeeClick={handleEditEmployeeClick} capitalizeWords={capitalizeWords} />
             </Grid>
           ))
         )}
