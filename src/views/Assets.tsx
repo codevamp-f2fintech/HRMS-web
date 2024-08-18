@@ -12,6 +12,8 @@ import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { DataGrid } from '@mui/x-data-grid';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
+import SearchIcon from '@mui/icons-material/Search';
+import InputAdornment from '@mui/material/InputAdornment';
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -34,6 +36,7 @@ export default function AssestsGrid() {
   const [selectedKeyword, setSelectedKeyword] = useState('');
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
+  const [userId, setUserId] = useState<string>("");
 
   console.log('assests', assests);
 
@@ -105,6 +108,7 @@ export default function AssestsGrid() {
     const user = JSON.parse(localStorage.getItem("user") || '{}')
 
     setUserRole(user.role)
+    setUserId(user.id);
   })
 
   const AddAssetForm: React.FC<AddAssetFormProps> = ({ handleClose, asset }) => {
@@ -429,11 +433,10 @@ export default function AssestsGrid() {
         sortable: true,
         align: 'center',
         renderCell: (params) => {
-          // Define basic styles
-          const textStyle = {
-            fontSize: '1em', // Example styling
-            fontWeight: 'bold', // Example styling
 
+          const textStyle = {
+            fontSize: '1em',
+            fontWeight: 'bold',
           };
 
           return (
@@ -456,7 +459,6 @@ export default function AssestsGrid() {
         width: 180,
         editable: true,
         headerClassName: 'super-app-theme--header',
-
       },
       {
         field: 'sno',
@@ -464,9 +466,6 @@ export default function AssestsGrid() {
         width: 180,
         editable: true,
         headerClassName: 'super-app-theme--header',
-
-        // headerAlign: 'center',
-        // align: 'center',
       },
       {
         field: 'description',
@@ -474,10 +473,6 @@ export default function AssestsGrid() {
         width: 250,
         editable: true,
         headerClassName: 'super-app-theme--header',
-
-        // headerAlign: 'center',
-
-        // align: 'center',
       },
       {
         field: 'type',
@@ -485,9 +480,6 @@ export default function AssestsGrid() {
         width: 150,
         editable: true,
         headerClassName: 'super-app-theme--header',
-
-        // headerAlign: 'center',
-        // align: 'center',
       },
       {
         field: 'assignment_date',
@@ -509,37 +501,53 @@ export default function AssestsGrid() {
         headerAlign: 'center',
         align: 'center',
       },
-      {
-        field: 'edit',
-        headerName: 'Action',
-        sortable: false,
-        headerAlign: 'center',
-        width: 160,
-        headerClassName: 'super-app-theme--header',
-        renderCell: (params: GridRenderCellParams) => (
-          <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
-            {userRole === "1" &&
+      ...(userRole === '1'
+        ? [{
+          field: 'edit',
+          headerName: 'Action',
+          sortable: false,
+          headerAlign: 'center',
+          width: 160,
+          headerClassName: 'super-app-theme--header',
+          renderCell: (params: GridRenderCellParams) => (
+            <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
               <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleEditAssetClick(params.row._id)}>
                 <DriveFileRenameOutlineOutlined />
               </Button>
-            }
-          </Box>
-        ),
-      }
+            </Box>
+          ),
+        }]
+        : [])
     ];
-
 
     return columns;
   }
 
-  const transformData = () => {
-    const assestSource = filteredAssest.length > 0 ? filteredAssest : assests;
+  interface GroupedData {
+    _id: string;
+    employee_id: string;
+    employee_name: string;
+    employee_image: string;
+    description: string;
+    model: string;
+    name: string;
+    sno: string;
+    type: string;
+    assignment_date: string;
+    return_date: string;
+  }
 
-    const groupedData = assestSource.reduce((acc, curr) => {
+  const transformData = (): GroupedData[] => {
+    const assestSource = Array.isArray(filteredAssest) && filteredAssest.length > 0 ? filteredAssest : Array.isArray(assests) ? assests : [];
+
+    if (!Array.isArray(assestSource) || assestSource.length === 0) {
+      return [];
+    }
+
+    const groupedData = assestSource.reduce<GroupedData[]>((acc, curr) => {
       const { employee, description, model, name, sno, type, assignment_date, return_date, _id } = curr;
 
       if (!employee) {
-        // If employee is null or undefined, skip this attendance record
         return acc;
       }
 
@@ -607,18 +615,25 @@ export default function AssestsGrid() {
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
-              label='Employee Name'
-              variant='outlined'
+              label="search"
+              variant="outlined"
               value={selectedKeyword}
               onChange={handleInputChange}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
             />
           </Grid>
 
-          <Grid item xs={12} md={3}>
+          {/* <Grid item xs={12} md={3}>
             <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>
               SEARCH
             </Button>
-          </Grid>
+          </Grid> */}
         </Grid>}
       </Box>
       <Box sx={{ height: 500, width: '100%' }}>

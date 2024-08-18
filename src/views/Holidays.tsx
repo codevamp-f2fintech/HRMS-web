@@ -393,13 +393,13 @@ export default function HolidayGrid() {
         </Box>
         <Grid container spacing={6} alignItems="center" mb={2}>
           <Grid item xs={12} md={3}>
-            <TextField fullWidth label="Search by any rows value" variant="outlined" value={selectedKeyword} onChange={handleInputChange} />
+            <TextField fullWidth label="search" variant="outlined" value={selectedKeyword} onChange={handleInputChange} />
           </Grid>
-          <Grid item xs={12} md={3}>
+          {/* <Grid item xs={12} md={3}>
             <Button style={{ padding: 15, backgroundColor: '#198754' }} variant="contained" fullWidth>
               SEARCH
             </Button>
-          </Grid>
+          </Grid> */}
         </Grid>
       </Box>
       <Box sx={{ height: 600, width: '100%' }}>

@@ -28,6 +28,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import SearchIcon from '@mui/icons-material/Search';
+import InputAdornment from '@mui/material/InputAdornment';
 import PauseCircleOutlineIcon from '@mui/icons-material/PauseCircleOutline';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import ContrastIcon from '@mui/icons-material/Contrast';
@@ -752,13 +754,20 @@ export default function AttendanceGrid() {
               variant='outlined'
               value={searchName}
               onChange={handleInputChange}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
             />
           </Grid>
-          <Grid item xs={12} md={3}>
+          {/* <Grid item xs={12} md={3}>
             <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>
               SEARCH
             </Button>
-          </Grid>
+          </Grid> */}
         </Grid>}
       </Box>
       <Box sx={{ display: 'flex' }}>
