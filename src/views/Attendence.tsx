@@ -22,6 +22,7 @@ import {
   MenuItem,
   Select,
   Avatar,
+  FormHelperText
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
@@ -321,6 +322,12 @@ export default function AttendanceGrid() {
       status: '',
     });
 
+    const [errors, setErrors] = useState({
+      employee: '',
+      date: '',
+      status: ''
+    });
+
     useEffect(() => {
       if (attendance) {
         const selected = attendances.find(attend => attend._id === attendance);
@@ -335,6 +342,33 @@ export default function AttendanceGrid() {
       }
     }, [attendance, attendances]);
 
+    const validateForm = () => {
+      let isValid = true;
+      const newErrors = {
+        employee: '',
+        date: '',
+        status: ''
+      };
+
+      if (!formData.employee) {
+        newErrors.employee = 'Employee selection is required';
+        isValid = false;
+      }
+
+      if (!formData.date) {
+        newErrors.date = 'Date is required';
+        isValid = false;
+      }
+
+      if (!formData.status) {
+        newErrors.status = 'Status selection is required';
+        isValid = false;
+      }
+
+      setErrors(newErrors);
+      return isValid;
+    };
+
     const handleChange = (e: { target: { name: any; value: any; }; }) => {
       const { name, value } = e.target;
 
@@ -345,41 +379,43 @@ export default function AttendanceGrid() {
     };
 
     const handleSubmit = () => {
-      const method = attendance ? 'PUT' : 'POST';
+      if (validateForm()) {
+        const method = attendance ? 'PUT' : 'POST';
 
-      const url = attendance
-        ? `${process.env.NEXT_PUBLIC_APP_URL}/attendence/update/${attendance}`
-        : `${process.env.NEXT_PUBLIC_APP_URL}/attendence/create`;
+        const url = attendance
+          ? `${process.env.NEXT_PUBLIC_APP_URL}/attendence/update/${attendance}`
+          : `${process.env.NEXT_PUBLIC_APP_URL}/attendence/create`;
 
-      fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.message) {
-            if (data.message.includes('success')) {
-              toast.success(data.message, {
-                position: 'top-center',
-              });
+        fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.message) {
+              if (data.message.includes('success')) {
+                toast.success(data.message, {
+                  position: 'top-center',
+                });
+              } else {
+                toast.error('Error: ' + data.message, {
+                  position: 'top-center',
+                });
+              }
             } else {
-              toast.error('Error: ' + data.message, {
+              toast.error('Unexpected error occurred', {
                 position: 'top-center',
               });
             }
-          } else {
-            toast.error('Unexpected error occurred', {
-              position: 'top-center',
-            });
-          }
 
-          handleClose();
-          dispatch(fetchAttendances());
-        })
-        .catch(error => {
-          console.log('Error', error);
-        });
+            handleClose();
+            dispatch(fetchAttendances());
+          })
+          .catch(error => {
+            console.log('Error', error);
+          });
+      }
     };
 
     return (
@@ -403,10 +439,12 @@ export default function AttendanceGrid() {
               onChange={handleChange}
               InputLabelProps={{ shrink: true }}
               required
+              error={!!errors.date}
+              helperText={errors.date}
             />
           </Grid>
           <Grid item xs={12} md={6}>
-            <FormControl fullWidth required>
+            <FormControl fullWidth required error={!!errors.employee}>
               <InputLabel required id='demo-simple-select-label'>Employee</InputLabel>
               <Select
                 label='Select Employee'
@@ -423,10 +461,11 @@ export default function AttendanceGrid() {
                   </MenuItem>
                 ))}
               </Select>
+              {errors.employee && <FormHelperText>{errors.employee}</FormHelperText>}
             </FormControl>
           </Grid>
           <Grid item xs={12} md={6}>
-            <FormControl fullWidth required>
+            <FormControl fullWidth required error={!!errors.status}>
               <InputLabel required id='demo-simple-select-label'>Status</InputLabel>
               <Select
                 label='Select Status'
@@ -441,6 +480,7 @@ export default function AttendanceGrid() {
                 <MenuItem value='On Half'>ON_HALF</MenuItem>
                 <MenuItem value='On Leave'>ON_LEAVE</MenuItem>
               </Select>
+              {errors.status && <FormHelperText>{errors.status}</FormHelperText>}
             </FormControl>
           </Grid>
           <Grid item xs={12}>
