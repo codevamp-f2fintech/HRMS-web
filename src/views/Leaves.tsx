@@ -462,7 +462,7 @@ export default function LeavesGrid() {
       ? data : leaves;
 
 
-    const groupedData = filteredLeaves.reduce((acc, curr) => {
+    const groupedData = filteredLeaves?.reduce((acc, curr) => {
       const { employee, start_date, end_date, status, application, type, day, _id } = curr;
 
       if (!employee) {
