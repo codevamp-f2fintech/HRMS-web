@@ -23,6 +23,7 @@ import {
   InputLabel,
   MenuItem,
   Select,
+  FormHelperText
 } from '@mui/material'
 
 import CloseIcon from '@mui/icons-material/Close'
@@ -92,6 +93,12 @@ export default function PolicyGrid() {
 
     })
 
+    const [errors, setErrors] = useState({
+      name: '',
+      document_url: '',
+      description: ''
+    });
+
     useEffect(() => {
       if (policy) {
         const selected = policies.find(p => p._id === policy)
@@ -105,6 +112,35 @@ export default function PolicyGrid() {
       }
     }, [policy, policies])
 
+    const validateForm = () => {
+      let isValid = true;
+      const newErrors = {
+        name: '',
+        document_url: '',
+        description: ''
+      };
+
+      if (!formData.name.trim()) {
+        newErrors.name = 'Policy name is required';
+        isValid = false;
+      }
+
+      if (!formData.document_url.trim()) {
+        newErrors.document_url = 'Document URL is required';
+        isValid = false;
+      }
+
+      if (!formData.description.trim()) {
+        newErrors.description = 'Description is required';
+        isValid = false;
+      }
+
+      setErrors(newErrors);
+      return isValid;
+    };
+
+
+
     const handleChange = (e) => {
       const { name, value } = e.target
       setFormData(prevState => ({
@@ -114,36 +150,38 @@ export default function PolicyGrid() {
     }
 
     const handleSubmit = () => {
-      const method = policy ? 'PUT' : 'POST'
-      const url = policy ? `${process.env.NEXT_PUBLIC_APP_URL}/policies/update/${policy}` : `${process.env.NEXT_PUBLIC_APP_URL}/policies/create`
-      fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.message) {
-            if (data.message.includes('success')) {
-              toast.success(data.message, {
-                position: 'top-center',
-              });
+      if (validateForm()) {
+        const method = policy ? 'PUT' : 'POST'
+        const url = policy ? `${process.env.NEXT_PUBLIC_APP_URL}/policies/update/${policy}` : `${process.env.NEXT_PUBLIC_APP_URL}/policies/create`
+        fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.message) {
+              if (data.message.includes('success')) {
+                toast.success(data.message, {
+                  position: 'top-center',
+                });
+              } else {
+                toast.error('Error: ' + data.message, {
+                  position: 'top-center',
+                });
+              }
             } else {
-              toast.error('Error: ' + data.message, {
+              toast.error('Unexpected error occurred', {
                 position: 'top-center',
               });
             }
-          } else {
-            toast.error('Unexpected error occurred', {
-              position: 'top-center',
-            });
-          }
-          handleClose();
-          debouncedFetch();
-        })
-        .catch(error => {
-          console.log('Error', error);
-        });
+            handleClose();
+            debouncedFetch();
+          })
+          .catch(error => {
+            console.log('Error', error);
+          });
+      }
     };
 
     return (
@@ -165,6 +203,8 @@ export default function PolicyGrid() {
               value={formData.name}
               onChange={handleChange}
               required
+              error={!!errors.name}
+              helperText={errors.name}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -175,6 +215,8 @@ export default function PolicyGrid() {
               value={formData.document_url}
               onChange={handleChange}
               required
+              error={!!errors.document_url}
+              helperText={errors.document_url}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -185,6 +227,8 @@ export default function PolicyGrid() {
               value={formData.description}
               onChange={handleChange}
               required
+              error={!!errors.description}
+              helperText={errors.description}
             />
           </Grid>
 
@@ -323,7 +367,7 @@ export default function PolicyGrid() {
           components={{
             Toolbar: GridToolbar,
           }}
-          rows={filteredPolicies.length > 0 ? filteredPolicies : policies}
+          rows={filteredPolicies?.length > 0 ? filteredPolicies : policies}
           columns={columns}
           getRowId={(row) => row._id}
           paginationMode="server"
