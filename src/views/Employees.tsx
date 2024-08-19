@@ -32,9 +32,11 @@ import ViewListIcon from '@mui/icons-material/ViewList'
 import CloseIcon from '@mui/icons-material/Close'
 import EditIcon from '@mui/icons-material/Edit'
 
+import { ToastContainer, toast } from 'react-toastify';
+
 import type { RootState, AppDispatch } from '../redux/store';
 import { fetchEmployees, filterEmployees } from '../redux/features/employees/employeesSlice';
-
+import 'react-toastify/dist/ReactToastify.css';
 import Loader from "../components/loader/loader"
 
 export default function EmployeeGrid() {
@@ -144,7 +146,7 @@ export default function EmployeeGrid() {
 
     const handleSubmit = () => {
       const method = employee ? 'PUT' : 'POST'
-      const url = employee ? `${process.env.NEXT_PUBLIC_APP_URL}/employees/update/${employee}` : `${process.env.NEXT_PUBLIC_APP_URL}/employees/create`;
+      const url = employee ? `${process.env.NEXT_PUBLIC_APP_URL}/employees/update / ${employee}` : `${process.env.NEXT_PUBLIC_APP_URL} /employees/create`;
 
       const formDataToSend = new FormData();
 
@@ -165,11 +167,16 @@ export default function EmployeeGrid() {
           console.log('Success:', data)
           handleClose()
           dispatch(fetchEmployees({ page, limit: 12 }));
+          toast.success(employee ? 'Employee updated successfully' : 'Employee created successfully');
+
         })
         .catch(error => {
           console.error('Error:', error)
+          toast.error('An error occurred. Please try again.');
+
         })
     }
+
 
     return (
       <Box sx={{ flexGrow: 1, padding: 2 }}>
@@ -500,6 +507,7 @@ export default function EmployeeGrid() {
 
   return (
     <Box sx={{ flexGrow: 1, padding: 2 }}>
+      <ToastContainer />
       <Dialog open={showForm} onClose={handleClose} fullWidth maxWidth='md'>
         <DialogContent>
           <AddEmployeeForm employee={selectedEmployee} handleClose={handleClose} />
