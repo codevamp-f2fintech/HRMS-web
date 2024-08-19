@@ -35,24 +35,27 @@ const initialState: EmployeesState = {
   error: null,
 };
 
-let token: string | null = null;
-
-if (typeof window !== "undefined") {
-  token = localStorage?.getItem("token");
-}
-
 export const fetchEmployees = createAsyncThunk(
   'employees/fetchEmployees',
-  async ({ page = 1, limit = 12 }: { page?: number; limit?: number }, { getState }) => {
+  async (
+    { page = 1, limit = 12, search = '' }: { page?: number; limit?: number; search?: string },
+    { getState }
+  ) => {
     const state = getState() as RootState;
+    const isSearch = search.trim().length > 0;
+    let token: string | null = null;
+
+    if (typeof window !== "undefined") {
+      token = localStorage?.getItem("token");
+    }
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL}/employees/get?page=${page}&limit=${limit}`,
+      `${process.env.NEXT_PUBLIC_APP_URL}/employees/get?page=${page}&limit=${limit}&search=${search}`,
       {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
       }
     );
@@ -63,13 +66,14 @@ export const fetchEmployees = createAsyncThunk(
 
     const data = await response.json();
 
-    // Filter out employees that are already in the state
-    const newEmployees = data.filter((employee: Employee) =>
-      !state.employees.employees.some((existingEmployee: Employee) => existingEmployee._id === employee._id)
+    let employees = isSearch ? [] : state.employees.employees;
+
+    const newEmployees = data.filter(
+      (employee: Employee) => !employees.some((existingEmployee) => existingEmployee._id === employee._id)
     );
 
     return {
-      employees: [...state.employees.employees, ...newEmployees],
+      employees: [...employees, ...newEmployees],
       hasMore: data.length === limit,
     };
   }
@@ -79,19 +83,30 @@ const employeesSlice = createSlice({
   name: 'employees',
   initialState,
   reducers: {
-    filterEmployees(state, action: PayloadAction<{ name: string; designation: string }>) {
-      const { name, designation } = action.payload;
+    resetEmployees(state) {
+      state.employees = [];
+      state.filteredEmployees = [];
+      state.hasMore = true;
+      state.error = null;
+    },
+    updateEmployee(state, action: PayloadAction<Employee>) {
+      const updatedEmployee = action.payload;
+      const index = state.employees.findIndex(emp => emp._id === updatedEmployee._id);
 
-      state.filteredEmployees = state.employees.filter(employee => {
-        return (
-          (name ? employee.first_name.toLowerCase().includes(name.toLowerCase()) || employee.last_name.toLowerCase().includes(name.toLowerCase()) : true) &&
-          (designation ? employee.designation === designation : true)
-        );
-      });
+      if (index !== -1) {
+        state.employees[index] = updatedEmployee;
+      }
     },
-    resetFilter(state) {
-      state.filteredEmployees = state.employees;
-    },
+    addOrUpdateEmployee(state, action: PayloadAction<Employee>) {
+      const updatedEmployee = action.payload;
+      const index = state.employees.findIndex(emp => emp._id === updatedEmployee._id);
+
+      if (index !== -1) {
+        state.employees[index] = updatedEmployee;
+      } else {
+        state.employees.push(updatedEmployee);
+      }
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -112,5 +127,5 @@ const employeesSlice = createSlice({
   },
 });
 
-export const { filterEmployees, resetFilter } = employeesSlice.actions;
+export const { resetEmployees, updateEmployee, addOrUpdateEmployee } = employeesSlice.actions;
 export default employeesSlice.reducer;

@@ -78,6 +78,14 @@ export default function HolidayGrid() {
       end_date: '',
     });
 
+    const [errors, setErrors] = useState({
+      title: '',
+      note: '',
+      year: '',
+      start_date: '',
+      end_date: '',
+    });
+
     useEffect(() => {
       if (holiday) {
         const selected = holidays.find(h => h._id === holiday);
@@ -94,6 +102,52 @@ export default function HolidayGrid() {
       }
     }, [holiday, holidays]);
 
+    const validateForm = () => {
+      let isValid = true;
+      const newErrors = {
+        title: '',
+        note: '',
+        year: '',
+        start_date: '',
+        end_date: '',
+      };
+
+      if (!formData.title.trim()) {
+        newErrors.title = 'Title is required';
+        isValid = false;
+      }
+
+      if (!formData.start_date) {
+        newErrors.start_date = 'Start date is required';
+        isValid = false;
+      }
+
+      if (!formData.end_date) {
+        newErrors.end_date = 'End date is required';
+        isValid = false;
+      } else if (formData.end_date < formData.start_date) {
+        newErrors.end_date = 'End date must be after start date';
+        isValid = false;
+      }
+
+      if (!formData.note.trim()) {
+        newErrors.note = 'Note is required';
+        isValid = false;
+      }
+
+      if (!formData.year) {
+        newErrors.year = 'Year is required';
+        isValid = false;
+      } else if (isNaN(formData.year) || formData.year.length !== 4) {
+        newErrors.year = 'Year must be a valid 4-digit number';
+        isValid = false;
+      }
+
+      setErrors(newErrors);
+      return isValid;
+    };
+
+
     const handleChange = (e) => {
       const { name, value } = e.target;
 
@@ -104,41 +158,44 @@ export default function HolidayGrid() {
     };
 
     const handleSubmit = () => {
-      const method = holiday ? 'PUT' : 'POST';
-      const url = holiday ? `${process.env.NEXT_PUBLIC_APP_URL}/holidays/update/${holiday}` : `${process.env.NEXT_PUBLIC_APP_URL}/holidays/create`;
+      if (validateForm()) {
+        const method = holiday ? 'PUT' : 'POST';
+        const url = holiday ? `${process.env.NEXT_PUBLIC_APP_URL}/holidays/update/${holiday}` : `${process.env.NEXT_PUBLIC_APP_URL}/holidays/create`;
 
-      fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.message) {
-            if (data.message.includes('success')) {
-              toast.success(data.message, {
-                position: 'top-center',
-              });
+        fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.message) {
+              if (data.message.includes('success')) {
+                toast.success(data.message, {
+                  position: 'top-center',
+                });
+              } else {
+                toast.error('Error: ' + data.message, {
+                  position: 'top-center',
+                });
+              }
             } else {
-              toast.error('Error: ' + data.message, {
+              toast.error('Unexpected error occurred', {
                 position: 'top-center',
               });
             }
-          } else {
-            toast.error('Unexpected error occurred', {
+
+            handleClose();
+            debouncedFetch();
+          })
+          .catch(error => {
+            toast.error('Error: ' + error.message, {
               position: 'top-center',
             });
-          }
-
-          handleClose();
-          debouncedFetch();
-        })
-        .catch(error => {
-          toast.error('Error: ' + error.message, {
-            position: 'top-center',
           });
-        });
+      }
     };
+
 
     return (
       <Box sx={{ flexGrow: 1, padding: 2 }}>
@@ -159,6 +216,11 @@ export default function HolidayGrid() {
               value={formData.title}
               onChange={handleChange}
               required
+              error={!!errors.title}
+              helperText={errors.title}
+              FormHelperTextProps={{
+                style: { color: 'red' }
+              }}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -171,6 +233,11 @@ export default function HolidayGrid() {
               onChange={handleChange}
               InputLabelProps={{ shrink: true }}
               required
+              error={!!errors.start_date}
+              helperText={errors.start_date}
+              FormHelperTextProps={{
+                style: { color: 'red' }
+              }}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -183,6 +250,11 @@ export default function HolidayGrid() {
               onChange={handleChange}
               InputLabelProps={{ shrink: true }}
               required
+              error={!!errors.end_date}
+              helperText={errors.end_date}
+              FormHelperTextProps={{
+                style: { color: 'red' }
+              }}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -193,6 +265,11 @@ export default function HolidayGrid() {
               value={formData.note}
               onChange={handleChange}
               required
+              error={!!errors.note}
+              helperText={errors.note}
+              FormHelperTextProps={{
+                style: { color: 'red' }
+              }}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -203,6 +280,11 @@ export default function HolidayGrid() {
               value={formData.year}
               onChange={handleChange}
               required
+              error={!!errors.year}
+              helperText={errors.year}
+              FormHelperTextProps={{
+                style: { color: 'red' }
+              }}
             />
           </Grid>
           <Grid item xs={12}>
@@ -311,13 +393,13 @@ export default function HolidayGrid() {
         </Box>
         <Grid container spacing={6} alignItems="center" mb={2}>
           <Grid item xs={12} md={3}>
-            <TextField fullWidth label="Search by any rows value" variant="outlined" value={selectedKeyword} onChange={handleInputChange} />
+            <TextField fullWidth label="search" variant="outlined" value={selectedKeyword} onChange={handleInputChange} />
           </Grid>
-          <Grid item xs={12} md={3}>
+          {/* <Grid item xs={12} md={3}>
             <Button style={{ padding: 15, backgroundColor: '#198754' }} variant="contained" fullWidth>
               SEARCH
             </Button>
-          </Grid>
+          </Grid> */}
         </Grid>
       </Box>
       <Box sx={{ height: 600, width: '100%' }}>

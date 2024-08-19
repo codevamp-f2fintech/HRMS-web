@@ -24,10 +24,13 @@ import {
   MenuItem,
   Select,
   Avatar,
+  FormHelperText
 } from '@mui/material'
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
+import SearchIcon from '@mui/icons-material/Search';
+import InputAdornment from '@mui/material/InputAdornment';
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material'
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -45,9 +48,8 @@ export default function LeavesGrid() {
   const [selectedLeaves, setSelectedLeaves] = useState(null)
   const [userRole, setUserRole] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
-  const [searchName, setSearchName] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
   const [employees, setEmployees] = useState([])
+  const [rows, setRows] = useState([]); // Store rows in state
   const [selectedKeyword, setSelectedKeyword] = useState('');
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
@@ -76,7 +78,7 @@ export default function LeavesGrid() {
     setLimit(newPageSize);
 
   };
-  console.log('limit', setLimit)
+
 
   const handlePaginationModelChange = (params: { page: number; pageSize: number }) => {
     handlePageChange(params.page, params.pageSize);
@@ -132,6 +134,16 @@ export default function LeavesGrid() {
       type: '',
       day: ''
     })
+    const [errors, setErrors] = useState({
+      employee: '',
+      start_date: '',
+      end_date: '',
+      status: '',
+      application: '',
+      type: '',
+      day: ''
+    });
+
 
     useEffect(() => {
       if (leave) {
@@ -144,54 +156,135 @@ export default function LeavesGrid() {
             status: selected.status,
             application: selected.application,
             type: selected.type,
-            day: selected.day,
+            day: calculateDaysDifference(selected.start_date, selected.end_date)
           })
         }
       }
     }, [leave, leaves])
 
+    const validateForm = () => {
+      let isValid = true;
+      const newErrors = {
+        employee: '',
+        start_date: '',
+        end_date: '',
+        status: '',
+        application: '',
+        type: '',
+        day: ''
+      };
+
+      if (!formData.employee) {
+        newErrors.employee = 'Employee selection is required';
+        isValid = false;
+      }
+
+      if (!formData.start_date) {
+        newErrors.start_date = 'Start date is required';
+        isValid = false;
+      }
+
+      if (!formData.end_date) {
+        newErrors.end_date = 'End date is required';
+        isValid = false;
+      }
+
+      if (!formData.status) {
+        newErrors.status = 'Status selection is required';
+        isValid = false;
+      }
+
+      if (!formData.application.trim()) {
+        newErrors.application = 'Application is required';
+        isValid = false;
+      }
+
+      if (!formData.type) {
+        newErrors.type = 'Leave type is required';
+        isValid = false;
+      }
+
+      if (!formData.day.trim()) {
+        newErrors.day = 'Day is required';
+        isValid = false;
+      }
+
+      setErrors(newErrors);
+      return isValid;
+    };
+
+
+
     const handleChange = (e) => {
-      const { name, value } = e.target
-      setFormData(prevState => ({
-        ...prevState,
-        [name]: value
-      }))
+      const { name, value } = e.target;
+      setFormData(prevState => {
+        const updatedFormData = {
+          ...prevState,
+          [name]: value
+        };
+        if (name === 'start_date' || name === 'end_date') {
+          updatedFormData.day = calculateDaysDifference(updatedFormData.start_date, updatedFormData.end_date);
+        }
+
+        return updatedFormData;
+      });
     }
 
-    const handleSubmit = () => {
-      const method = leave ? 'PUT' : 'POST'
-      const url = leave ? `${process.env.NEXT_PUBLIC_APP_URL}/leaves/update/${leave}` : `${process.env.NEXT_PUBLIC_APP_URL}/leaves/create`
-      console.log("submitted form data", formData);
+    const calculateDaysDifference = (start: string, end: string): string => {
+      if (start && end) {
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        const differenceInTime = endDate.getTime() - startDate.getTime();
+        const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
 
-      fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.message) {
-            if (data.message.includes('success')) {
-              toast.success(data.message, {
-                position: 'top-center',
-              });
+        return differenceInDays > 0 ? differenceInDays.toString() : '0';
+      }
+
+      return '';
+    };
+
+
+    const handleSubmit = () => {
+      if (validateForm()) {
+        const method = leave ? 'PUT' : 'POST'
+        const url = leave ? `${process.env.NEXT_PUBLIC_APP_URL}/leaves/update/${leave}` : `${process.env.NEXT_PUBLIC_APP_URL}/leaves/create`
+        console.log("submitted form data", formData);
+
+        fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.message) {
+              if (data.message.includes('success')) {
+                toast.success(data.message, {
+                  position: 'top-center',
+                });
+              } else {
+                toast.error('Error: ' + data.message, {
+                  position: 'top-center',
+                });
+              }
             } else {
-              toast.error('Error: ' + data.message, {
+              toast.error('Unexpected error occurred', {
                 position: 'top-center',
               });
             }
-          } else {
-            toast.error('Unexpected error occurred', {
-              position: 'top-center',
-            });
-          }
-          handleClose();
-          dispatch(fetchLeaves({ page, limit, keyword: selectedKeyword }));
-        })
-        .catch(error => {
-          console.log('Error', error);
-        });
+            handleClose();
+            dispatch(fetchLeaves({ page, limit, keyword: selectedKeyword }));
+          })
+          .catch(error => {
+            console.log('Error', error);
+          });
+      }
     };
+
+    // Filter employees based on user role
+    const filteredEmployees = userRole === '3'
+      ? employees.filter(emp => emp._id === userId)
+      : employees;
 
     return (
       <Box sx={{ flexGrow: 1, padding: 2 }}>
@@ -215,13 +308,16 @@ export default function LeavesGrid() {
                 value={formData.employee}
                 onChange={handleChange}
                 required
+                error={!!errors.employee}
+                disabled={userRole === '3'}
               >
-                {employees.map((employee) => (
+                {filteredEmployees.map((employee) => (
                   <MenuItem key={employee._id} value={employee._id}>
                     {employee.first_name} {employee.last_name}
                   </MenuItem>
                 ))}
               </Select>
+              {errors.employee && <FormHelperText error>{errors.employee}</FormHelperText>}
             </FormControl>
           </Grid>
           <Grid item xs={12} md={6}>
@@ -234,6 +330,8 @@ export default function LeavesGrid() {
               onChange={handleChange}
               InputLabelProps={{ shrink: true }}
               required
+              error={!!errors.start_date}
+              helperText={errors.start_date}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -246,10 +344,12 @@ export default function LeavesGrid() {
               onChange={handleChange}
               InputLabelProps={{ shrink: true }}
               required
+              error={!!errors.end_date}
+              helperText={errors.end_date}
             />
           </Grid>
           <Grid item xs={12} md={6}>
-            <FormControl fullWidth required>
+            <FormControl fullWidth required error={!!errors.status}>
               <InputLabel required id='demo-simple-select-label'>Status</InputLabel>
               <Select
                 label='Select Status'
@@ -258,13 +358,16 @@ export default function LeavesGrid() {
                 name='status'
                 value={formData.status}
                 onChange={handleChange}
+                disabled={userRole === '3'}
               >
                 <MenuItem value='Pending'>Pending</MenuItem>
-                <MenuItem value='Approved'>Approved</MenuItem>
-                <MenuItem value='Rejected'>Rejected</MenuItem>
+                <MenuItem value='Approved' >Approved</MenuItem>
+                <MenuItem value='Rejected' >Rejected</MenuItem>
               </Select>
+              {errors.status && <Typography color="error">{errors.status}</Typography>}
             </FormControl>
           </Grid>
+
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
@@ -273,10 +376,12 @@ export default function LeavesGrid() {
               value={formData.application}
               onChange={handleChange}
               required
+              error={!!errors.application}
+              helperText={errors.application}
             />
           </Grid>
           <Grid item xs={12} md={6}>
-            <FormControl fullWidth required>
+            <FormControl fullWidth required error={!!errors.type}>
               <InputLabel required id='demo-simple-select-label'>Type</InputLabel>
               <Select
                 label='Select Type'
@@ -289,18 +394,27 @@ export default function LeavesGrid() {
                 <MenuItem value='Annual'>ANNUAL</MenuItem>
                 <MenuItem value='Sick'>SICK</MenuItem>
                 <MenuItem value='Unpaid'>UNPAID</MenuItem>
-                <MenuItem value='Other'>OTHER</MenuItem>
+                <MenuItem value='Casual'>CASUAL</MenuItem>
+                <MenuItem value='Complimentary'>COMPLIMENTARY</MenuItem>
+                <MenuItem value='Maternity'>MATERNITY</MenuItem>
+                <MenuItem value='Optional'>OPTIONAL</MenuItem>
               </Select>
+              {errors.type && <Typography color="error">{errors.type}</Typography>}
             </FormControl>
           </Grid>
+
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
               label='Day'
               name='day'
               value={formData.day}
-              onChange={handleChange}
+              type='text'  // Ensure the input type is text to handle the string value
+              InputProps={{ readOnly: true }}  // Make the input field read-only
+              InputLabelProps={{ shrink: true }}
               required
+              error={!!errors.day}
+              helperText={errors.day}
             />
           </Grid>
           <Grid item xs={12}>
@@ -393,6 +507,18 @@ export default function LeavesGrid() {
     return columns;
   }
 
+  // Fetch and transform data
+  useEffect(() => {
+    const fetchData = async () => {
+      if (userId) {
+        const transformedData = await transformData();
+        setRows(transformedData);
+      }
+    };
+
+    fetchData();
+  }, [userId, leaves, userRole]);
+
   const transformData = async () => {
     let token: string | null = null;
 
@@ -415,7 +541,7 @@ export default function LeavesGrid() {
     const filteredLeaves = userRole === '3'
       ? data : leaves;
 
-    console.log("filtered leave isss", filteredLeaves, data)
+
     const groupedData = filteredLeaves.reduce((acc, curr) => {
       const { employee, start_date, end_date, status, application, type, day, _id } = curr;
 
@@ -444,7 +570,10 @@ export default function LeavesGrid() {
   };
 
   const columns = generateColumns();
-  const rows = transformData();
+
+  // const rows = transformData();
+
+
 
   return (
     <Box>
@@ -512,21 +641,29 @@ export default function LeavesGrid() {
             </FormControl>
           </Grid> */}
           {userRole === "1" && (
-            <Grid item xs={12} md={3}>
+            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label='Employee Name'
-                variant='outlined'
+                label="search"
+                variant="outlined"
                 value={selectedKeyword}
                 onChange={handleInputChange}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
               />
             </Grid>
+
           )}
-          <Grid item xs={12} md={3}>
+          {/* <Grid item xs={12} md={3}>
             <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>
               SEARCH
             </Button>
-          </Grid>
+          </Grid> */}
         </Grid>
       </Box>
       <Box sx={{ height: 500, width: '100%' }}>
