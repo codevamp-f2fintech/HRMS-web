@@ -105,7 +105,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
 
         requiredFields.forEach(field => {
             if (!formData[field]) {
-                newErrors[field] = ${ field.replace('_', ' ') } is required;
+                newErrors[field] = `${field.replace('_', ' ')} is require`
             }
         });
 
@@ -121,7 +121,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
         if (!validate()) return;
 
         const method = employee ? 'PUT' : 'POST';
-        const url = employee ? ${ process.env.NEXT_PUBLIC_APP_URL }/employees/update / ${ employee } : ${ process.env.NEXT_PUBLIC_APP_URL } /employees/create;
+        const url = employee ? `${process.env.NEXT_PUBLIC_APP_URL}/employees/update/${employee}` : `${process.env.NEXT_PUBLIC_APP_URL}/employees/create`;
 
         const formDataToSend = new FormData();
         for (const key in formData) {
