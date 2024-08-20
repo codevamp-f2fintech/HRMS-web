@@ -11,6 +11,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
         first_name: "",
         last_name: "",
         email: "",
+        work_email: "",
         contact: "",
         role_priority: "",
         dob: "",
@@ -42,6 +43,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
                     first_name: selected.first_name,
                     last_name: selected.last_name,
                     email: selected.email,
+                    work_email: selected.work_email,
                     contact: selected.contact,
                     role_priority: selected.role_priority,
                     dob: selected.dob,
@@ -99,7 +101,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
 
     const validate = () => {
         const newErrors = {};
-        const requiredFields = ['first_name', 'last_name', 'email', 'contact', 'role_priority', 'dob', 'gender', 'designation', 'joining_date', 'password', 'code', 'location'];
+        const requiredFields = ['first_name', 'last_name', 'email', 'work_email', 'contact', 'role_priority', 'dob', 'gender', 'designation', 'joining_date', 'password', 'code', 'location'];
 
         requiredFields.forEach(field => {
             if (!formData[field]) {
@@ -224,6 +226,18 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
                         required
                         error={!!errors.email}
                         helperText={errors.email}
+                    />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                    <TextField
+                        fullWidth
+                        label='Work Email'
+                        name='work_email'
+                        value={formData.work_email}
+                        onChange={handleChange}
+                        required
+                        error={!!errors.work_email}
+                        helperText={errors.work_email}
                     />
                 </Grid>
                 <Grid item xs={12} md={6}>
