@@ -23,7 +23,9 @@ import FormControl from '@mui/material/FormControl'
 import AddIcon from '@mui/icons-material/Add'
 import ViewModuleIcon from '@mui/icons-material/ViewModule'
 import ViewListIcon from '@mui/icons-material/ViewList'
+import { ToastContainer, } from 'react-toastify';
 
+import 'react-toastify/dist/ReactToastify.css';
 import type { RootState, AppDispatch } from '../redux/store';
 import { fetchEmployees, resetEmployees } from '../redux/features/employees/employeesSlice';
 
