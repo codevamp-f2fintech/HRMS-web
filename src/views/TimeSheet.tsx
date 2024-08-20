@@ -27,6 +27,8 @@ import {
 } from '@mui/material'
 import { useDispatch, useSelector } from 'react-redux';
 import { Add, Remove } from '@mui/icons-material';
+import SearchIcon from '@mui/icons-material/Search';
+import InputAdornment from '@mui/material/InputAdornment';
 
 import type { AppDispatch, RootState } from '@/redux/store';
 import { fetchEmployees, filterEmployees } from '@/redux/features/employees/employeesSlice';
@@ -82,7 +84,7 @@ export default function TimeSheetGrid() {
     }
 
     if (employees.length === 0) {
-      dispatch(fetchEmployees({ page, limit: ITEMS_PER_PAGE }));
+      dispatch(fetchEmployees({ page, limit: ITEMS_PER_PAGE, search: '' }));
     }
 
     if (attendances.length === 0) {
@@ -303,13 +305,20 @@ export default function TimeSheetGrid() {
             Save
           </Button>
           <Grid container spacing={2}>
-            {userRole !== '3' && <Grid item xs={12} md={4}>
+            {userRole === "1" && <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
                 label='Employee Name'
                 variant='outlined'
                 value={searchName}
                 onChange={(e) => handleInputChange(e, 'searchName')}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
               />
             </Grid>}
             <Grid item xs={12} md={3}>
@@ -329,7 +338,7 @@ export default function TimeSheetGrid() {
                 </Select>
               </FormControl>
             </Grid>
-            {userRole !== '3' && <Grid item xs={12} md={4}>
+            {/* <Grid item xs={12} md={4}>
               <Button
                 variant='contained'
                 fullWidth
@@ -338,7 +347,7 @@ export default function TimeSheetGrid() {
               >
                 SEARCH
               </Button>
-            </Grid>}
+            </Grid> */}
           </Grid>
         </Box>
 
@@ -359,20 +368,20 @@ export default function TimeSheetGrid() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {(searchName !== '' ? filteredTimesheet : paginatedRows).map((row) => (
+              {(searchName !== '' || selectedStatus !== '' ? filteredTimesheet : paginatedRows).map((row) => (
                 <TableRow key={row._id || row.attendance_id}>
                   {userRole === "1" && <TableCell sx={{ textAlign: 'center', fontSize: '1em' }}>
                     <Box display="flex" alignItems="center">
-                      <Avatar src={searchName !== '' ? row.employee.image : row.employee_image} alt={row.employee_name} sx={{ mr: 2 }} />
-                      {searchName !== ''
+                      <Avatar src={searchName !== '' || selectedStatus !== '' ? row.employee.image : row.employee_image} alt={row.employee_name} sx={{ mr: 2 }} />
+                      {searchName !== '' || selectedStatus !== ''
                         ? `${row.employee.first_name} ${row.employee.last_name}`
                         : row.employee_name}
 
                     </Box>
                   </TableCell>}
-                  <TableCell sx={{ textAlign: 'center', fontSize: '1em' }} >{searchName !== '' ? row.attendance.date : row.attendance_date}</TableCell>
-                  <TableCell sx={{ textAlign: 'center', fontSize: '1em' }} >{searchName !== '' ? row.attendance.status : row.attendance_status}</TableCell>
-                  <TableCell sx={{ textAlign: 'center', fontSize: '1em' }} >
+                  <TableCell sx={{ textAlign: 'center', fontSize: '1em' }} >{searchName !== '' || selectedStatus !== '' ? row.attendance.date : row.attendance_date}</TableCell>
+                  <TableCell sx={{ textAlign: 'center', fontSize: '1em' }} >{searchName !== '' || selectedStatus !== '' ? row.attendance.status : row.attendance_status}</TableCell>
+                  <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }} >
                     {userRole === "3" && editableRows[row._id || row.attendance_id] ? (
                       <Box display="flex" alignItems="center">
                         <IconButton onClick={() => handleDecrementTime(row._id || row.attendance_id)}>
@@ -389,10 +398,10 @@ export default function TimeSheetGrid() {
                         </IconButton>
                       </Box>
                     ) : (
-                      <span onClick={() => userRole === "3" && handleEditClick(row)}>{row.time || '0'}</span>
+                      <span style={userRole === '3' ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}} onClick={() => userRole === "3" && handleEditClick(row)}>{row.time || '0'}</span>
                     )}
                   </TableCell>
-                  <TableCell sx={{ textAlign: 'center', fontSize: '1em' }} >
+                  <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }} >
                     {editableRows[row._id || row.attendance_id] ? (
                       userRole === '1' ? (
                         <Select
@@ -408,10 +417,16 @@ export default function TimeSheetGrid() {
                         <span>{row.status}</span>
                       )
                     ) : (
-                      <span onClick={() => handleEditClick(row)}>{row.status || 'Approved'}</span>
+                      <span
+                        style={userRole === '1' ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}}
+                        onClick={() => handleEditClick(row)}
+                      >
+                        {row.status || 'Approved'}
+                      </span>
+
                     )}
                   </TableCell>
-                  <TableCell sx={{ textAlign: 'center', fontSize: '1em' }} >
+                  <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }} >
                     {userRole === "3" && editableRows[row._id || row.attendance_id] ? (
                       <TextField
                         name="note"
@@ -422,7 +437,7 @@ export default function TimeSheetGrid() {
                       <span onClick={() => userRole === "3" && handleEditClick(row)}>{row.note || ''}</span>
                     )}
                   </TableCell>
-                  <TableCell sx={{ textAlign: 'center', fontSize: '1em' }} >
+                  <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }} >
                     {userRole === "3" && editableRows[row._id || row.attendance_id] ? (
                       <TextField
                         name="submission_date"
@@ -431,7 +446,7 @@ export default function TimeSheetGrid() {
                         onChange={(e) => handleChange(e, row._id || row.attendance_id)}
                       />
                     ) : (
-                      <span onClick={() => userRole === "3" && handleEditClick(row)}>{row.submission_date || ''}</span>
+                      <span style={userRole === '3' ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}} onClick={() => userRole === "3" && handleEditClick(row)}>{row.submission_date || ''}</span>
                     )}
                   </TableCell>
                   {/* <TableCell>

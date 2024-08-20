@@ -28,13 +28,15 @@ const initialState: attendancesState = {
   error: null,
 };
 
-let token: string | null = null;
 
-if (typeof window !== 'undefined') {
-  token = localStorage.getItem('token');
-}
 
 export const fetchAttendances = createAsyncThunk('attendances/fetchAttendances', async () => {
+  let token: string | null = null;
+
+  if (typeof window !== 'undefined') {
+    token = localStorage.getItem('token');
+  }
+
   const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/attendence/get`, {
     method: 'GET',
     headers: {
@@ -55,6 +57,10 @@ export const attendancesSlice = createSlice({
   name: 'attendances',
   initialState,
   reducers: {
+    resetAttendances(state) {
+      state.attendances = [];
+      state.filteredAttendance = [];
+    },
     filterAttendance(state, action: PayloadAction<{ name: string }>) {
       const { name } = action.payload
 
@@ -84,6 +90,6 @@ export const attendancesSlice = createSlice({
   },
 })
 
-export const { filterAttendance, resetFilter } = attendancesSlice.actions;
+export const { filterAttendance, resetFilter, resetAttendances } = attendancesSlice.actions;
 
 export default attendancesSlice.reducer;

@@ -5,6 +5,9 @@ import type { FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
@@ -21,6 +24,7 @@ import { useImageVariant } from '@core/hooks/useImageVariant';
 import Logo from '@components/layout/shared/Logo';
 import Illustrations from '@components/Illustrations';
 import themeConfig from '@configs/themeConfig';
+import Loader from '../components/loader/loader'
 
 const Login = ({ mode }: { mode: Mode }) => {
   const [isPasswordShown, setIsPasswordShown] = useState(false);
@@ -30,11 +34,17 @@ const Login = ({ mode }: { mode: Mode }) => {
   const darkImg = '/images/pages/auth-v1-mask-dark.png';
   const lightImg = '/images/pages/auth-v1-mask-light.png';
   const authBackground = useImageVariant(mode, lightImg, darkImg);
+  const [isLoading, setIsLoading] = useState(false);
+
 
   const handleClickShowPassword = () => setIsPasswordShown(show => !show);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log("Button clicked, setting loading to true...");
+    setIsLoading(true);
+    console.log("Loading state after setIsLoading: ", isLoading);
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/auth/login`, {
@@ -46,30 +56,48 @@ const Login = ({ mode }: { mode: Mode }) => {
         body: JSON.stringify({ email, password }),
       });
 
-      console.log("response", response);
-
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        const errorData = await response.json();
+
+        throw new Error(errorData.message || 'Network response was not ok');
       }
 
       const data = await response.json();
 
-      localStorage.setItem("token", data.token);
+      localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify({
         id: data.payload.id,
         role: data.payload.role,
       }));
 
-      // Handle successful login
-      console.log("data", data);
+      toast.success('Login successful!', {
+        position: 'top-center',
+      });
+
       router.push('/');
-    } catch (error) {
+    } catch (error: any) {
+      if (error.message === 'Invalid email or password') {
+        toast.error('Invalid email or password', {
+          position: 'top-center',
+        });
+      } else {
+        toast.error('Unexpected error occurred', {
+          position: 'top-center',
+        });
+      }
+
       console.error('There was a problem with the fetch operation:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+
+
+
   return (
     <div className='flex flex-col justify-center items-center min-bs-[100dvh] relative p-6'>
+      <ToastContainer />
       <Card className='flex flex-col sm:is-[450px]'>
         <CardContent className='p-6 sm:!p-12'>
           <Link href='/' className='flex justify-center items-center mbe-6'>
@@ -87,6 +115,7 @@ const Login = ({ mode }: { mode: Mode }) => {
                 label='Email'
                 value={email}
                 onChange={e => setEmail(e.target.value)}
+                disabled={isLoading}
               />
               <TextField
                 fullWidth
@@ -103,31 +132,45 @@ const Login = ({ mode }: { mode: Mode }) => {
                         edge='end'
                         onClick={handleClickShowPassword}
                         onMouseDown={e => e.preventDefault()}
+                        disabled={isLoading}
                       >
                         <i className={isPasswordShown ? 'ri-eye-off-line' : 'ri-eye-line'} />
                       </IconButton>
                     </InputAdornment>
                   ),
                 }}
+                disabled={isLoading}
               />
               <div className='flex justify-between items-center gap-x-3 gap-y-1 flex-wrap'>
-                <FormControlLabel control={<Checkbox />} label='Remember me' />
+                <FormControlLabel control={<Checkbox disabled={isLoading} />} label='Remember me' />
                 <Typography className='text-end' color='primary' component={Link} href='/forgot-password'>
                   Forgot password?
                 </Typography>
               </div>
-              <Button fullWidth variant='contained' type='submit'>
-                Log In
+              <Button
+                fullWidth
+                variant="contained"
+                type="submit"
+                sx={{
+                  backgroundColor: 'orange',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: 'darkorange',
+                  },
+                }}
+              >
+                {isLoading ? <Loader /> : 'Log In'}
               </Button>
+
               <div className='flex justify-center items-center flex-wrap gap-2'>
-                {/* <Typography>New on our platform?</Typography> */}
-                {/* <Typography component={Link} href='/register' color='primary'>
+                <Typography>New on our platform?</Typography>
+                <Typography component={Link} href='/register' color='primary'>
                   Create an account
-                </Typography> */}
+                </Typography>
               </div>
               <Divider className='gap-3'>or</Divider>
               <div className='flex justify-center items-center gap-2'>
-                {/* <IconButton size='small' className='text-facebook'>
+                <IconButton size='small' className='text-facebook'>
                   <i className='ri-facebook-fill' />
                 </IconButton>
                 <IconButton size='small' className='text-twitter'>
@@ -135,8 +178,8 @@ const Login = ({ mode }: { mode: Mode }) => {
                 </IconButton>
                 <IconButton size='small' className='text-github'>
                   <i className='ri-github-fill' />
-                </IconButton> */}
-                <IconButton size='small' className='text-googlePlus'>
+                </IconButton>
+                <IconButton size='small' className='text-googlePlus' disabled={isLoading}>
                   <i className='ri-google-fill' />
                 </IconButton>
               </div>

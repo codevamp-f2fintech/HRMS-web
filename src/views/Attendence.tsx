@@ -28,6 +28,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import SearchIcon from '@mui/icons-material/Search';
+import InputAdornment from '@mui/material/InputAdornment';
 import PauseCircleOutlineIcon from '@mui/icons-material/PauseCircleOutline';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import ContrastIcon from '@mui/icons-material/Contrast';
@@ -42,7 +44,7 @@ import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 
 import type { AppDispatch, RootState } from '@/redux/store';
-import { fetchAttendances, filterAttendance } from '@/redux/features/attendances/attendancesSlice';
+import { fetchAttendances, filterAttendance, resetAttendances } from '@/redux/features/attendances/attendancesSlice';
 import { fetchEmployees } from '@/redux/features/employees/employeesSlice';
 import { apiResponse } from '@/utility/apiResponse/employeesResponse';
 
@@ -342,6 +344,7 @@ export default function AttendanceGrid() {
 
     const validateForm = () => {
       let isValid = true;
+
       const newErrors = {
         employee: '',
         date: '',
@@ -364,10 +367,11 @@ export default function AttendanceGrid() {
       }
 
       setErrors(newErrors);
+
       return isValid;
     };
 
-    const handleChange = (e: { target: { name: any; value: any; }; }) => {
+    const handleChange = (e) => {
       const { name, value } = e.target;
 
       setFormData(prevState => ({
@@ -408,6 +412,7 @@ export default function AttendanceGrid() {
             }
 
             handleClose();
+            dispatch(resetAttendances());
             dispatch(fetchAttendances());
           })
           .catch(error => {
@@ -459,7 +464,7 @@ export default function AttendanceGrid() {
                   </MenuItem>
                 ))}
               </Select>
-              {errors.employee && <FormHelperText>{errors.employee}</FormHelperText>}
+              <Typography variant="caption" color="error">{errors.employee}</Typography>
             </FormControl>
           </Grid>
           <Grid item xs={12} md={6}>
@@ -478,7 +483,7 @@ export default function AttendanceGrid() {
                 <MenuItem value='On Half'>ON_HALF</MenuItem>
                 <MenuItem value='On Leave'>ON_LEAVE</MenuItem>
               </Select>
-              {errors.status && <FormHelperText>{errors.status}</FormHelperText>}
+              <Typography variant="caption" color="error">{errors.status}</Typography>
             </FormControl>
           </Grid>
           <Grid item xs={12}>
@@ -502,6 +507,7 @@ export default function AttendanceGrid() {
       </Box>
     );
   }
+
 
   const handleAttendanceAddClick = () => {
     setSelectedAttendance(null);
@@ -569,14 +575,26 @@ export default function AttendanceGrid() {
 
           const status = params.row[`day_${day}`];
 
+          console.log('params is', params)
+
+          const attendanceId = params.row[`day_${day}_id`];
+
           if (status === 'Present') {
-            return <CheckCircleIcon style={{ color: 'green', marginTop: '20%' }} />;
+            return <CheckCircleIcon style={{ color: 'green', marginTop: '20%' }}
+              onClick={() => handleAttendanceEditClick(attendanceId)}
+            />;
           } else if (status === 'Absent') {
-            return <CancelIcon style={{ color: 'red', marginTop: '20%' }} />;
+            return <CancelIcon style={{ color: 'red', marginTop: '20%' }}
+              onClick={() => handleAttendanceEditClick(attendanceId)}
+            />;
           } else if (status === 'On Leave') {
-            return <PauseCircleOutlineIcon style={{ color: 'orange', marginTop: '20%' }} />;
+            return <PauseCircleOutlineIcon style={{ color: 'orange', marginTop: '20%' }}
+              onClick={() => handleAttendanceEditClick(attendanceId)}
+            />;
           } else if (status === 'On Half') {
-            return <ContrastIcon style={{ color: 'green', fontSize: '1.5em', marginTop: '20%' }} />;
+            return <ContrastIcon style={{ color: 'green', fontSize: '1.5em', marginTop: '20%' }}
+              onClick={() => handleAttendanceEditClick(attendanceId)}
+            />;
           }
           else {
             return null;
@@ -645,6 +663,7 @@ export default function AttendanceGrid() {
       }
 
       acc[employee._id][`day_${day}`] = status;
+      acc[employee._id][`day_${day}_id`] = _id;
 
       return acc;
     }, {});
@@ -752,13 +771,20 @@ export default function AttendanceGrid() {
               variant='outlined'
               value={searchName}
               onChange={handleInputChange}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
             />
           </Grid>
-          <Grid item xs={12} md={3}>
+          {/* <Grid item xs={12} md={3}>
             <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>
               SEARCH
             </Button>
-          </Grid>
+          </Grid> */}
         </Grid>}
       </Box>
       <Box sx={{ display: 'flex' }}>
@@ -829,3 +855,4 @@ export default function AttendanceGrid() {
     </Box>
   );
 }
+

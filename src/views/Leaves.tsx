@@ -29,6 +29,8 @@ import {
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
+import SearchIcon from '@mui/icons-material/Search';
+import InputAdornment from '@mui/material/InputAdornment';
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material'
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -46,9 +48,8 @@ export default function LeavesGrid() {
   const [selectedLeaves, setSelectedLeaves] = useState(null)
   const [userRole, setUserRole] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
-  const [searchName, setSearchName] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
   const [employees, setEmployees] = useState([])
+  const [rows, setRows] = useState([]); // Store rows in state
   const [selectedKeyword, setSelectedKeyword] = useState('');
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
@@ -77,7 +78,7 @@ export default function LeavesGrid() {
     setLimit(newPageSize);
 
   };
-  console.log('limit', setLimit)
+
 
   const handlePaginationModelChange = (params: { page: number; pageSize: number }) => {
     handlePageChange(params.page, params.pageSize);
@@ -155,7 +156,7 @@ export default function LeavesGrid() {
             status: selected.status,
             application: selected.application,
             type: selected.type,
-            day: selected.day,
+            day: calculateDaysDifference(selected.start_date, selected.end_date)
           })
         }
       }
@@ -215,12 +216,33 @@ export default function LeavesGrid() {
 
 
     const handleChange = (e) => {
-      const { name, value } = e.target
-      setFormData(prevState => ({
-        ...prevState,
-        [name]: value
-      }))
+      const { name, value } = e.target;
+      setFormData(prevState => {
+        const updatedFormData = {
+          ...prevState,
+          [name]: value
+        };
+        if (name === 'start_date' || name === 'end_date') {
+          updatedFormData.day = calculateDaysDifference(updatedFormData.start_date, updatedFormData.end_date);
+        }
+
+        return updatedFormData;
+      });
     }
+
+    const calculateDaysDifference = (start: string, end: string): string => {
+      if (start && end) {
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        const differenceInTime = endDate.getTime() - startDate.getTime();
+        const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
+
+        return differenceInDays > 0 ? differenceInDays.toString() : '0';
+      }
+
+      return '';
+    };
+
 
     const handleSubmit = () => {
       if (validateForm()) {
@@ -259,6 +281,11 @@ export default function LeavesGrid() {
       }
     };
 
+    // Filter employees based on user role
+    const filteredEmployees = userRole === '3'
+      ? employees.filter(emp => emp._id === userId)
+      : employees;
+
     return (
       <Box sx={{ flexGrow: 1, padding: 2 }}>
         <Box display='flex' justifyContent='space-between' alignItems='center'>
@@ -282,8 +309,9 @@ export default function LeavesGrid() {
                 onChange={handleChange}
                 required
                 error={!!errors.employee}
+                disabled={userRole === '3'}
               >
-                {employees.map((employee) => (
+                {filteredEmployees.map((employee) => (
                   <MenuItem key={employee._id} value={employee._id}>
                     {employee.first_name} {employee.last_name}
                   </MenuItem>
@@ -330,10 +358,11 @@ export default function LeavesGrid() {
                 name='status'
                 value={formData.status}
                 onChange={handleChange}
+                disabled={userRole === '3'}
               >
                 <MenuItem value='Pending'>Pending</MenuItem>
-                <MenuItem value='Approved'>Approved</MenuItem>
-                <MenuItem value='Rejected'>Rejected</MenuItem>
+                <MenuItem value='Approved' >Approved</MenuItem>
+                <MenuItem value='Rejected' >Rejected</MenuItem>
               </Select>
               {errors.status && <Typography color="error">{errors.status}</Typography>}
             </FormControl>
@@ -380,7 +409,9 @@ export default function LeavesGrid() {
               label='Day'
               name='day'
               value={formData.day}
-              onChange={handleChange}
+              type='text'  // Ensure the input type is text to handle the string value
+              InputProps={{ readOnly: true }}  // Make the input field read-only
+              InputLabelProps={{ shrink: true }}
               required
               error={!!errors.day}
               helperText={errors.day}
@@ -476,6 +507,18 @@ export default function LeavesGrid() {
     return columns;
   }
 
+  // Fetch and transform data
+  useEffect(() => {
+    const fetchData = async () => {
+      if (userId) {
+        const transformedData = await transformData();
+        setRows(transformedData);
+      }
+    };
+
+    fetchData();
+  }, [userId, leaves, userRole]);
+
   const transformData = async () => {
     let token: string | null = null;
 
@@ -498,8 +541,8 @@ export default function LeavesGrid() {
     const filteredLeaves = userRole === '3'
       ? data : leaves;
 
-    console.log("filtered leave isss", filteredLeaves, data)
-    const groupedData = filteredLeaves.reduce((acc, curr) => {
+
+    const groupedData = filteredLeaves?.reduce((acc, curr) => {
       const { employee, start_date, end_date, status, application, type, day, _id } = curr;
 
       if (!employee) {
@@ -527,7 +570,10 @@ export default function LeavesGrid() {
   };
 
   const columns = generateColumns();
-  const rows = transformData();
+
+  // const rows = transformData();
+
+
 
   return (
     <Box>
@@ -595,21 +641,29 @@ export default function LeavesGrid() {
             </FormControl>
           </Grid> */}
           {userRole === "1" && (
-            <Grid item xs={12} md={3}>
+            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label='Employee Name'
-                variant='outlined'
+                label="search"
+                variant="outlined"
                 value={selectedKeyword}
                 onChange={handleInputChange}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
               />
             </Grid>
+
           )}
-          <Grid item xs={12} md={3}>
+          {/* <Grid item xs={12} md={3}>
             <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>
               SEARCH
             </Button>
-          </Grid>
+          </Grid> */}
         </Grid>
       </Box>
       <Box sx={{ height: 500, width: '100%' }}>
