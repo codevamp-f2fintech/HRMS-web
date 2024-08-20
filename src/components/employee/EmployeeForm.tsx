@@ -3,7 +3,7 @@ import { Box, Grid, TextField, Typography, IconButton, Button, FormControl, Inpu
 import CloseIcon from '@mui/icons-material/Close';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../redux/store';
-import { updateEmployee, addOrUpdateEmployee } from '@/redux/features/employees/employeesSlice';
+import { addOrUpdateEmployee } from '@/redux/features/employees/employeesSlice';
 
 const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }) => {
 
@@ -21,7 +21,9 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
         joining_date: "",
         leaving_date: "",
         status: "active",
-        image: ""
+        image: "",
+        code: "",
+        location: "",
     });
 
     const [selectedImage, setSelectedImage] = useState(null);
@@ -50,7 +52,9 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
                     joining_date: selected.joining_date,
                     leaving_date: selected.leaving_date,
                     status: selected.status,
-                    image: selected.image
+                    image: selected.image,
+                    code: selected.code,
+                    location: selected.location
                 });
                 setImagePreviewUrl(selected.image);
             }
@@ -95,7 +99,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
 
     const validate = () => {
         const newErrors = {};
-        const requiredFields = ['first_name', 'last_name', 'email', 'contact', 'role_priority', 'dob', 'gender', 'designation', 'joining_date', 'password'];
+        const requiredFields = ['first_name', 'last_name', 'email', 'contact', 'role_priority', 'dob', 'gender', 'designation', 'joining_date', 'password', 'code', 'location'];
 
         requiredFields.forEach(field => {
             if (!formData[field]) {
@@ -103,7 +107,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
             }
         });
 
-        if (formData.password !== formData.confirm_password) {
+        if (formData.password !== formData.confirm_password && isPasswordFieldVisible) {
             newErrors.confirm_password = 'Passwords do not match';
         }
 
@@ -410,6 +414,35 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
                             <MenuItem value='Web Developer'>Web Developer</MenuItem>
                         </Select>
                         {errors.designation && <Typography color='error'>{errors.designation}</Typography>}
+                    </FormControl>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                    <TextField
+                        fullWidth
+                        label='Employee code'
+                        name='code'
+                        value={formData.code}
+                        onChange={handleChange}
+                        required
+                        error={!!errors.code}
+                        helperText={errors.code}
+                    />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                    <FormControl fullWidth >
+                        <InputLabel id='demo-simple-select-label'>Select Location</InputLabel>
+                        <Select
+                            label='Select Location'
+                            labelId='demo-simple-select-label'
+                            id='demo-simple-select'
+                            name='location'
+                            value={formData.location}
+                            onChange={handleChange}
+                            fullWidth
+                        >
+                            <MenuItem value='noida'>Noida</MenuItem>
+                            <MenuItem value='bareilly'>Bareilly</MenuItem>
+                        </Select>
                     </FormControl>
                 </Grid>
                 <Grid item xs={12} md={6}>
