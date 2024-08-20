@@ -93,6 +93,7 @@ export default function EmployeeGrid() {
 
   const handleInputChange = (e) => {
     const searchValue = e.target.value;
+
     setSearchName(searchValue);
 
     if (searchValue === '') {
@@ -104,6 +105,7 @@ export default function EmployeeGrid() {
 
   return (
     <Box sx={{ flexGrow: 1, padding: 2 }}>
+      <ToastContainer />
       <Dialog open={showForm} onClose={handleClose} fullWidth maxWidth='md'>
         <DialogContent>
           <EmployeeForm employee={selectedEmployee} handleClose={handleClose} employees={employees} fetchEmployees={fetchEmployees} page={page} />
