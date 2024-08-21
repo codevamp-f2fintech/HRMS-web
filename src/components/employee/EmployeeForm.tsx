@@ -285,6 +285,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
                                 name='password'
                                 value={formData.password}
                                 onChange={handleChange}
+                                autoComplete="off"
                                 InputProps={{
                                     endAdornment: (
                                         <InputAdornment position='end'>
@@ -311,6 +312,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
                                 name='confirm_password'
                                 value={formData.confirm_password}
                                 onChange={handleChange}
+                                autoComplete="off"
                                 InputProps={{
                                     endAdornment: (
                                         <InputAdornment position='end'>
@@ -397,39 +399,53 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
                 </Grid>
                 <Grid item xs={12} md={6}>
                     <FormControl fullWidth error={!!errors.designation}>
-                        <InputLabel id='designation-select-label'>Select Designation</InputLabel>
+                        <InputLabel id="designation-select-label">Select Designation</InputLabel>
                         <Select
-                            label='Select Designation'
-                            labelId='designation-select-label'
-                            id='designation-select'
-                            name='designation'
+                            label="Select Designation"
+                            labelId="designation-select-label"
+                            id="designation-select"
+                            name="designation"
                             value={formData.designation}
                             onChange={handleChange}
                             fullWidth
                         >
-                            <MenuItem value='Assistant Manager Hr'>Assistant Manager Hr</MenuItem>
-                            <MenuItem value='Assistant Sales Manager'>Assistant Sales Manager</MenuItem>
-                            <MenuItem value='Back end Developer'>Back end Developer</MenuItem>
-                            <MenuItem value='Channel Partner'>Channel Partner</MenuItem>
-                            <MenuItem value='Credit Manager'>Credit Manager</MenuItem>
-                            <MenuItem value='Digital Marketing Executive'>Digital Marketing Executive</MenuItem>
-                            <MenuItem value='Financial Sales Intern'>Financial Sales Intern</MenuItem>
-                            <MenuItem value='Front end Developer'>Front end Developer</MenuItem>
-                            <MenuItem value='Growth Manager'>Growth Manager</MenuItem>
-                            <MenuItem value='Hr Interns'>Hr Interns</MenuItem>
-                            <MenuItem value='IT Infra & Networking'>IT Infra & Networking</MenuItem>
-                            <MenuItem value='Legal & Finance'>Legal & Finance</MenuItem>
-                            <MenuItem value='Other'>Other</MenuItem>
-                            <MenuItem value='Regional Sales Head'>Regional Sales Head</MenuItem>
-                            <MenuItem value='Senior Accountant'>Senior Accountant</MenuItem>
-                            <MenuItem value='Team Manager'>Team Manager</MenuItem>
-                            <MenuItem value='Tele Caller'>Tele Caller</MenuItem>
-                            <MenuItem value='UI/UX Designer'>UI/UX Designer</MenuItem>
-                            <MenuItem value='Web Developer'>Web Developer</MenuItem>
+                            <MenuItem value="Assistant Manager Hr">Assistant Manager Hr</MenuItem>
+                            <MenuItem value="Assistant Sales Manager">Assistant Sales Manager</MenuItem>
+                            <MenuItem value="Back end Developer">Back end Developer</MenuItem>
+                            <MenuItem value="Branch Manager">Branch Manager</MenuItem>
+                            <MenuItem value="Channel Partner">Channel Partner</MenuItem>
+                            <MenuItem value="Credit & Sales Manager">Credit & Sales Manager</MenuItem>
+                            <MenuItem value="Credit Manager">Credit Manager</MenuItem>
+                            <MenuItem value="Digital Marketing Executive">Digital Marketing Executive</MenuItem>
+                            <MenuItem value="Financial Sales Intern">Financial Sales Intern</MenuItem>
+                            <MenuItem value="Front end Developer">Front end Developer</MenuItem>
+                            <MenuItem value="Growth Manager">Growth Manager</MenuItem>
+                            <MenuItem value="Hr Interns">Hr Interns</MenuItem>
+                            <MenuItem value="IT Executive">IT Executive</MenuItem>
+                            <MenuItem value="IT Head">IT Head</MenuItem>
+                            <MenuItem value="IT Infra & Networking">IT Infra & Networking</MenuItem>
+                            <MenuItem value="Legal & Finance">Legal & Finance</MenuItem>
+                            <MenuItem value="Operation Manager">Operation Manager</MenuItem>
+                            <MenuItem value="Regional Sales Head">Regional Sales Head</MenuItem>
+                            <MenuItem value="Relationship Manager">Relationship Manager</MenuItem>
+                            <MenuItem value="Sales Manager">Sales Manager</MenuItem>
+                            <MenuItem value="Senior Accountant">Senior Accountant</MenuItem>
+                            <MenuItem value="Software Developer">Software Developer</MenuItem>
+                            <MenuItem value="Sources">Sources</MenuItem>
+                            <MenuItem value="Sr. Operation Manager">Sr. Operation Manager</MenuItem>
+                            <MenuItem value="Team Leader">Team Leader</MenuItem>
+                            <MenuItem value="Team Manager">Team Manager</MenuItem>
+                            <MenuItem value="Tele Caller">Tele Caller</MenuItem>
+                            <MenuItem value="UI/UX Designer">UI/UX Designer</MenuItem>
+                            <MenuItem value="Web Developer">Web Developer</MenuItem>
+                            <MenuItem value="Other">Other</MenuItem>
                         </Select>
-                        {errors.designation && <Typography color='error'>{errors.designation}</Typography>}
+                        {errors.designation && (
+                            <Typography color="error">{errors.designation}</Typography>
+                        )}
                     </FormControl>
                 </Grid>
+
                 <Grid item xs={12} md={6}>
                     <TextField
                         fullWidth
