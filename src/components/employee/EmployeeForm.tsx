@@ -3,7 +3,10 @@ import { Box, Grid, TextField, Typography, IconButton, Button, FormControl, Inpu
 import CloseIcon from '@mui/icons-material/Close';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../redux/store';
+import { toast } from 'react-toastify';
 import { addOrUpdateEmployee } from '@/redux/features/employees/employeesSlice';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }) => {
 
@@ -140,17 +143,31 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
         })
             .then(response => response.json())
             .then(data => {
-                handleClose();
-                if (employee) {
-                    dispatch(addOrUpdateEmployee(data));
+                if (data.error) {
+                    // Check for specific error messages and show corresponding toast notifications
+                    if (data.error === 'Email already exists') {
+                        toast.error('Email already exists. Please use a different email.');
+                    } else {
+                        toast.error(data.error || 'An error occurred. Please try again.');
+                    }
                 } else {
-                    dispatch(fetchEmployees({ page, limit: 12, search: '' }));
+                    if (employee) {
+                        dispatch(addOrUpdateEmployee(data));
+                        toast.success('Employee updated successfully!');
+                    } else {
+                        dispatch(fetchEmployees({ page, limit: 12, search: '' }));
+                        toast.success('Employee created successfully!');
+                    }
+                    setTimeout(() => handleClose(), 3000);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
+                toast.error('An error occurred. Please try again.');
             });
     };
+
+
 
     const handlePasswordFieldVisibility = () => {
         setIsPasswordFieldVisible(true);
@@ -162,6 +179,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
 
     return (
         <Box sx={{ flexGrow: 1, padding: 2 }}>
+            <ToastContainer position="top-center" autoClose={3000} hideProgressBar={false} />
             <Box display='flex' justifyContent='space-between' alignItems='center'>
                 <Typography style={{ fontSize: '2em' }} variant='h5' gutterBottom>
                     {employee ? 'Edit Employee' : 'Add Employee'}

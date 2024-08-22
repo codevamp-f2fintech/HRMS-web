@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-
 import { debounce } from 'lodash';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -17,13 +16,11 @@ import {
   DialogContent,
 } from '@mui/material'
 
-
 import InputLabel from '@mui/material/InputLabel'
 import FormControl from '@mui/material/FormControl'
 import AddIcon from '@mui/icons-material/Add'
 import ViewModuleIcon from '@mui/icons-material/ViewModule'
 import ViewListIcon from '@mui/icons-material/ViewList'
-import { ToastContainer, } from 'react-toastify';
 
 import 'react-toastify/dist/ReactToastify.css';
 import type { RootState, AppDispatch } from '../redux/store';
@@ -54,7 +51,6 @@ export default function EmployeeGrid() {
   }, [dispatch, page]);
 
   const handleScroll = useCallback(() => {
-
     if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 && !loading && hasMore) {
       setPage(prevPage => prevPage + 1);
     }
