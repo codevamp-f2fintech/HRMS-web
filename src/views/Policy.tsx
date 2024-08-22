@@ -88,15 +88,14 @@ export default function PolicyGrid() {
   function AddPolicyForm({ handleClose, policy }) {
     const [formData, setFormData] = useState({
       name: '',
-      document_url: '',
-      description: ''
-
-    })
+      description: '',
+      file: null
+    });
 
     const [errors, setErrors] = useState({
       name: '',
-      document_url: '',
-      description: ''
+      description: '',
+      file: ''
     });
 
     useEffect(() => {
@@ -105,28 +104,23 @@ export default function PolicyGrid() {
         if (selected) {
           setFormData({
             name: selected.name,
-            document_url: selected.document_url,
             description: selected.description,
-          })
+            file: null
+          });
         }
       }
-    }, [policy, policies])
+    }, [policy, policies]);
 
     const validateForm = () => {
       let isValid = true;
       const newErrors = {
         name: '',
-        document_url: '',
-        description: ''
+        description: '',
+        file: ''
       };
 
       if (!formData.name.trim()) {
         newErrors.name = 'Policy name is required';
-        isValid = false;
-      }
-
-      if (!formData.document_url.trim()) {
-        newErrors.document_url = 'Document URL is required';
         isValid = false;
       }
 
@@ -135,28 +129,38 @@ export default function PolicyGrid() {
         isValid = false;
       }
 
+      if (!formData.file && !policy) {
+        newErrors.file = 'File is required';
+        isValid = false;
+      }
+
       setErrors(newErrors);
       return isValid;
     };
 
-
-
     const handleChange = (e) => {
-      const { name, value } = e.target
+      const { name, value, files } = e.target;
       setFormData(prevState => ({
         ...prevState,
-        [name]: value
-      }))
-    }
+        [name]: files ? files[0] : value
+      }));
+    };
 
     const handleSubmit = () => {
       if (validateForm()) {
-        const method = policy ? 'PUT' : 'POST'
-        const url = policy ? `${process.env.NEXT_PUBLIC_APP_URL}/policies/update/${policy}` : `${process.env.NEXT_PUBLIC_APP_URL}/policies/create`
+        const method = policy ? 'PUT' : 'POST';
+        const url = policy ? `${process.env.NEXT_PUBLIC_APP_URL}/policies/update/${policy}` : `${process.env.NEXT_PUBLIC_APP_URL}/policies/create`;
+
+        const formPayload = new FormData();
+        formPayload.append('name', formData.name);
+        formPayload.append('description', formData.description);
+        if (formData.file) {
+          formPayload.append('file', formData.file);
+        }
+
         fetch(url, {
           method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
+          body: formPayload,
         })
           .then(response => response.json())
           .then(data => {
@@ -207,18 +211,7 @@ export default function PolicyGrid() {
               helperText={errors.name}
             />
           </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Document_url'
-              name='document_url'
-              value={formData.document_url}
-              onChange={handleChange}
-              required
-              error={!!errors.document_url}
-              helperText={errors.document_url}
-            />
-          </Grid>
+
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
@@ -231,29 +224,33 @@ export default function PolicyGrid() {
               helperText={errors.description}
             />
           </Grid>
-
+          <Grid item xs={12} md={6}>
+            <Button variant='contained' component='label'>
+              upload document
+              <input
+                type="file"
+                name="file"
+                hidden
+                onChange={handleChange}
+                required={!policy}
+                style={{ marginTop: '16px' }}
+              />
+            </Button>
+            {errors.file && (
+              <FormHelperText error>{errors.file}</FormHelperText>
+            )}
+          </Grid>
 
           <Grid item xs={12}>
-            <Button
-              style={{
-                fontSize: '18px',
-                fontWeight: 600,
-                color: 'white',
-                padding: 15,
-                backgroundColor: '#ff902f',
-                width: 250
-              }}
-              variant='contained'
-              fullWidth
-              onClick={handleSubmit}
-            >
-              {policy ? 'UPDATE POICY' : 'ADD POLICY'}
+            <Button variant='contained' color='primary' onClick={handleSubmit}>
+              {policy ? 'Update' : 'Add'} Policy
             </Button>
           </Grid>
         </Grid>
       </Box>
-    )
+    );
   }
+
 
   const handlePolicyAddClick = () => {
     setSelectedPolicy(null)
@@ -270,9 +267,34 @@ export default function PolicyGrid() {
   }
 
   const columns: GridColDef[] = [
-    { field: '_id', headerName: 'ID', flex: 1 },
     { field: 'name', headerName: 'Name', headerClassName: 'super-app-theme--header', flex: 2, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'document_url', headerName: 'Document Url', headerClassName: 'super-app-theme--header', flex: 2, headerAlign: 'center', align: 'center', sortable: false },
+    {
+      field: 'document_url',
+      headerName: 'Document Url',
+      headerClassName: 'super-app-theme--header',
+      flex: 2,
+      headerAlign: 'center',
+      align: 'center',
+      sortable: false,
+      renderCell: (params) => {
+        const documentUrl = params.value;
+        const previewUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(documentUrl)}&embedded=true`;
+
+        return (
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              window.open(previewUrl, '_blank');
+            }}
+          >
+            Open Document
+          </Button>
+        );
+      }
+
+    },
+
     { field: 'description', headerName: 'Description', headerClassName: 'super-app-theme--header', flex: 2, headerAlign: 'center', align: 'center', sortable: false },
     ...(userRole === '1' ? [{
       field: 'edit',

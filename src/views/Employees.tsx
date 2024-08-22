@@ -95,7 +95,7 @@ export default function EmployeeGrid() {
 
   const debouncedSearch = useCallback(
     debounce(() => {
-      console.log("chal rha h") // sbse pehle ye dekho
+
       dispatch(resetEmployees());
       dispatch(fetchEmployees({ page: 1, limit: searchName !== '' ? 0 : 12, search: searchName, designation: selectedDesignation }));
     }, 300),

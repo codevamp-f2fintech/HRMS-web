@@ -43,7 +43,7 @@ export const fetchEmployees = createAsyncThunk(
   ) => {
     const state = getState() as RootState;
     const isSearch = search.trim().length > 0;
-    // const isDesignation = designation.trim().length > 0;
+
     let token: string | null = null;
 
     if (typeof window !== "undefined") {
