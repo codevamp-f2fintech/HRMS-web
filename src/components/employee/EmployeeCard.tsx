@@ -35,6 +35,18 @@ const StyledChip = styled(Chip)(({ theme }) => ({
     textTransform: 'uppercase',
 }));
 
+
+const EmailTypography = styled(Typography)(({ emailLength }) => ({
+    fontSize: emailLength > 40 ? '0.875rem' : `calc(1rem - 0.01rem * ${emailLength})`,
+    whiteSpace: emailLength > 40 ? 'normal' : 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    wordBreak: emailLength > 40 ? 'break-word' : 'normal',
+    display: 'block',
+    maxWidth: '100%',
+}));
+
+
 const EmployeeCard = ({ employee, id, handleEditEmployeeClick, capitalizeWords }) => {
     const [anchorEl, setAnchorEl] = useState(null);
     const [userRole, setUserRole] = useState("");
@@ -111,10 +123,19 @@ const EmployeeCard = ({ employee, id, handleEditEmployeeClick, capitalizeWords }
                         />
                     </Box>
                     <Box sx={{ mt: 2 }}>
-                        <Typography variant='body2' sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
+                        <EmailTypography
+                            variant='body2'
+                            emailLength={employee.email.length}
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                mb: 1
+                            }}
+                        >
                             <EmailIcon fontSize='small' sx={{ mr: 1 }} />
                             {employee.email}
-                        </Typography>
+                        </EmailTypography>
                     </Box>
                 </CardContent>
             )}
