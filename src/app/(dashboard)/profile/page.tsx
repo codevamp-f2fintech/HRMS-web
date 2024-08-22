@@ -90,14 +90,16 @@ const Profile = () => {
     formData.append('aadhaarFrontImage', addressDetails.aadhaarFrontImage);
     formData.append('aadhaarBackImage', addressDetails.aadhaarBackImage);
 
-    const response = await fetch('/employee-verification', {
-      method: 'POST',
-      body: formData,
-    });
+    console.log("formData", formData);
 
-    if (response.ok) {
-      // Handle success
-    }
+    // const response = await fetch('/employee-verification', {
+    //   method: 'POST',
+    //   body: formData,
+    // });
+
+    // if (response.ok) {
+    //   // Handle success
+    // }
   };
 
   if (!userData) return null;
@@ -123,7 +125,7 @@ const Profile = () => {
           <Box sx={{ display: 'flex', mb: 3 }}>
             <InfoChip icon={<EmailIcon />} label={userData.email} />
             <InfoChip icon={<PhoneIcon />} label={userData.contact} />
-            <InfoChip icon={<LocationOnIcon />} label="Bareilly, UP, India" />
+            {/* <InfoChip icon={<LocationOnIcon />} label="Bareilly, UP, India" /> */}
           </Box>
 
           <Typography variant="body1" sx={{ mb: 3 }}>

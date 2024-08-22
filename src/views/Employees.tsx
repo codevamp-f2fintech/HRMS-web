@@ -35,6 +35,7 @@ export default function EmployeeGrid() {
   const { employees, hasMore, loading, error } = useSelector((state: RootState) => state.employees);
 
   const [showForm, setShowForm] = useState(false);
+  const [userRole, setUserRole] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [searchName, setSearchName] = useState('');
   const [selectedDesignation, setSelectedDesignation] = useState('');
@@ -47,14 +48,30 @@ export default function EmployeeGrid() {
   };
 
   useEffect(() => {
-    dispatch(fetchEmployees({ page, limit: 12, search: searchName }));
-  }, [dispatch, page]);
-
-  const handleScroll = useCallback(() => {
-    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 && !loading && hasMore) {
-      setPage(prevPage => prevPage + 1);
+    if (userRole === "") {
+      const user = JSON.parse(localStorage.getItem("user") || '{}');
+      setUserRole(user.role);
     }
-  }, [loading, hasMore]);
+  }, [userRole]);
+
+  useEffect(() => {
+    if (searchName === '' || selectedDesignation === '') {
+      dispatch(fetchEmployees({ page, limit: 12, search: searchName, designation: selectedDesignation }));
+    }
+  }, [dispatch, page, searchName, selectedDesignation]);
+
+  const handleScroll = useCallback(
+    debounce(() => {
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 && !loading && hasMore) {
+        setPage((prevPage) => {
+          const nextPage = prevPage + 1;
+          dispatch(fetchEmployees({ page: nextPage, limit: 12, search: searchName, designation: selectedDesignation }));
+          return nextPage;
+        });
+      }
+    }, 100),
+    [loading, hasMore, searchName, selectedDesignation]
+  );
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll);
@@ -78,26 +95,39 @@ export default function EmployeeGrid() {
 
   const debouncedSearch = useCallback(
     debounce(() => {
-      dispatch(fetchEmployees({ page: 1, limit: searchName !== '' ? 0 : 12, search: searchName }));
+      console.log("chal rha h") // sbse pehle ye dekho
+      dispatch(resetEmployees());
+      dispatch(fetchEmployees({ page: 1, limit: searchName !== '' ? 0 : 12, search: searchName, designation: selectedDesignation }));
     }, 300),
     [searchName, selectedDesignation]
   );
 
   useEffect(() => {
-    debouncedSearch();
-
+    if (searchName !== '' || selectedDesignation !== '') {
+      debouncedSearch();
+    }
     return debouncedSearch.cancel;
   }, [searchName, selectedDesignation, debouncedSearch]);
 
   const handleInputChange = (e) => {
     const searchValue = e.target.value;
 
+    setSelectedDesignation('')
     setSearchName(searchValue);
-
     if (searchValue === '') {
       setPage(1);
       dispatch(resetEmployees());
-      dispatch(fetchEmployees({ page: 1, limit: 12, search: '' }));
+    }
+  };
+
+  const handleDesignationChange = (e) => {
+    const designationValue = e.target.value;
+
+    setSearchName('')
+    setSelectedDesignation(designationValue);
+    if (designationValue === '') {
+      setPage(1);
+      dispatch(resetEmployees());
     }
   };
 
@@ -134,7 +164,7 @@ export default function EmployeeGrid() {
           >
             <ViewListIcon />
           </IconButton>
-          <Button
+          {userRole === '1' && <Button
             style={{ borderRadius: 50, backgroundColor: '#ff902f' }}
             variant='contained'
             color='warning'
@@ -143,6 +173,7 @@ export default function EmployeeGrid() {
           >
             Add Employee
           </Button>
+          }
         </Box>
       </Box>
       <Grid container spacing={6} alignItems='center' mb={2}>
@@ -155,7 +186,7 @@ export default function EmployeeGrid() {
             onChange={handleInputChange}
           />
         </Grid>
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} md={6}>
           <FormControl fullWidth>
             <InputLabel id='demo-simple-select-label'>Select Designation</InputLabel>
             <Select
@@ -164,7 +195,7 @@ export default function EmployeeGrid() {
               id='demo-simple-select'
               fullWidth
               value={selectedDesignation}
-              onChange={(e) => setSelectedDesignation(e.target.value)}
+              onChange={handleDesignationChange}
             >
               <MenuItem value="">Discard</MenuItem>
               <MenuItem value='1'>Admin</MenuItem>
@@ -173,16 +204,6 @@ export default function EmployeeGrid() {
               <MenuItem value='4'>Channel Partner</MenuItem>
             </Select>
           </FormControl>
-        </Grid>
-        <Grid item xs={12} md={3}>
-          <Button
-            style={{ padding: 15, backgroundColor: '#198754' }}
-            variant='contained'
-            fullWidth
-            onClick={debouncedSearch}
-          >
-            SEARCH
-          </Button>
         </Grid>
       </Grid>
       <Grid container spacing={6}>

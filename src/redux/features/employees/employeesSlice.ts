@@ -38,11 +38,12 @@ const initialState: EmployeesState = {
 export const fetchEmployees = createAsyncThunk(
   'employees/fetchEmployees',
   async (
-    { page = 1, limit = 12, search = '' }: { page?: number; limit?: number; search?: string },
+    { page = 1, limit = 12, search = '', designation = '' }: { page?: number; limit?: number; search?: string, designation?: string },
     { getState }
   ) => {
     const state = getState() as RootState;
     const isSearch = search.trim().length > 0;
+    // const isDesignation = designation.trim().length > 0;
     let token: string | null = null;
 
     if (typeof window !== "undefined") {
@@ -50,7 +51,7 @@ export const fetchEmployees = createAsyncThunk(
     }
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL}/employees/get?page=${page}&limit=${limit}&search=${search}`,
+      `${process.env.NEXT_PUBLIC_APP_URL}/employees/get?page=${page}&limit=${limit}&search=${search}&designation=${designation}`,
       {
         method: 'GET',
         headers: {
