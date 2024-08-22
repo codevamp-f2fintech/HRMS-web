@@ -84,7 +84,7 @@ export default function TimeSheetGrid() {
     }
 
     if (employees.length === 0) {
-      dispatch(fetchEmployees({ page, limit: ITEMS_PER_PAGE, search: '' }));
+      dispatch(fetchEmployees({ page, limit: ITEMS_PER_PAGE, search: '', designation: '' }));
     }
 
     if (attendances.length === 0) {

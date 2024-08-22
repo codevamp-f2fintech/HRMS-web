@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Grid, TextField, Typography, IconButton, Button, FormControl, InputLabel, Select, MenuItem, InputAdornment } from '@mui/material';
+import { Box, Grid, TextField, Typography, IconButton, Button, FormControl, InputLabel, Select, MenuItem, InputAdornment, Autocomplete } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../redux/store';
@@ -155,7 +155,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
                         dispatch(addOrUpdateEmployee(data));
                         toast.success('Employee updated successfully!');
                     } else {
-                        dispatch(fetchEmployees({ page, limit: 12, search: '' }));
+                        dispatch(fetchEmployees({ page, limit: 12, search: '', designation: '' }));
                         toast.success('Employee created successfully!');
                     }
                     setTimeout(() => handleClose(), 3000);
@@ -417,52 +417,33 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
                 </Grid>
                 <Grid item xs={12} md={6}>
                     <FormControl fullWidth error={!!errors.designation}>
-                        <InputLabel id="designation-select-label">Select Designation</InputLabel>
-                        <Select
-                            label="Select Designation"
-                            labelId="designation-select-label"
+                        <Autocomplete
                             id="designation-select"
-                            name="designation"
+                            options={[
+                                "Assistant Manager Hr", "Assistant Sales Manager", "Area Sales Manager", "Backend Developer", "Branch Manager",
+                                "Channel Partner", "Credit & Sales Manager", "Credit Manager", "Co-Founder & MD", "Digital Marketing Executive",
+                                "Financial Sales Intern", "Frontend Developer", "Founder & CEO", "Growth Manager", "Hr Interns",
+                                "IT Executive", "IT Head", "IT Infra & Networking", "Legal & Finance",
+                                "Operation Manager", "Regional Sales Head", "Relationship Manager", "Sales Manager",
+                                "Senior Accountant", "Software Developer", "Sources", "Sr. Operation Manager",
+                                "Team Leader", "Team Manager", "Tele Caller", "UI/UX Designer", "Web Developer",
+                                "Other"
+                            ]}
+                            getOptionLabel={(option) => option}
+                            renderInput={(params) => (
+                                <TextField {...params} label="Select Designation" variant="outlined" />
+                            )}
                             value={formData.designation}
-                            onChange={handleChange}
-                            fullWidth
-                        >
-                            <MenuItem value="Assistant Manager Hr">Assistant Manager Hr</MenuItem>
-                            <MenuItem value="Assistant Sales Manager">Assistant Sales Manager</MenuItem>
-                            <MenuItem value="Back end Developer">Back end Developer</MenuItem>
-                            <MenuItem value="Branch Manager">Branch Manager</MenuItem>
-                            <MenuItem value="Channel Partner">Channel Partner</MenuItem>
-                            <MenuItem value="Credit & Sales Manager">Credit & Sales Manager</MenuItem>
-                            <MenuItem value="Credit Manager">Credit Manager</MenuItem>
-                            <MenuItem value="Digital Marketing Executive">Digital Marketing Executive</MenuItem>
-                            <MenuItem value="Financial Sales Intern">Financial Sales Intern</MenuItem>
-                            <MenuItem value="Front end Developer">Front end Developer</MenuItem>
-                            <MenuItem value="Growth Manager">Growth Manager</MenuItem>
-                            <MenuItem value="Hr Interns">Hr Interns</MenuItem>
-                            <MenuItem value="IT Executive">IT Executive</MenuItem>
-                            <MenuItem value="IT Head">IT Head</MenuItem>
-                            <MenuItem value="IT Infra & Networking">IT Infra & Networking</MenuItem>
-                            <MenuItem value="Legal & Finance">Legal & Finance</MenuItem>
-                            <MenuItem value="Operation Manager">Operation Manager</MenuItem>
-                            <MenuItem value="Regional Sales Head">Regional Sales Head</MenuItem>
-                            <MenuItem value="Relationship Manager">Relationship Manager</MenuItem>
-                            <MenuItem value="Sales Manager">Sales Manager</MenuItem>
-                            <MenuItem value="Senior Accountant">Senior Accountant</MenuItem>
-                            <MenuItem value="Software Developer">Software Developer</MenuItem>
-                            <MenuItem value="Sources">Sources</MenuItem>
-                            <MenuItem value="Sr. Operation Manager">Sr. Operation Manager</MenuItem>
-                            <MenuItem value="Team Leader">Team Leader</MenuItem>
-                            <MenuItem value="Team Manager">Team Manager</MenuItem>
-                            <MenuItem value="Tele Caller">Tele Caller</MenuItem>
-                            <MenuItem value="UI/UX Designer">UI/UX Designer</MenuItem>
-                            <MenuItem value="Web Developer">Web Developer</MenuItem>
-                            <MenuItem value="Other">Other</MenuItem>
-                        </Select>
+                            onChange={(event, newValue) => {
+                                handleChange({ target: { name: "designation", value: newValue } });
+                            }}
+                        />
                         {errors.designation && (
                             <Typography color="error">{errors.designation}</Typography>
                         )}
                     </FormControl>
                 </Grid>
+
 
                 <Grid item xs={12} md={6}>
                     <TextField
