@@ -420,13 +420,13 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
                         <Autocomplete
                             id="designation-select"
                             options={[
-                                "Assistant Manager Hr", "Assistant Sales Manager", "Area Sales Manager", "Backend Developer", "Branch Manager",
-                                "Channel Partner", "Credit & Sales Manager", "Credit Manager", "Co-Founder & MD", "Digital Marketing Executive",
-                                "Financial Sales Intern", "Frontend Developer", "Founder & CEO", "Growth Manager", "Hr Interns",
-                                "IT Executive", "IT Head", "IT Infra & Networking", "Legal & Finance",
-                                "Operation Manager", "Regional Sales Head", "Relationship Manager", "Sales Manager",
-                                "Senior Accountant", "Software Developer", "Sources", "Sr. Operation Manager",
-                                "Team Leader", "Team Manager", "Tele Caller", "UI/UX Designer", "Web Developer",
+                                "Admin", "Assistant Manager Hr", "Assistant Sales Manager", "Area Sales Manager", "Backend Developer", "Branch Manager",
+                                "Channel Partner", "Credit & Sales Manager", "Credit Manager", "Credit Executive", "Credit Manager", "Co-Founder & MD", "Digital Marketing Executive",
+                                "Financial Sales Intern", "Frontend Developer", "Founder & CEO", "Growth Manager", "Hr Intern", "Ops Executive", "Ops Manager",
+                                "IT Executive", "IT Head", "IT Infra & Networking", "IT Intern", "Legal & Finance", "Music Head", "Marketing Manager", "Marketing Intern", "Marketing Executive",
+                                "Operation Manager", "Product Excutive", "Product Manager", "Regional Sales Head", "Relationship Manager", "Relationship Executive", "Sales Manager",
+                                "Senior Accountant", "Software Developer", "Sourcer", "Sr. Operation Manager",
+                                "Team Leader", "Team Manager", "UI/UX Designer", "Web Developer",
                                 "Other"
                             ]}
                             getOptionLabel={(option) => option}
@@ -471,6 +471,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
                         >
                             <MenuItem value='noida'>Noida</MenuItem>
                             <MenuItem value='bareilly'>Bareilly</MenuItem>
+                            <MenuItem value='bareilly'>Patel Nagar</MenuItem>
                         </Select>
                     </FormControl>
                 </Grid>
