@@ -422,7 +422,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
                             options={[
                                 "Admin", "Assistant Manager Hr", "Assistant Sales Manager", "Area Sales Manager", "Backend Developer", "Branch Manager",
                                 "Channel Partner", "Credit & Sales Manager", "Credit Manager", "Credit Executive", "Credit Manager", "Co-Founder & MD", "Digital Marketing Executive",
-                                "Financial Sales Intern", "Frontend Developer", "Founder & CEO", "Growth Manager", "Hr Intern", "Ops Executive", "Ops Manager",
+                                "Financial Sales Intern", "Frontend Developer", "Founder & CEO", "Growth Manager", "Hr Intern", "Hr Executive", "Hr Manager", "Ops Executive", "Ops Manager",
                                 "IT Executive", "IT Head", "IT Infra & Networking", "IT Intern", "Legal & Finance", "Music Head", "Marketing Manager", "Marketing Intern", "Marketing Executive",
                                 "Operation Manager", "Product Excutive", "Product Manager", "Regional Sales Head", "Relationship Manager", "Relationship Executive", "Sales Manager",
                                 "Senior Accountant", "Software Developer", "Sourcer", "Sr. Operation Manager",
@@ -471,7 +471,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
                         >
                             <MenuItem value='noida'>Noida</MenuItem>
                             <MenuItem value='bareilly'>Bareilly</MenuItem>
-                            <MenuItem value='bareilly'>Patel Nagar</MenuItem>
+                            <MenuItem value='patel nagar'>Patel Nagar</MenuItem>
                         </Select>
                     </FormControl>
                 </Grid>
