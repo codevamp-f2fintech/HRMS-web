@@ -104,6 +104,7 @@ export default function HolidayGrid() {
 
     const validateForm = () => {
       let isValid = true;
+
       const newErrors = {
         title: '',
         note: '',
@@ -144,6 +145,7 @@ export default function HolidayGrid() {
       }
 
       setErrors(newErrors);
+
       return isValid;
     };
 
@@ -327,7 +329,7 @@ export default function HolidayGrid() {
     {
       sortable: true,
       field: 'lineNo',
-      headerName: '#',
+      headerName: 'S.NO',
       headerClassName: 'super-app-theme--header',
       flex: 0,
       editable: false,

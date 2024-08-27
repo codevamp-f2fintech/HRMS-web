@@ -8,6 +8,7 @@ interface Attendance {
     first_name: string;
     last_name: string;
     image: string;
+    location: string;
   };
   employee_id: string;
   date: Date;
@@ -61,34 +62,49 @@ export const attendancesSlice = createSlice({
       state.attendances = [];
       state.filteredAttendance = [];
     },
-    filterAttendance(state, action: PayloadAction<{ name: string }>) {
-      const { name } = action.payload
+    filterAttendance(state, action: PayloadAction<{ name: string, location: string }>) {
+      const { name, location } = action.payload;
 
       state.filteredAttendance = state.attendances.filter(attendance => {
-        return (
-          (name ? attendance.employee.first_name.toLowerCase().includes(name.toLowerCase()) || attendance.employee.last_name.toLowerCase().includes(name.toLowerCase()) : true)
-        );
-      })
+        // Safeguard against null or undefined employee objects
+        const employee = attendance.employee;
+
+        // If employee is null or undefined, skip this attendance record
+        if (!employee) return false;
+
+        const nameMatch = name
+          ? employee.first_name?.toLowerCase().includes(name.toLowerCase()) ||
+          employee.last_name?.toLowerCase().includes(name.toLowerCase())
+          : true;
+
+        const locationMatch = location && location.toLowerCase() !== 'all'
+          ? employee.location?.toLowerCase().includes(location.toLowerCase())
+          : true;
+
+        return nameMatch && locationMatch;
+      });
     },
+
     resetFilter(state) {
       state.filteredAttendance = state.attendances;
-    }
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(fetchAttendances.pending, (state) => {
-      state.loading = true
-      state.error = null
+      state.loading = true;
+      state.error = null;
     })
       .addCase(fetchAttendances.fulfilled, (state, action) => {
-        state.attendances = action.payload
-        state.loading = false
+        state.attendances = action.payload;
+        state.loading = false;
       })
       .addCase(fetchAttendances.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.error.message || 'Something went wrong'  // Assuming error message is stored as a string in the API response
-      })
+        state.loading = false;
+        state.error = action.error.message || 'Something went wrong';
+      });
   },
-})
+});
+
 
 export const { filterAttendance, resetFilter, resetAttendances } = attendancesSlice.actions;
 

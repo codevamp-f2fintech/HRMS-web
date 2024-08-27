@@ -129,7 +129,7 @@ export default function LeavesGrid() {
       employee: '',
       start_date: '',
       end_date: '',
-      status: '',
+      status: 'Pending',
       application: '',
       type: '',
       day: ''
@@ -210,6 +210,7 @@ export default function LeavesGrid() {
       }
 
       setErrors(newErrors);
+
       return isValid;
     };
 
@@ -282,7 +283,7 @@ export default function LeavesGrid() {
     };
 
     // Filter employees based on user role
-    const filteredEmployees = userRole === '3'
+    const filteredEmployees = userRole !== '1'
       ? employees.filter(emp => emp._id === userId)
       : employees;
 
@@ -309,7 +310,8 @@ export default function LeavesGrid() {
                 onChange={handleChange}
                 required
                 error={!!errors.employee}
-                disabled={userRole === '3'}
+
+              // disabled={userRole === '3'}
               >
                 {filteredEmployees.map((employee) => (
                   <MenuItem key={employee._id} value={employee._id}>
@@ -358,7 +360,7 @@ export default function LeavesGrid() {
                 name='status'
                 value={formData.status}
                 onChange={handleChange}
-                disabled={userRole === '3'}
+                disabled={userRole !== '1'}
               >
                 <MenuItem value='Pending'>Pending</MenuItem>
                 <MenuItem value='Approved' >Approved</MenuItem>
@@ -458,7 +460,7 @@ export default function LeavesGrid() {
 
   const generateColumns = () => {
     const columns: GridColDef[] = [
-      {
+      ...(userRole === '1' ? [{
         field: 'employee_name',
         headerName: 'Employee',
         width: 220,
@@ -480,7 +482,8 @@ export default function LeavesGrid() {
             </Box>
           );
         },
-      },
+      }] : []),
+
       { field: 'start_date', headerName: 'Start Date', headerClassName: 'super-app-theme--header', width: 130, sortable: false },
       { field: 'end_date', headerName: 'End Date', headerClassName: 'super-app-theme--header', width: 130, sortable: false },
       { field: 'status', headerName: 'Status', headerClassName: 'super-app-theme--header', width: 110, sortable: false },
@@ -538,7 +541,7 @@ export default function LeavesGrid() {
 
     const data = await response.json();
 
-    const filteredLeaves = userRole === '3'
+    const filteredLeaves = Number(userRole) >= 2
       ? data : leaves;
 
 
@@ -608,7 +611,7 @@ export default function LeavesGrid() {
               >
                 Add Leave
               </Button>
-            ) : userRole === "3" ? (
+            ) : Number(userRole) >= 2 ? (
               <Button
                 style={{ borderRadius: 50, backgroundColor: '#ff902f' }}
                 variant='contained'

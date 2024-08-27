@@ -155,6 +155,7 @@ export default function AssestsGrid() {
 
     const validateForm = () => {
       let isValid = true;
+
       const newErrors = {
         employee: '',
         description: '',
@@ -207,6 +208,7 @@ export default function AssestsGrid() {
       }
 
       setErrors(newErrors);
+
       return isValid;
     };
 
@@ -425,7 +427,7 @@ export default function AssestsGrid() {
 
   const generateColumns = () => {
     const columns: GridColDef[] = [
-      {
+      ...(userRole === '1' ? [{
         field: 'employee_name',
         headerName: 'Employee',
         width: 220,
@@ -446,7 +448,8 @@ export default function AssestsGrid() {
             </Box>
           );
         },
-      },
+      }] : []),
+
       {
         field: 'name',
         headerName: 'Asset Name',
@@ -538,7 +541,12 @@ export default function AssestsGrid() {
   }
 
   const transformData = (): GroupedData[] => {
-    const assestSource = Array.isArray(filteredAssest) && filteredAssest.length > 0 ? filteredAssest : Array.isArray(assests) ? assests : [];
+    let assestSource = Array.isArray(filteredAssest) && filteredAssest.length > 0 ? filteredAssest : Array.isArray(assests) ? assests : [];
+
+    if (Number(userRole) >= 2) {
+
+      assestSource = assestSource.filter(asset => asset.employee && asset.employee._id === userId);
+    }
 
     if (!Array.isArray(assestSource) || assestSource.length === 0) {
       return [];
