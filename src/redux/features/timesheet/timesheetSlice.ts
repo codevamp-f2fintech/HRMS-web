@@ -1,8 +1,6 @@
 import type { PayloadAction } from "@reduxjs/toolkit";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-
-
 interface TimeSheet {
   _id: string;
   employee: {
@@ -58,27 +56,29 @@ export const fetchTimeSheet = createAsyncThunk('timesheets/fetchTimeSheet', asyn
     throw new Error('Failed to fetch time sheets');
   }
 
-
-  return (await response.json()) as TimeSheet[]
-})
+  return (await response.json()) as TimeSheet[];
+});
 
 export const timesheetSlice = createSlice({
   name: 'timesheets',
   initialState,
   reducers: {
-    filterTimesheet(state, action: PayloadAction<{ name: string; status: string }>) {
-      const { name, status } = action.payload;
+    resetTimesheets(state) {
+      state.timesheets = [];
+      state.filteredTimesheet = [];
+    },
+    filterTimesheet(state, action: PayloadAction<{ name: string; status: string; month: number }>) {
+      const { name, status, month } = action.payload;
 
       console.log("name is", name);
 
-
       state.filteredTimesheet = state.timesheets.filter(timesheet => {
-        console.log("time sheet first name", timesheet.employee.first_name)
+        const timesheetMonth = new Date(timesheet.attendance.date).getMonth() + 1;
 
         return (
           (name ? timesheet.employee.first_name.toLowerCase().includes(name.toLowerCase()) || timesheet.employee.last_name.toLowerCase().includes(name.toLowerCase()) : true) &&
-          (status ? timesheet.status === status : true)
-
+          (status ? timesheet.status === status : true) &&
+          (month ? timesheetMonth === month : true)
         );
       });
     },
@@ -97,10 +97,10 @@ export const timesheetSlice = createSlice({
       })
       .addCase(fetchTimeSheet.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Something went wrong'
-      })
+        state.error = action.error.message || 'Something went wrong';
+      });
   }
-})
+});
 
-export const { filterTimesheet, resetFilter } = timesheetSlice.actions;
+export const { filterTimesheet, resetFilter, resetTimesheets } = timesheetSlice.actions;
 export default timesheetSlice.reducer;
