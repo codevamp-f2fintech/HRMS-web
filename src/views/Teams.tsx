@@ -371,7 +371,7 @@ export default function TeamGrid() {
     }
 
     if (employees.length === 0) {
-      dispatch(fetchEmployees({ page: 1, limit: 0, search: '' }));
+      dispatch(fetchEmployees({ page: 1, limit: 0, search: '', designation: '' }));
     }
   }, [dispatch, teams.length, employees.length]);
 

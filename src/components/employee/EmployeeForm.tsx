@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 
-import { Box, Grid, TextField, Typography, IconButton, Button, FormControl, InputLabel, Select, MenuItem, InputAdornment } from '@mui/material';
+import { Box, Grid, TextField, Typography, IconButton, Button, FormControl, InputLabel, Select, MenuItem, InputAdornment, Autocomplete } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { useDispatch } from 'react-redux';
 
+import { toast, ToastContainer } from 'react-toastify';
+
 import type { AppDispatch } from '../../redux/store';
 import { addOrUpdateEmployee } from '@/redux/features/employees/employeesSlice';
+
+import 'react-toastify/dist/ReactToastify.css';
 
 const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }) => {
 
@@ -13,6 +17,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
     first_name: "",
     last_name: "",
     email: "",
+    work_email: "",
     contact: "",
     role_priority: "",
     dob: "",
@@ -44,6 +49,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
           first_name: selected.first_name,
           last_name: selected.last_name,
           email: selected.email,
+          work_email: selected.work_email,
           contact: selected.contact,
           role_priority: selected.role_priority,
           dob: selected.dob,
@@ -104,11 +110,11 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
 
   const validate = () => {
     const newErrors = {};
-    const requiredFields = ['first_name', 'last_name', 'email', 'contact', 'role_priority', 'dob', 'gender', 'designation', 'joining_date', 'password', 'code', 'location'];
+    const requiredFields = ['first_name', 'last_name', 'email', 'work_email', 'contact', 'role_priority', 'dob', 'gender', 'designation', 'joining_date', 'password', 'code', 'location'];
 
     requiredFields.forEach(field => {
       if (!formData[field]) {
-        newErrors[field] = `${field.replace('_', ' ')} is required`;
+        newErrors[field] = `${field.replace('_', ' ')} is require`
       }
     });
 
@@ -145,18 +151,32 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
     })
       .then(response => response.json())
       .then(data => {
-        handleClose();
-
-        if (employee) {
-          dispatch(addOrUpdateEmployee(data));
+        if (data.error) {
+          // Check for specific error messages and show corresponding toast notifications
+          if (data.error === 'Email already exists') {
+            toast.error('Email already exists. Please use a different email.');
+          } else {
+            toast.error(data.error || 'An error occurred. Please try again.');
+          }
         } else {
-          dispatch(fetchEmployees({ page, limit: 12, search: '' }));
+          if (employee) {
+            dispatch(addOrUpdateEmployee(data));
+            toast.success('Employee updated successfully!');
+          } else {
+            dispatch(fetchEmployees({ page, limit: 12, search: '', designation: '' }));
+            toast.success('Employee created successfully!');
+          }
+
+          setTimeout(() => handleClose(), 3000);
         }
       })
       .catch(error => {
         console.error('Error:', error);
+        toast.error('An error occurred. Please try again.');
       });
   };
+
+
 
   const handlePasswordFieldVisibility = () => {
     setIsPasswordFieldVisible(true);
@@ -168,6 +188,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
 
   return (
     <Box sx={{ flexGrow: 1, padding: 2 }}>
+      <ToastContainer position="top-center" autoClose={3000} hideProgressBar={false} />
       <Box display='flex' justifyContent='space-between' alignItems='center'>
         <Typography style={{ fontSize: '2em' }} variant='h5' gutterBottom>
           {employee ? 'Edit Employee' : 'Add Employee'}
@@ -237,6 +258,18 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
+            label='Work Email'
+            name='work_email'
+            value={formData.work_email}
+            onChange={handleChange}
+            required
+            error={!!errors.work_email}
+            helperText={errors.work_email}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
             type='date'
             label='DOB'
             name="dob"
@@ -279,6 +312,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
                 name='password'
                 value={formData.password}
                 onChange={handleChange}
+                autoComplete="off"
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position='end'>
@@ -305,6 +339,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
                 name='confirm_password'
                 value={formData.confirm_password}
                 onChange={handleChange}
+                autoComplete="off"
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position='end'>
@@ -391,39 +426,34 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
         </Grid>
         <Grid item xs={12} md={6}>
           <FormControl fullWidth error={!!errors.designation}>
-            <InputLabel id='designation-select-label'>Select Designation</InputLabel>
-            <Select
-              label='Select Designation'
-              labelId='designation-select-label'
-              id='designation-select'
-              name='designation'
+            <Autocomplete
+              id="designation-select"
+              options={[
+                "Admin", "Assistant Manager Hr", "Assistant Sales Manager", "Area Sales Manager", "Backend Developer", "Branch Manager",
+                "Channel Partner", "Credit & Sales Manager", "Credit Manager", "Credit Executive", "Credit Manager", "Co-Founder & MD", "Digital Marketing Executive",
+                "Financial Sales Intern", "Frontend Developer", "Founder & CEO", "Growth Manager", "Hr Intern", "Hr Executive", "Hr Manager", "Ops Executive", "Ops Manager",
+                "IT Executive", "IT Head", "IT Infra & Networking", "IT Intern", "Legal & Finance", "Music Head", "Marketing Manager", "Marketing Intern", "Marketing Executive",
+                "Operation Manager", "Product Excutive", "Product Manager", "Regional Sales Head", "Relationship Manager", "Relationship Executive", "Sales Manager",
+                "Senior Accountant", "Software Developer", "Sourcer", "Sr. Operation Manager",
+                "Team Leader", "Team Manager", "UI/UX Designer", "Web Developer",
+                "Other"
+              ]}
+              getOptionLabel={(option) => option}
+              renderInput={(params) => (
+                <TextField {...params} label="Select Designation" variant="outlined" />
+              )}
               value={formData.designation}
-              onChange={handleChange}
-              fullWidth
-            >
-              <MenuItem value='Assistant Manager Hr'>Assistant Manager Hr</MenuItem>
-              <MenuItem value='Assistant Sales Manager'>Assistant Sales Manager</MenuItem>
-              <MenuItem value='Back end Developer'>Back end Developer</MenuItem>
-              <MenuItem value='Channel Partner'>Channel Partner</MenuItem>
-              <MenuItem value='Credit Manager'>Credit Manager</MenuItem>
-              <MenuItem value='Digital Marketing Executive'>Digital Marketing Executive</MenuItem>
-              <MenuItem value='Financial Sales Intern'>Financial Sales Intern</MenuItem>
-              <MenuItem value='Front end Developer'>Front end Developer</MenuItem>
-              <MenuItem value='Growth Manager'>Growth Manager</MenuItem>
-              <MenuItem value='Hr Interns'>Hr Interns</MenuItem>
-              <MenuItem value='IT Infra & Networking'>IT Infra & Networking</MenuItem>
-              <MenuItem value='Legal & Finance'>Legal & Finance</MenuItem>
-              <MenuItem value='Other'>Other</MenuItem>
-              <MenuItem value='Regional Sales Head'>Regional Sales Head</MenuItem>
-              <MenuItem value='Senior Accountant'>Senior Accountant</MenuItem>
-              <MenuItem value='Team Manager'>Team Manager</MenuItem>
-              <MenuItem value='Tele Caller'>Tele Caller</MenuItem>
-              <MenuItem value='UI/UX Designer'>UI/UX Designer</MenuItem>
-              <MenuItem value='Web Developer'>Web Developer</MenuItem>
-            </Select>
-            {errors.designation && <Typography color='error'>{errors.designation}</Typography>}
+              onChange={(event, newValue) => {
+                handleChange({ target: { name: "designation", value: newValue } });
+              }}
+            />
+            {errors.designation && (
+              <Typography color="error">{errors.designation}</Typography>
+            )}
           </FormControl>
         </Grid>
+
+
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
@@ -450,6 +480,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
             >
               <MenuItem value='noida'>Noida</MenuItem>
               <MenuItem value='bareilly'>Bareilly</MenuItem>
+              <MenuItem value='patel nagar'>Patel Nagar</MenuItem>
             </Select>
           </FormControl>
         </Grid>
