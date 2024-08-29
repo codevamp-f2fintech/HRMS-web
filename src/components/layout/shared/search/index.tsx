@@ -10,18 +10,18 @@ const NavSearch = () => {
   // Hooks
   const { isBreakpointReached } = useVerticalNav()
 
-  return isBreakpointReached ? (
-    <IconButton className='text-textPrimary'>
-      <i className='ri-search-line' />
-    </IconButton>
-  ) : (
-    <div className='flex items-center cursor-pointer gap-2'>
-      <IconButton className='text-textPrimary'>
-        <i className='ri-search-line' />
-      </IconButton>
-      <div className='whitespace-nowrap select-none text-textDisabled'>Search ⌘K</div>
-    </div>
-  )
+  // return isBreakpointReached ? (
+  //   <IconButton className='text-textPrimary'>
+  //     <i className='ri-search-line' />
+  //   </IconButton>
+  // ) : (
+  //   <div className='flex items-center cursor-pointer gap-2'>
+  //     <IconButton className='text-textPrimary'>
+  //       <i className='ri-search-line' />
+  //     </IconButton>
+  //     <div className='whitespace-nowrap select-none text-textDisabled'>Search ⌘K</div>
+  //   </div>
+  // )
 }
 
 export default NavSearch

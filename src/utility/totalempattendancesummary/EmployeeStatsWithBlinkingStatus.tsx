@@ -1,8 +1,17 @@
 import React, { useEffect, useState } from 'react';
 
-import { Box, Typography, CircularProgress, Grid } from '@mui/material';
 import { useSelector } from 'react-redux';
 import dayjs from 'dayjs';
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Grid,
+  Paper,
+  useTheme,
+  ThemeProvider,
+  createTheme
+} from '@mui/material';
 
 import { apiResponse } from '@/utility/apiResponse/employeesResponse';
 
@@ -10,60 +19,89 @@ interface Employee {
   _id: string;
 }
 
-const BlinkingStatus = ({ count, status }: { count: number; status: string }) => {
+interface AttendanceCounts {
+  Present: number;
+  Absent: number;
+  OnLeave: number;
+  OnHalf: number;
+}
+
+interface RootState {
+  attendances: {
+    attendances: Array<{
+      date: string;
+      status: string;
+      employee: {
+        _id: string;
+      };
+    }>;
+  };
+}
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#3f51b5',
+    },
+    secondary: {
+      main: '#f50057',
+    },
+  },
+});
+
+const BlinkingStatus: React.FC<{ count: number; status: string }> = ({ count, status }) => {
   const [blink, setBlink] = useState(true);
+  const theme = useTheme();
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setBlink((prev) => !prev);
-    }, 1000);
+    const interval = setInterval(() => setBlink(prev => !prev), 1000);
+
 
     return () => clearInterval(interval);
   }, []);
 
   const getColor = () => {
     switch (status) {
-      case 'Present':
-        return { backgroundColor: 'green', textColor: 'white' };
-      case 'Absent':
-        return { backgroundColor: 'red', textColor: 'white' };
-      case 'On Leave':
-        return { backgroundColor: 'yellow', textColor: 'black' };
-      case 'On Half':
-        return { backgroundColor: 'orange', textColor: 'white' };
-      default:
-        return { backgroundColor: 'gray', textColor: 'white' };
+      case 'Present': return { backgroundColor: theme.palette.success.main, textColor: theme.palette.common.white };
+      case 'Absent': return { backgroundColor: theme.palette.error.main, textColor: theme.palette.common.white };
+      case 'On Leave': return { backgroundColor: theme.palette.warning.main, textColor: theme.palette.common.black };
+      case 'On Half': return { backgroundColor: theme.palette.info.main, textColor: theme.palette.common.white };
+      default: return { backgroundColor: theme.palette.grey[500], textColor: theme.palette.common.white };
     }
   };
 
   const { backgroundColor, textColor } = getColor();
 
   return (
-    <Box
+    <Paper
+      elevation={3}
       sx={{
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-
         backgroundColor,
         padding: '10px',
-        borderRadius: '8px',
-        opacity: blink ? 1 : 0.5,
+        borderRadius: '12px',
+        opacity: blink ? 1 : 0.7,
         transition: 'opacity 0.5s ease-in-out',
-        minWidth: '100px',
+        height: '100%',
       }}
     >
-      <Typography variant="h5" sx={{ color: textColor }}>
-        {status}: {count}
+      <Typography variant="h5" sx={{ color: textColor, fontWeight: 'bold', mb: 1 }}>
+        {count}
       </Typography>
-    </Box>
+      <Typography variant="h6" sx={{ color: textColor }}>
+        {status}
+      </Typography>
+    </Paper>
   );
 };
 
-const EmployeeAttendanceStatus = () => {
+const EmployeeAttendanceStatus: React.FC = () => {
   const [totalEmployees, setTotalEmployees] = useState<number>(0);
 
-  const [attendanceCounts, setAttendanceCounts] = useState({
+  const [attendanceCounts, setAttendanceCounts] = useState<AttendanceCounts>({
     Present: 0,
     Absent: 0,
     OnLeave: 0,
@@ -74,6 +112,7 @@ const EmployeeAttendanceStatus = () => {
   const [error, setError] = useState<string>('');
 
   const todayDate = dayjs().format('YYYY-MM-DD');
+  const attendances = useSelector((state: RootState) => state.attendances.attendances);
 
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -83,7 +122,7 @@ const EmployeeAttendanceStatus = () => {
         setTotalEmployees(employees.length);
         setLoading(false);
       } catch (error: any) {
-        setError(error.message);
+        setError(error.message || 'An unexpected error occurred.');
         setLoading(false);
       }
     };
@@ -91,23 +130,30 @@ const EmployeeAttendanceStatus = () => {
     fetchEmployees();
   }, []);
 
-  const attendances = useSelector((state: RootState) => state.attendances.attendances);
-
   useEffect(() => {
     if (attendances.length > 0) {
-      const counts = {
+      const counts: AttendanceCounts = {
         Present: 0,
         Absent: 0,
         OnLeave: 0,
         OnHalf: 0,
       };
 
-      attendances.forEach((attendance) => {
+      const uniqueAttendance = new Set<string>(); // Set to track unique employee attendance per day
+
+      attendances.forEach(attendance => {
         if (attendance.date === todayDate) {
-          if (attendance.status === 'Present') counts.Present += 1;
-          else if (attendance.status === 'Absent') counts.Absent += 1;
-          else if (attendance.status === 'On Leave') counts.OnLeave += 1;
-          else if (attendance.status === 'On Half') counts.OnHalf += 1;
+          const uniqueKey = `${attendance.date}-${attendance.status}-${attendance.employee?._id}`;
+
+          if (!uniqueAttendance.has(uniqueKey)) {
+            uniqueAttendance.add(uniqueKey);
+
+            const status = attendance.status.replace(' ', '') as keyof AttendanceCounts;
+
+            if (status in counts) {
+              counts[status] += 1;
+            }
+          }
         }
       });
 
@@ -117,40 +163,38 @@ const EmployeeAttendanceStatus = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" my={4}>
-        <CircularProgress />
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress size={60} />
       </Box>
     );
   }
 
   if (error) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" my={4}>
-        <Typography color="error">{error || 'An unexpected error occurred.'}</Typography>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <Typography color="error" variant="h6">{error}</Typography>
       </Box>
     );
   }
 
   return (
-    <Box mb={4}>
-      <Typography variant="h5" gutterBottom>
-        Total Employees: {totalEmployees}
-      </Typography>
-      <Grid container spacing={2}>
-        <Grid item xs={12} sm={6} md={3}>
-          <BlinkingStatus count={attendanceCounts.Present} status="Present" />
+    <ThemeProvider theme={theme}>
+      <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
+        <Typography variant="h6" gutterBottom color="text.secondary">
+          Total Employees: {totalEmployees}
+        </Typography>
+        <Typography variant="subtitle1" gutterBottom color="text.secondary">
+          Date: {dayjs().format('MMMM D, YYYY')}
+        </Typography>
+        <Grid container spacing={3} sx={{ mt: 2 }}>
+          {Object.entries(attendanceCounts).map(([status, count]) => (
+            <Grid item xs={12} sm={6} md={3} key={status}>
+              <BlinkingStatus count={count} status={status.replace(/([A-Z])/g, ' $1').trim()} />
+            </Grid>
+          ))}
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <BlinkingStatus count={attendanceCounts.Absent} status="Absent" />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <BlinkingStatus count={attendanceCounts.OnLeave} status="On Leave" />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <BlinkingStatus count={attendanceCounts.OnHalf} status="On Half" />
-        </Grid>
-      </Grid>
-    </Box>
+      </Paper>
+    </ThemeProvider>
   );
 };
 
