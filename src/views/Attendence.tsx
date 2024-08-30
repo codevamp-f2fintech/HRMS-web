@@ -661,7 +661,7 @@ export default function AttendanceGrid() {
             if (!status && !isSunday && !isFutureDate) {
               return (
                 <Button
-                  style={{ color: 'blue', marginTop: '35%' }}
+                  style={{ color: 'blue', marginTop: '30%' }}
                   onClick={() => handleAttendanceAddClick(employeeId, employeeName, day)}
                 >
                   Mark
@@ -669,9 +669,14 @@ export default function AttendanceGrid() {
               );
             }
 
-            if (isSunday && day !== lastSunday) {
-              // Show the WeekendIcon for all Sundays except the last Sunday
-              return <WeekendIcon style={{ color: 'blue', marginTop: '35%' }} />;
+            if (isSunday && !status) {
+              // If it's a Sunday and no status is marked, show the WeekendIcon
+              return (
+                <WeekendIcon
+                  style={{ color: 'blue', marginTop: '35%', cursor: 'pointer' }}
+                  onClick={() => handleAttendanceAddClick(employeeId, employeeName, day)}
+                />
+              );
             } else if (day === lastSunday) {
               // Allow editing only on the last Sunday
               if (status === 'Present') {
@@ -818,75 +823,92 @@ export default function AttendanceGrid() {
         {userRole === '1' && <EmployeeStatsWithBlinkingStatus />}
 
 
-        <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
-          <Box>
-            <Typography style={{ fontSize: '2em' }} variant='h5' gutterBottom>
-              Attendance
-            </Typography>
-            <Typography
-              style={{ fontSize: '1em', fontWeight: 'bold' }}
-              variant='subtitle1'
-              gutterBottom
-            >
-              Dashboard / Attendance
-            </Typography>
-          </Box>
-
-          {userRole === "1" && <Box display='flex' alignItems='center'>
-            <FormControl fullWidth sx={{ mr: 2 }}>
-              <InputLabel required id='demo-simple-select-label'>
-                Month
-              </InputLabel>
-              <Select
-                label='Select Month'
-                labelId='demo-simple-select-label'
-                id='demo-simple-select'
-                value={month}
-                onChange={(e) => setMonth(e.target.value)}
+        <Box mb={2}>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm={6} md={6}>
+              <Typography style={{ fontSize: '2em' }} variant='h5' gutterBottom>
+                Attendance
+              </Typography>
+              <Typography
+                style={{ fontSize: '1em', fontWeight: 'bold' }}
+                variant='subtitle1'
+                gutterBottom
               >
-                <MenuItem value={1}>January</MenuItem>
-                <MenuItem value={2}>February</MenuItem>
-                <MenuItem value={3}>March</MenuItem>
-                <MenuItem value={4}>April</MenuItem>
-                <MenuItem value={5}>May</MenuItem>
-                <MenuItem value={6}>June</MenuItem>
-                <MenuItem value={7}>July</MenuItem>
-                <MenuItem value={8}>August</MenuItem>
-                <MenuItem value={9}>September</MenuItem>
-                <MenuItem value={10}>October</MenuItem>
-                <MenuItem value={11}>November</MenuItem>
-                <MenuItem value={12}>December</MenuItem>
-              </Select>
-            </FormControl>
+                Dashboard / Attendance
+              </Typography>
+            </Grid>
 
-            <Button
-              style={{ borderRadius: 50, backgroundColor: '#ff902f', width: '400px', padding: '15px' }}
-              variant='contained'
-              color='warning'
-              startIcon={<AddIcon />}
-              onClick={handleAttendanceAddClick}
-            >
-              Add Attendance
-            </Button>
-            <Button
-              style={{ borderRadius: 50, backgroundColor: '#ff902f', width: '50px', padding: '15px', marginLeft: '10px' }}
-              variant='contained'
-              color='warning'
-              onClick={handlePreviousDaysClick}
-              disabled={startDayIndex === 0}
-            >
-              {'<'}
-            </Button>
-            <Button
-              style={{ borderRadius: 50, backgroundColor: '#ff902f', width: '50px', padding: '15px', marginLeft: '10px' }}
-              variant='contained'
-              color='warning'
-              onClick={handleNextDaysClick}
-              disabled={startDayIndex + daysToShow >= 30}
-            >
-              {'>'}
-            </Button>
-          </Box>}
+            {userRole === "1" && (
+              <Grid spacing={3} item xs={12} sm={6} md={6} container justifyContent="flex-end" alignItems="center">
+                <Grid item xs={12} sm={6} md={4}>
+                  <FormControl fullWidth>
+                    <InputLabel required id='demo-simple-select-label'>
+                      Month
+                    </InputLabel>
+                    <Select
+                      label='Select Month'
+                      labelId='demo-simple-select-label'
+                      id='demo-simple-select'
+                      value={month}
+                      onChange={(e) => setMonth(e.target.value)}
+                    >
+                      <MenuItem value={1}>January</MenuItem>
+                      <MenuItem value={2}>February</MenuItem>
+                      <MenuItem value={3}>March</MenuItem>
+                      <MenuItem value={4}>April</MenuItem>
+                      <MenuItem value={5}>May</MenuItem>
+                      <MenuItem value={6}>June</MenuItem>
+                      <MenuItem value={7}>July</MenuItem>
+                      <MenuItem value={8}>August</MenuItem>
+                      <MenuItem value={9}>September</MenuItem>
+                      <MenuItem value={10}>October</MenuItem>
+                      <MenuItem value={11}>November</MenuItem>
+                      <MenuItem value={12}>December</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={6} md={4} container spacing={1} justifyContent="flex-end">
+                  <Button
+                    fullWidth
+                    style={{ borderRadius: 50, backgroundColor: '#ff902f', padding: '15px' }}
+                    variant='contained'
+                    color='warning'
+                    startIcon={<AddIcon />}
+                    onClick={handleAttendanceAddClick}
+                  >
+                    Add Attendance
+                  </Button>
+                </Grid>
+
+                <Grid item xs={6} sm={3} md={2}>
+                  <Button
+                    fullWidth
+                    style={{ borderRadius: 50, backgroundColor: '#ff902f', padding: '15px' }}
+                    variant='contained'
+                    color='warning'
+                    onClick={handlePreviousDaysClick}
+                    disabled={startDayIndex === 0}
+                  >
+                    {'<'}
+                  </Button>
+                </Grid>
+
+                <Grid item xs={6} sm={3} md={2}>
+                  <Button
+                    fullWidth
+                    style={{ borderRadius: 50, backgroundColor: '#ff902f', padding: '15px' }}
+                    variant='contained'
+                    color='warning'
+                    onClick={handleNextDaysClick}
+                    disabled={startDayIndex + daysToShow >= 30}
+                  >
+                    {'>'}
+                  </Button>
+                </Grid>
+              </Grid>
+            )}
+          </Grid>
         </Box>
         {userRole === "1" && <Grid container spacing={6} alignItems='center' mb={2}>
           <Grid item xs={12} md={6}>

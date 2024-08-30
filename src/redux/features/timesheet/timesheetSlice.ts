@@ -76,7 +76,7 @@ export const timesheetSlice = createSlice({
         const timesheetMonth = new Date(timesheet.attendance.date).getMonth() + 1;
 
         return (
-          (name ? timesheet.employee.first_name.toLowerCase().includes(name.toLowerCase()) || timesheet.employee.last_name.toLowerCase().includes(name.toLowerCase()) : true) &&
+          (name ? timesheet.employee?.first_name.toLowerCase().includes(name.toLowerCase()) || timesheet.employee?.last_name.toLowerCase().includes(name.toLowerCase()) : true) &&
           (status ? timesheet.status === status : true) &&
           (month ? timesheetMonth === month : true)
         );

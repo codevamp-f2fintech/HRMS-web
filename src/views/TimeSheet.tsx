@@ -25,6 +25,8 @@ import {
   FormControl,
   InputLabel
 } from '@mui/material'
+import Tooltip from '@mui/material/Tooltip';
+
 import { useDispatch, useSelector } from 'react-redux';
 import { Add, Remove } from '@mui/icons-material';
 import SearchIcon from '@mui/icons-material/Search';
@@ -213,12 +215,12 @@ export default function TimeSheetGrid() {
 
   const transformData = () => {
     const filteredAttendances = Number(userRole) >= 3
-      ? attendances.filter(att => att.employee._id === userId && new Date(att.date).getMonth() + 1 === month)
+      ? attendances.filter(att => att.employee?._id === userId && new Date(att.date).getMonth() + 1 === month)
       : attendances.filter(att => new Date(att.date).getMonth() + 1 === month);
 
     const updatedData = filteredAttendances.map(attendance => {
       const timesheet = timesheets.find(ts => ts.attendance._id === attendance._id);
-      const employee = employees.find(emp => emp._id === attendance.employee._id);
+      const employee = employees.find(emp => emp._id === attendance.employee?._id);
 
       return {
         _id: timesheet ? timesheet._id : null,
@@ -235,7 +237,23 @@ export default function TimeSheetGrid() {
       };
     });
 
-    return updatedData;
+    const uniqueData = new Map();
+
+    updatedData.forEach(item => {
+      const dateKey = item.attendance_date;
+
+      if (!uniqueData.has(dateKey)) {
+        uniqueData.set(dateKey, item);
+      }
+    });
+
+    // Convert the Map back to an array
+    const uniqueRows = Array.from(uniqueData.values());
+
+    // Sort the data by attendance_date in ascending order
+    uniqueRows.sort((a, b) => new Date(a.attendance_date) - new Date(b.attendance_date));
+
+    return uniqueRows;
   };
 
   const rows = transformData();
@@ -413,7 +431,9 @@ export default function TimeSheetGrid() {
                         </IconButton>
                       </Box>
                     ) : (
-                      <span style={Number(userRole) >= 3 ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}} onClick={() => Number(userRole) >= 3 && handleEditClick(row)}>{row.time || '0'}</span>
+                      <Tooltip title="Click here">
+                        <span style={Number(userRole) >= 3 ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}} onClick={() => Number(userRole) >= 3 && handleEditClick(row)}>{row.time || '0'}</span>
+                      </Tooltip>
                     )}
                   </TableCell>
                   <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }} >
@@ -429,15 +449,19 @@ export default function TimeSheetGrid() {
                           <MenuItem value="Rejected">REJECTED</MenuItem>
                         </Select>
                       ) : (
+
                         <span>{row.status || 'Pending'}</span>
+
                       )
                     ) : (
-                      <span
-                        style={Number(userRole) <= 2 ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}}
-                        onClick={() => handleEditClick(row)}
-                      >
-                        {row.status}
-                      </span>
+                      <Tooltip title="Click here">
+                        <span
+                          style={Number(userRole) <= 2 ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}}
+                          onClick={() => handleEditClick(row)}
+                        >
+                          {row.status}
+                        </span>
+                      </Tooltip>
                     )}
                   </TableCell>
                   <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }} >
@@ -448,7 +472,9 @@ export default function TimeSheetGrid() {
                         onChange={(e) => handleChange(e, row._id || row.attendance_id)}
                       />
                     ) : (
-                      <span onClick={() => Number(userRole) >= 3 && handleEditClick(row)}>{row.note || ''}</span>
+                      <Tooltip title="Click here">
+                        <span onClick={() => Number(userRole) >= 3 && handleEditClick(row)}>{row.note || ''}</span>
+                      </Tooltip>
                     )}
                   </TableCell>
                   <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }} >
@@ -460,7 +486,9 @@ export default function TimeSheetGrid() {
                         onChange={(e) => handleChange(e, row._id || row.attendance_id)}
                       />
                     ) : (
-                      <span style={Number(userRole) >= 3 ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}} onClick={() => Number(userRole) >= 3 && handleEditClick(row)}>{row.submission_date || ''}</span>
+                      <Tooltip title="Click here">
+                        <span style={Number(userRole) >= 3 ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}} onClick={() => Number(userRole) >= 3 && handleEditClick(row)}>{row.submission_date || ''}</span>
+                      </Tooltip>
                     )}
                   </TableCell>
                 </TableRow>
