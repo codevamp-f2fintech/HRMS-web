@@ -10,6 +10,8 @@ import attendancesReducer from './features/attendances/attendancesSlice';
 import policiesReducer from './features/policies/policiesSlice';
 import employeesReducer from './features/employees/employeesSlice';
 import timesheetsReducer from './features/timesheet/timesheetSlice';
+import designationReducer from '@/redux/features/designation/designationSlice';
+
 
 const store = configureStore({
   reducer: {
@@ -22,6 +24,7 @@ const store = configureStore({
     policies: policiesReducer,
     employees: employeesReducer,
     timesheets: timesheetsReducer,
+    designations: designationReducer,
   }
 })
 
