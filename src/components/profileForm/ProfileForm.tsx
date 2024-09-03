@@ -1,10 +1,9 @@
 'use client'
 import React, { useState, useEffect } from 'react';
-import { Typography, Button, Box, Chip, Tabs, Tab, TextField } from '@mui/material';
+import { Typography, Button, Box, Chip, Tabs, Tab, TextField, Divider } from '@mui/material';
 import { styled } from '@mui/system';
 import { Autocomplete } from '@mui/material';
-import { CircularProgressbar } from 'react-circular-progressbar';
-import 'react-circular-progressbar/dist/styles.css';
+
 
 const StyledTabs = styled(Tabs)(({ theme }) => ({
     marginBottom: theme.spacing(2),
@@ -23,10 +22,10 @@ const StyledTab = styled(Tab)(({ theme }) => ({
     },
 }));
 
-const ProfileForm = ({ profileId, logedUser }) => {
+const ProfileForm = ({ profileId, logedUser, calculateFilledTabsCount, setCalculateFilledTabsCount }) => {
     const [tabValue, setTabValue] = useState(0);
     const [updating, setUpdating] = useState(false);
-    const [verifyStatus, setVerifyStatus] = useState(false);
+    const [verifyTrigger, setVerifyTrigger] = useState(0);
     const [formData, setFormData] = useState({
         employeeId: '',
         skills: [],
@@ -86,7 +85,7 @@ const ProfileForm = ({ profileId, logedUser }) => {
         if (profileId) {
             checkIfExist();
         }
-    }, [profileId, verifyStatus]);
+    }, [profileId, verifyTrigger]);
 
     useEffect(() => {
         setFormData(prevData => ({
@@ -167,9 +166,6 @@ const ProfileForm = ({ profileId, logedUser }) => {
 
         appendData('verify', formData.verify);
 
-        console.log("formDataToSend", formDataToSend);
-
-
         try {
 
             const url = updating
@@ -183,6 +179,7 @@ const ProfileForm = ({ profileId, logedUser }) => {
 
             if (response.ok) {
                 console.log('Profile submitted/updated successfully');
+                setVerifyTrigger(prev => prev + 1);
             } else {
                 console.error('Failed to submit/update profile');
             }
@@ -205,7 +202,7 @@ const ProfileForm = ({ profileId, logedUser }) => {
 
             if (response.ok) {
                 console.log('Profile verified successfully');
-                setVerifyStatus(val);
+                setVerifyTrigger(prev => prev + 1);
             } else {
                 console.error('Failed to verify profile');
             }
@@ -539,24 +536,58 @@ const ProfileForm = ({ profileId, logedUser }) => {
     const calculateFilledTabs = () => {
         let filledCount = 0;
 
-        if (formData.skills.length > 0) filledCount++;
-        if (formData.bankDetails.bankName || formData.bankDetails.accountNumber || formData.bankDetails.ifscCode || formData.bankDetails.panCardNumber) filledCount++;
-        if (formData.addressDetails.permanentAddress || formData.addressDetails.currentAddress || formData.addressDetails.aadhaarCardNumber) filledCount++;
-        if (formData.academics.tenthDetails || formData.academics.twelfthDetails || formData.academics.graduationDetails) filledCount++;
-        if (formData.pastExperience.some(exp => exp.companyName || exp.fromYear || exp.toYear)) filledCount++;
+        // Skills tab (up to 1 point)
+        filledCount += Math.min(formData.skills.length, 3) / 3;
+
+        // Bank Details tab (up to 1 point)
+        if (formData.bankDetails.bankName) filledCount += 1 / 4;
+        if (formData.bankDetails.accountNumber) filledCount += 1 / 4;
+        if (formData.bankDetails.ifscCode) filledCount += 1 / 4;
+        if (formData.bankDetails.panCardNumber) filledCount += 1 / 4;
+
+        // Address Details tab (up to 1 point)
+        if (formData.addressDetails.permanentAddress) filledCount += 1 / 3;
+        if (formData.addressDetails.currentAddress) filledCount += 1 / 3;
+        if (formData.addressDetails.aadhaarCardNumber) filledCount += 1 / 3;
+
+        // Academics tab (up to 1 point)
+        if (formData.academics.tenthDetails) filledCount += 1 / 3;
+        if (formData.academics.twelfthDetails) filledCount += 1 / 3;
+        if (formData.academics.graduationDetails) filledCount += 1 / 3;
+
+        // Past Experience tab (up to 1 point)
+        if (formData.pastExperience.some(exp => exp.companyName)) filledCount += 1 / 3;
+        if (formData.pastExperience.some(exp => exp.fromYear)) filledCount += 1 / 3;
+        if (formData.pastExperience.some(exp => exp.toYear)) filledCount += 1 / 3;
 
         return (filledCount / (tabContent.length - 1)) * 100;
     };
 
-    console.log("calculateFilledTabs()", calculateFilledTabs());
+    useEffect(() => {
+        if (calculateFilledTabs()) {
+            setCalculateFilledTabsCount(calculateFilledTabs());
+        }
+    }, [calculateFilledTabs()]);
+
+    const areDetailsComplete = () => {
+        const bankDetailsComplete =
+            formData.bankDetails.bankName &&
+            formData.bankDetails.accountNumber &&
+            formData.bankDetails.ifscCode &&
+            formData.bankDetails.panCardNumber;
+
+        const addressDetailsComplete =
+            formData.addressDetails.permanentAddress &&
+            formData.addressDetails.currentAddress &&
+            formData.addressDetails.aadhaarCardNumber;
+
+        return bankDetailsComplete && addressDetailsComplete;
+    };
 
     if (logedUser.id === profileId || Number(logedUser.role) < 3) {
         return (
             <>
                 <form onSubmit={handleSubmit}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 2, width: "100px" }}>
-                        <CircularProgressbar value={calculateFilledTabs()} text={`${Math.round(calculateFilledTabs())}%`} />
-                    </Box>
 
                     <StyledTabs value={tabValue} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
                         {tabContent.map((tab, index) => (
@@ -569,11 +600,13 @@ const ProfileForm = ({ profileId, logedUser }) => {
                     </Box>
 
                 </form >
+
+                <Divider />
                 {Number(logedUser.role) < 3 &&
-                    <>
+                    <Box sx={{ display: 'flex', justifyContent: 'center' }}>
                         <Button
                             onClick={() => handleVerifyProfile(true)}
-                            disabled={formData.verify}
+                            disabled={!updating || formData.verify}
                             variant='contained'
                             sx={{ margin: "10px" }}
                         >
@@ -590,7 +623,7 @@ const ProfileForm = ({ profileId, logedUser }) => {
                                 marked as unverified
                             </Button>
                         }
-                    </>
+                    </Box>
                 }
             </>
         );
