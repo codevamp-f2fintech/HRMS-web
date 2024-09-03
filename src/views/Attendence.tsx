@@ -291,6 +291,10 @@ export default function AttendanceGrid() {
 
   const [employees, setEmployees] = useState([]);
 
+  const [prefillEmployee, setPrefillEmployee] = useState('');
+  const [prefillEmployeeName, setPrefillEmployeeName] = useState('');
+  const [prefillDate, setPrefillDate] = useState('');
+
   console.log('attendances issss', attendances)
 
   const debouncedSearch = useCallback(
@@ -336,10 +340,10 @@ export default function AttendanceGrid() {
     setUserId(user.id);
   }, []);
 
-  function AddAttendanceForm({ handleClose, attendance }) {
+  function AddAttendanceForm({ handleClose, attendance, prefillEmployee, prefillEmployeeName, prefillDate }) {
     const [formData, setFormData] = useState({
-      employee: '',
-      date: '',
+      employee: prefillEmployee || '',
+      date: prefillDate || '',
       status: '',
     });
 
@@ -360,8 +364,14 @@ export default function AttendanceGrid() {
             status: selected.status,
           });
         }
+      } else if (prefillEmployee && prefillDate) {
+        setFormData({
+          employee: prefillEmployee,
+          date: prefillDate,
+          status: '',
+        });
       }
-    }, [attendance, attendances]);
+    }, [attendance, attendances, prefillEmployee, prefillDate]);
 
     const validateForm = () => {
       let isValid = true;
@@ -536,10 +546,18 @@ export default function AttendanceGrid() {
     );
   }
 
-  const handleAttendanceAddClick = () => {
+
+
+  const handleAttendanceAddClick = (employeeId = '', employeeName = '', day) => {
+    const date = dayjs(new Date(new Date().getFullYear(), month - 1, day)).format('YYYY-MM-DD');
+
     setSelectedAttendance(null);
     setShowForm(true);
+    setPrefillEmployee(employeeId);
+    setPrefillEmployeeName(employeeName);
+    setPrefillDate(date);
   };
+
 
   const handleAttendanceEditClick = (id: React.SetStateAction<null>) => {
     setSelectedAttendance(id);
@@ -603,9 +621,10 @@ export default function AttendanceGrid() {
   };
 
   const generateColumns = () => {
-    const daysInMonth = getDaysInMonth(month, new Date().getFullYear());
+    const today = new Date(); // Get the current date
+    const daysInMonth = getDaysInMonth(month, today.getFullYear());
     const visibleDays: number[] = Array.from({ length: daysInMonth }, (_, i) => i + 1).slice(startDayIndex, startDayIndex + daysToShow);
-    const lastSunday = getLastSundayOfMonth(month, new Date().getFullYear());
+    const lastSunday = getLastSundayOfMonth(month, today.getFullYear());
 
     const columns: GridColDef[] = [
       {
@@ -621,105 +640,88 @@ export default function AttendanceGrid() {
           </Box>
         ),
       },
-      ...visibleDays.map(day => ({
-        field: `day_${day}`,
-        headerName: `${day}`,
-        headerAlign: 'center',
-        align: 'center',
-        headerClassName: 'super-app-theme--header',
-        renderCell: (params) => {
-          const status = params.row[`day_${day}`];
-          const attendanceId = params.row[`day_${day}_id`];
+      ...visibleDays.map(day => {
+        const cellDate = new Date(today.getFullYear(), month - 1, day);
+        const isFutureDate = cellDate > today; // Determine if the date is in the future
 
-          if (day === lastSunday) {
-            // Allow editing only on the last Sunday
-            if (status === 'Present') {
-              return <CheckCircleIcon style={{ color: 'green', marginTop: '30%' }}
-                onClick={() => handleAttendanceEditClick(attendanceId)}
-              />;
-            } else if (status === 'Absent') {
-              return <CancelIcon style={{ color: 'red', marginTop: '30%' }}
-                onClick={() => handleAttendanceEditClick(attendanceId)}
-              />;
-            } else if (status === 'On Leave') {
-              return <PauseCircleOutlineIcon style={{ color: 'orange', marginTop: '30%' }}
-                onClick={() => handleAttendanceEditClick(attendanceId)}
-              />;
-            } else if (status === 'On Half') {
-              return <ContrastIcon style={{ color: 'green', fontSize: '1.5em', marginTop: '30%' }}
-                onClick={() => handleAttendanceEditClick(attendanceId)}
-              />;
-            } else {
-              return null;
+        return {
+          field: `day_${day}`,
+          headerName: `${day}`,
+          headerAlign: 'center',
+          align: 'center',
+          headerClassName: 'super-app-theme--header',
+          renderCell: (params) => {
+            const status = params.row[`day_${day}`];
+            const attendanceId = params.row[`day_${day}_id`];
+            const employeeId = params.row.employee_id;
+            const employeeName = params.row.name;
+            const isSunday = cellDate.getDay() === 0;
+
+            // Show the "Mark" button only for current or past dates and non-Sundays
+            if (!status && !isSunday && !isFutureDate) {
+              return (
+                <Button
+                  style={{ color: 'blue', marginTop: '30%' }}
+                  onClick={() => handleAttendanceAddClick(employeeId, employeeName, day)}
+                >
+                  Mark
+                </Button>
+              );
             }
-          } else if (new Date(new Date().getFullYear(), month - 1, day).getDay() === 0) {
-            // Show the WeekendIcon for all other Sundays
-            return <WeekendIcon style={{ color: 'blue', marginTop: '35%' }} />;
-          } else {
-            // For all other days
-            if (status === 'Present') {
-              return <CheckCircleIcon style={{ color: 'green', marginTop: '35%' }}
-                onClick={() => handleAttendanceEditClick(attendanceId)}
-              />;
-            } else if (status === 'Absent') {
-              return <CancelIcon style={{ color: 'red', marginTop: '35%' }}
-                onClick={() => handleAttendanceEditClick(attendanceId)}
-              />;
-            } else if (status === 'On Leave') {
-              return <PauseCircleOutlineIcon style={{ color: 'orange', marginTop: '35%' }}
-                onClick={() => handleAttendanceEditClick(attendanceId)}
-              />;
-            } else if (status === 'On Half') {
-              return <ContrastIcon style={{ color: 'green', fontSize: '1.5em', marginTop: '35%' }}
-                onClick={() => handleAttendanceEditClick(attendanceId)}
-              />;
+
+            if (isSunday && !status) {
+              // If it's a Sunday and no status is marked, show the WeekendIcon
+              return (
+                <WeekendIcon
+                  style={{ color: 'blue', marginTop: '35%', cursor: 'pointer' }}
+                  onClick={() => handleAttendanceAddClick(employeeId, employeeName, day)}
+                />
+              );
+            } else if (day === lastSunday) {
+              // Allow editing only on the last Sunday
+              if (status === 'Present') {
+                return <CheckCircleIcon style={{ color: 'green', marginTop: '30%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
+              } else if (status === 'Absent') {
+                return <CancelIcon style={{ color: 'red', marginTop: '30%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
+              } else if (status === 'On Leave') {
+                return <PauseCircleOutlineIcon style={{ color: 'orange', marginTop: '30%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
+              } else if (status === 'On Half') {
+                return <ContrastIcon style={{ color: 'green', fontSize: '1.5em', marginTop: '30%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
+              } else if (!status && !isFutureDate) {
+                return (
+                  <Button
+                    style={{ color: 'blue', marginTop: '35%' }}
+                    onClick={() => handleAttendanceAddClick(employeeId, employeeName, day)}
+                  >
+                    Mark
+                  </Button>
+                );
+              }
             } else {
-              return null;
+              // For all other days
+              if (status === 'Present') {
+                return <CheckCircleIcon style={{ color: 'green', marginTop: '35%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
+              } else if (status === 'Absent') {
+                return <CancelIcon style={{ color: 'red', marginTop: '35%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
+              } else if (status === 'On Leave') {
+                return <PauseCircleOutlineIcon style={{ color: 'orange', marginTop: '35%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
+              } else if (status === 'On Half') {
+                return <ContrastIcon style={{ color: 'green', fontSize: '1.5em', marginTop: '35%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
+              } else {
+                return null;
+              }
             }
           }
-        }
-      })),
+        };
+      }),
 
-      // {
-      //   field: 'edit',
-      //   headerName: "Edit",
-      //   headerAlign: "center",
-      //   align: "center",
-      //   sortable: false,
-      //   renderCell: ({ row: { _id } }) => (
-      //     <Box display="flex" justifyContent="center" mt="10%" >
-      //       <Button color="info" variant="contained" onClick={() => handleAttendanceEditClick(_id)}>
-      //         <DriveFileRenameOutlineOutlined />
-      //       </Button>
-      //     </Box>
-      //   ),
-      // },
-
-      // {
-      //   field: 'view',
-      //   headerName: "View",
-      //   headerAlign: "center",
-      //   align: "center",
-      //   sortable: false,
-      //   renderCell: (params) => {
-      //     // Log the params object
-      //     return (
-      //       <Box display="flex" justifyContent="center" mt="10%">
-      //         <Button color="primary" variant="contained" onClick={() => handleViewClick(params.row.employee_id)}>
-      //           View
-      //         </Button>
-      //       </Box>
-      //     );
-      //   },
-      // },
-
-      // import from utility/attendancesummary/AttendancesSummaryColumns
+      // Additional columns or configurations
       ...AttendanceSummaryColumns,
-
     ];
 
     return columns;
   };
+
 
   const transformData = () => {
     const attendanceSource = filteredAttendance.length > 0 ? filteredAttendance : attendances;
@@ -731,9 +733,13 @@ export default function AttendanceGrid() {
         return acc;
       }
 
+
+
       const attendanceDate = new Date(date);
       const day = attendanceDate.getDate();
       const attendanceMonth = attendanceDate.getMonth() + 1;
+
+      const uniqueKey = `${employee._id}-${day}-${attendanceMonth}`;
 
       if (attendanceMonth !== month) {
         return acc;
@@ -752,17 +758,21 @@ export default function AttendanceGrid() {
         };
       }
 
-      acc[employee._id][`day_${day}`] = status;
-      acc[employee._id][`day_${day}_id`] = _id;
+      if (!acc[employee._id][uniqueKey]) {
+        acc[employee._id][uniqueKey] = true; // Mark this day as counted
 
-      if (status === 'Present') {
-        acc[employee._id].present += 1;
-      } else if (status === 'Absent') {
-        acc[employee._id].absent += 1;
-      } else if (status === 'On Half') {
-        acc[employee._id].onHalf += 1;
-      } else if (status === 'On Leave') {
-        acc[employee._id].onLeave += 1;
+        acc[employee._id][`day_${day}`] = status;
+        acc[employee._id][`day_${day}_id`] = _id;
+
+        if (status === 'Present') {
+          acc[employee._id].present += 1;
+        } else if (status === 'Absent') {
+          acc[employee._id].absent += 1;
+        } else if (status === 'On Half') {
+          acc[employee._id].onHalf += 1;
+        } else if (status === 'On Leave') {
+          acc[employee._id].onLeave += 1;
+        }
       }
 
       return acc;
@@ -786,7 +796,14 @@ export default function AttendanceGrid() {
       <Box sx={{ flexGrow: 1, padding: 2 }}>
         <Dialog open={showForm} onClose={handleClose} fullWidth maxWidth='md'>
           <DialogContent>
-            <AddAttendanceForm attendance={selectedAttendance} handleClose={handleClose} />
+            <AddAttendanceForm
+              attendance={selectedAttendance}
+              handleClose={handleClose}
+              prefillEmployee={prefillEmployee}
+              prefillEmployeeName={prefillEmployeeName}
+              prefillDate={prefillDate}
+            />
+
           </DialogContent>
         </Dialog>
 
@@ -806,75 +823,92 @@ export default function AttendanceGrid() {
         {userRole === '1' && <EmployeeStatsWithBlinkingStatus />}
 
 
-        <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
-          <Box>
-            <Typography style={{ fontSize: '2em' }} variant='h5' gutterBottom>
-              Attendance
-            </Typography>
-            <Typography
-              style={{ fontSize: '1em', fontWeight: 'bold' }}
-              variant='subtitle1'
-              gutterBottom
-            >
-              Dashboard / Attendance
-            </Typography>
-          </Box>
-
-          {userRole === "1" && <Box display='flex' alignItems='center'>
-            <FormControl fullWidth sx={{ mr: 2 }}>
-              <InputLabel required id='demo-simple-select-label'>
-                Month
-              </InputLabel>
-              <Select
-                label='Select Month'
-                labelId='demo-simple-select-label'
-                id='demo-simple-select'
-                value={month}
-                onChange={(e) => setMonth(e.target.value)}
+        <Box mb={2}>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm={6} md={6}>
+              <Typography style={{ fontSize: '2em' }} variant='h5' gutterBottom>
+                Attendance
+              </Typography>
+              <Typography
+                style={{ fontSize: '1em', fontWeight: 'bold' }}
+                variant='subtitle1'
+                gutterBottom
               >
-                <MenuItem value={1}>January</MenuItem>
-                <MenuItem value={2}>February</MenuItem>
-                <MenuItem value={3}>March</MenuItem>
-                <MenuItem value={4}>April</MenuItem>
-                <MenuItem value={5}>May</MenuItem>
-                <MenuItem value={6}>June</MenuItem>
-                <MenuItem value={7}>July</MenuItem>
-                <MenuItem value={8}>August</MenuItem>
-                <MenuItem value={9}>September</MenuItem>
-                <MenuItem value={10}>October</MenuItem>
-                <MenuItem value={11}>November</MenuItem>
-                <MenuItem value={12}>December</MenuItem>
-              </Select>
-            </FormControl>
+                Dashboard / Attendance
+              </Typography>
+            </Grid>
 
-            <Button
-              style={{ borderRadius: 50, backgroundColor: '#ff902f', width: '400px', padding: '15px' }}
-              variant='contained'
-              color='warning'
-              startIcon={<AddIcon />}
-              onClick={handleAttendanceAddClick}
-            >
-              Add Attendance
-            </Button>
-            <Button
-              style={{ borderRadius: 50, backgroundColor: '#ff902f', width: '50px', padding: '15px', marginLeft: '10px' }}
-              variant='contained'
-              color='warning'
-              onClick={handlePreviousDaysClick}
-              disabled={startDayIndex === 0}
-            >
-              {'<'}
-            </Button>
-            <Button
-              style={{ borderRadius: 50, backgroundColor: '#ff902f', width: '50px', padding: '15px', marginLeft: '10px' }}
-              variant='contained'
-              color='warning'
-              onClick={handleNextDaysClick}
-              disabled={startDayIndex + daysToShow >= 30}
-            >
-              {'>'}
-            </Button>
-          </Box>}
+            {userRole === "1" && (
+              <Grid spacing={3} item xs={12} sm={6} md={6} container justifyContent="flex-end" alignItems="center">
+                <Grid item xs={12} sm={6} md={4}>
+                  <FormControl fullWidth>
+                    <InputLabel required id='demo-simple-select-label'>
+                      Month
+                    </InputLabel>
+                    <Select
+                      label='Select Month'
+                      labelId='demo-simple-select-label'
+                      id='demo-simple-select'
+                      value={month}
+                      onChange={(e) => setMonth(e.target.value)}
+                    >
+                      <MenuItem value={1}>January</MenuItem>
+                      <MenuItem value={2}>February</MenuItem>
+                      <MenuItem value={3}>March</MenuItem>
+                      <MenuItem value={4}>April</MenuItem>
+                      <MenuItem value={5}>May</MenuItem>
+                      <MenuItem value={6}>June</MenuItem>
+                      <MenuItem value={7}>July</MenuItem>
+                      <MenuItem value={8}>August</MenuItem>
+                      <MenuItem value={9}>September</MenuItem>
+                      <MenuItem value={10}>October</MenuItem>
+                      <MenuItem value={11}>November</MenuItem>
+                      <MenuItem value={12}>December</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={6} md={4} container spacing={1} justifyContent="flex-end">
+                  <Button
+                    fullWidth
+                    style={{ borderRadius: 50, backgroundColor: '#ff902f', padding: '15px' }}
+                    variant='contained'
+                    color='warning'
+                    startIcon={<AddIcon />}
+                    onClick={handleAttendanceAddClick}
+                  >
+                    Add Attendance
+                  </Button>
+                </Grid>
+
+                <Grid item xs={6} sm={3} md={2}>
+                  <Button
+                    fullWidth
+                    style={{ borderRadius: 50, backgroundColor: '#ff902f', padding: '15px' }}
+                    variant='contained'
+                    color='warning'
+                    onClick={handlePreviousDaysClick}
+                    disabled={startDayIndex === 0}
+                  >
+                    {'<'}
+                  </Button>
+                </Grid>
+
+                <Grid item xs={6} sm={3} md={2}>
+                  <Button
+                    fullWidth
+                    style={{ borderRadius: 50, backgroundColor: '#ff902f', padding: '15px' }}
+                    variant='contained'
+                    color='warning'
+                    onClick={handleNextDaysClick}
+                    disabled={startDayIndex + daysToShow >= 30}
+                  >
+                    {'>'}
+                  </Button>
+                </Grid>
+              </Grid>
+            )}
+          </Grid>
         </Box>
         {userRole === "1" && <Grid container spacing={6} alignItems='center' mb={2}>
           <Grid item xs={12} md={6}>
