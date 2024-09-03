@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useCallback, useEffect, useState } from 'react';
-
 import { debounce } from 'lodash';
 import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 import {
@@ -12,32 +11,38 @@ import {
   IconButton,
   TextField,
   Dialog,
+  FormControl,
+  Select,
+  InputLabel,
+  MenuItem,
   DialogContent,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@/redux/store';
+import { fetchDesignations } from '@/redux/features/designation/designationSlice';
 import { ToastContainer, toast } from 'react-toastify';
-
-import type { AppDispatch, RootState } from '@/redux/store';
-import { fetchHolidays } from '@/redux/features/holidays/holidaysSlice';
 import 'react-toastify/dist/ReactToastify.css';
 
-export default function HolidayGrid() {
+const Designation = () => {
   const dispatch: AppDispatch = useDispatch();
-  const { holidays, loading, error, filteredHoliday, total } = useSelector((state: RootState) => state.holidays);
+  const { designations, loading, error, filteredDesignation, total } = useSelector((state: RootState) => state.designations);
   const [showForm, setShowForm] = useState(false);
-  const [selectedHoliday, setSelectedHoliday] = useState(null);
+  const [selectedDesignation, setSelectedDesignation] = useState(null);
   const [userRole, setUserRole] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
   const [selectedKeyword, setSelectedKeyword] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
 
+  console.log('designations=>', designations);
+
   const debouncedFetch = useCallback(
     debounce(() => {
-      dispatch(fetchHolidays({ page, limit, keyword: selectedKeyword }));
+      console.log('i m called');
+      dispatch(fetchDesignations({ page, limit, keyword: selectedKeyword }));
     }, 300),
     [page, limit, selectedKeyword]
   );
@@ -48,7 +53,8 @@ export default function HolidayGrid() {
     return debouncedFetch.cancel;
   }, [page, limit, selectedKeyword, debouncedFetch]);
 
-  const handleInputChange = (e) => {
+
+  const handleInputChange = (e: { target: { value: React.SetStateAction<string>; }; }) => {
     setSelectedKeyword(e.target.value);
   };
 
@@ -56,6 +62,7 @@ export default function HolidayGrid() {
     setPage(newPage + 1);
     setLimit(newPageSize);
   };
+
 
   const handlePaginationModelChange = (params: { page: number; pageSize: number }) => {
     handlePageChange(params.page, params.pageSize);
@@ -67,88 +74,54 @@ export default function HolidayGrid() {
 
     setUserRole(user.role);
     setUserId(user.id);
-  }, []);
+  }, [])
 
-  function AddHolidayForm({ handleClose, holiday }) {
+
+  function AddDesignationForm({ id, handleClose }) {
     const [formData, setFormData] = useState({
       title: '',
-      note: '',
-      year: '',
-      start_date: '',
-      end_date: '',
+      description: '',
+      grade: '',
     });
 
     const [errors, setErrors] = useState({
       title: '',
-      note: '',
-      year: '',
-      start_date: '',
-      end_date: '',
+      description: '',
+      grade: '',
     });
 
     useEffect(() => {
-      if (holiday) {
-        const selected = holidays.find(h => h._id === holiday);
+      if (id) {
+        const selected = designations.find(des => des._id === id);
+        console.log('selected', selected);
 
         if (selected) {
           setFormData({
             title: selected.title,
-            note: selected.note,
-            year: selected.year,
-            start_date: selected.start_date,
-            end_date: selected.end_date,
+            description: selected.description,
+            grade: selected.grade
           });
         }
       }
-    }, [holiday, holidays]);
+    }, [id, designations])
 
     const validateForm = () => {
       let isValid = true;
-
       const newErrors = {
         title: '',
-        note: '',
-        year: '',
-        start_date: '',
-        end_date: '',
+        description: '',
+        grade: '',
       };
 
       if (!formData.title.trim()) {
-        newErrors.title = 'Title is required';
-        isValid = false;
-      }
-
-      if (!formData.start_date) {
-        newErrors.start_date = 'Start date is required';
-        isValid = false;
-      }
-
-      if (!formData.end_date) {
-        newErrors.end_date = 'End date is required';
-        isValid = false;
-      } else if (formData.end_date < formData.start_date) {
-        newErrors.end_date = 'End date must be after start date';
-        isValid = false;
-      }
-
-      if (!formData.note.trim()) {
-        newErrors.note = 'Note is required';
-        isValid = false;
-      }
-
-      if (!formData.year) {
-        newErrors.year = 'Year is required';
-        isValid = false;
-      } else if (isNaN(formData.year) || formData.year.length !== 4) {
-        newErrors.year = 'Year must be a valid 4-digit number';
+        newErrors.title = 'title is required';
         isValid = false;
       }
 
       setErrors(newErrors);
+      return isValid
 
-      return isValid;
     };
-
 
     const handleChange = (e) => {
       const { name, value } = e.target;
@@ -161,8 +134,8 @@ export default function HolidayGrid() {
 
     const handleSubmit = () => {
       if (validateForm()) {
-        const method = holiday ? 'PUT' : 'POST';
-        const url = holiday ? `${process.env.NEXT_PUBLIC_APP_URL}/holidays/update/${holiday}` : `${process.env.NEXT_PUBLIC_APP_URL}/holidays/create`;
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `${process.env.NEXT_PUBLIC_APP_URL}/designation/update/${id}` : `${process.env.NEXT_PUBLIC_APP_URL}/designation/create`;
 
         fetch(url, {
           method,
@@ -186,9 +159,11 @@ export default function HolidayGrid() {
                 position: 'top-center',
               });
             }
+            if (data.message.includes('success')) {
+              handleClose();
+              debouncedFetch();
+            }
 
-            handleClose();
-            debouncedFetch();
           })
           .catch(error => {
             toast.error('Error: ' + error.message, {
@@ -198,12 +173,11 @@ export default function HolidayGrid() {
       }
     };
 
-
     return (
       <Box sx={{ flexGrow: 1, padding: 2 }}>
         <Box display='flex' justifyContent='space-between' alignItems='center'>
           <Typography style={{ fontSize: '2em' }} variant='h5' gutterBottom>
-            {holiday ? 'Edit Holiday' : 'Add Holiday'}
+            {id ? 'Edit Designation' : 'Add Designation'}
           </Typography>
           <IconButton onClick={handleClose}>
             <CloseIcon />
@@ -213,7 +187,7 @@ export default function HolidayGrid() {
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
-              label='Title'
+              label='Designation'
               name='title'
               value={formData.title}
               onChange={handleChange}
@@ -228,66 +202,50 @@ export default function HolidayGrid() {
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
-              label='Start Date'
-              name='start_date'
-              value={formData.start_date}
-              type='date'
+              label='Description'
+              name='description'
+              value={formData.description}
               onChange={handleChange}
-              InputLabelProps={{ shrink: true }}
               required
-              error={!!errors.start_date}
-              helperText={errors.start_date}
+              error={!!errors.description}
+              helperText={errors.description}
               FormHelperTextProps={{
                 style: { color: 'red' }
               }}
             />
           </Grid>
           <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='End Date'
-              name='end_date'
-              type='date'
-              value={formData.end_date}
-              onChange={handleChange}
-              InputLabelProps={{ shrink: true }}
-              required
-              error={!!errors.end_date}
-              helperText={errors.end_date}
-              FormHelperTextProps={{
-                style: { color: 'red' }
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Note'
-              name='note'
-              value={formData.note}
-              onChange={handleChange}
-              required
-              error={!!errors.note}
-              helperText={errors.note}
-              FormHelperTextProps={{
-                style: { color: 'red' }
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Year'
-              name='year'
-              value={formData.year}
-              onChange={handleChange}
-              required
-              error={!!errors.year}
-              helperText={errors.year}
-              FormHelperTextProps={{
-                style: { color: 'red' }
-              }}
-            />
+            <FormControl fullWidth error={!!errors.grade}>
+              <InputLabel id="grade-select-label">Select Grade</InputLabel>
+              <Select
+                label="Select Grade"
+                labelId="grade-select-label"
+                id="grade-select"
+                name="grade"
+                value={formData.grade}
+                onChange={handleChange}
+                fullWidth
+              >
+                <MenuItem value="1">1</MenuItem>
+                <MenuItem value="2">2</MenuItem>
+                <MenuItem value="3">3</MenuItem>
+                <MenuItem value="4">4</MenuItem>
+                <MenuItem value="5">5</MenuItem>
+                <MenuItem value="6">6</MenuItem>
+                <MenuItem value="7">7</MenuItem>
+                <MenuItem value="8">8</MenuItem>
+                <MenuItem value="9">9</MenuItem>
+                <MenuItem value="10">10</MenuItem>
+                <MenuItem value="11">11</MenuItem>
+                <MenuItem value="12">12</MenuItem>
+                <MenuItem value="13">13</MenuItem>
+                <MenuItem value="14">14</MenuItem>
+                <MenuItem value="15">15</MenuItem>
+              </Select>
+              {errors.grade && (
+                <Typography color="error">{errors.grade}</Typography>
+              )}
+            </FormControl>
           </Grid>
           <Grid item xs={12}>
             <Button
@@ -303,7 +261,7 @@ export default function HolidayGrid() {
               fullWidth
               onClick={handleSubmit}
             >
-              {holiday ? 'UPDATE HOLIDAY' : 'ADD HOLIDAY'}
+              {id ? 'Edit Designation' : 'Add Designation'}
             </Button>
           </Grid>
         </Grid>
@@ -311,13 +269,14 @@ export default function HolidayGrid() {
     );
   }
 
-  const handleHolidayAddClick = () => {
-    setSelectedHoliday(null);
+
+  const handleDesignationAddClick = () => {
+    setSelectedDesignation(null);
     setShowForm(true);
   };
 
-  const handleHolidayEditClick = (id) => {
-    setSelectedHoliday(id);
+  const handleDesignationEditClick = (id: React.SetStateAction<null>) => {
+    setSelectedDesignation(id);
     setShowForm(true);
   };
 
@@ -325,21 +284,20 @@ export default function HolidayGrid() {
     setShowForm(false);
   };
 
+
   const columns: GridColDef[] = [
     {
       sortable: true,
       field: 'lineNo',
-      headerName: 'S.NO',
+      headerName: '#',
       headerClassName: 'super-app-theme--header',
       flex: 0,
       editable: false,
-      renderCell: (params) => params.api.getAllRowIds().indexOf(params.id) + 1,
+      renderCell: (params: { api: { getAllRowIds: () => string | any[]; }; id: any; }) => params.api.getAllRowIds().indexOf(params.id) + 1,
     },
-    { field: 'title', headerName: 'Title', headerClassName: 'super-app-theme--header', width: 200, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'start_date', headerName: 'Holiday Start Date', headerClassName: 'super-app-theme--header', width: 200, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'end_date', headerName: 'Holiday End Date', headerClassName: 'super-app-theme--header', width: 200, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'note', headerName: 'Note', headerClassName: 'super-app-theme--header', width: 200, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'year', headerName: 'Year', headerClassName: 'super-app-theme--header', width: 200, headerAlign: 'center', align: 'center', sortable: false },
+    { field: 'title', headerName: 'Title', headerClassName: 'super-app-theme--header', flex: 2, headerAlign: 'center', align: 'center', sortable: false },
+    { field: 'description', headerName: 'Description', headerClassName: 'super-app-theme--header', flex: 2, headerAlign: 'center', align: 'center', sortable: false },
+    { field: 'grade', headerName: 'Grade', headerClassName: 'super-app-theme--header', flex: 2, headerAlign: 'center', align: 'center', sortable: false },
     ...(userRole === '1'
       ? [
         {
@@ -351,7 +309,7 @@ export default function HolidayGrid() {
           headerClassName: 'super-app-theme--header',
           renderCell: ({ row: { _id } }) => (
             <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
-              <Button color="info" variant="contained" sx={{ minWidth: '50px' }} onClick={() => handleHolidayEditClick(_id)}>
+              <Button color="info" variant="contained" sx={{ minWidth: '50px' }} onClick={() => handleDesignationEditClick(_id)}>
                 <DriveFileRenameOutlineOutlined />
               </Button>
             </Box>
@@ -367,16 +325,16 @@ export default function HolidayGrid() {
       <Box sx={{ flexGrow: 1, padding: 2 }}>
         <Dialog open={showForm} onClose={handleClose} fullWidth maxWidth="md">
           <DialogContent>
-            <AddHolidayForm holiday={selectedHoliday} handleClose={handleClose} />
+            <AddDesignationForm id={selectedDesignation} handleClose={handleClose} />
           </DialogContent>
         </Dialog>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
           <Box>
             <Typography style={{ fontSize: '2em' }} variant="h5" gutterBottom>
-              Holiday
+              Designation
             </Typography>
             <Typography style={{ fontSize: '1em', fontWeight: 'bold' }} variant="subtitle1" gutterBottom>
-              Dashboard / Holiday
+              Dashboard / Designation
             </Typography>
           </Box>
           {userRole === '1' && (
@@ -386,9 +344,9 @@ export default function HolidayGrid() {
                 variant="contained"
                 color="warning"
                 startIcon={<AddIcon />}
-                onClick={handleHolidayAddClick}
+                onClick={handleDesignationAddClick}
               >
-                Add Holiday
+                Add Designation
               </Button>
             </Box>
           )}
@@ -397,11 +355,6 @@ export default function HolidayGrid() {
           <Grid item xs={12} md={3}>
             <TextField fullWidth label="search" variant="outlined" value={selectedKeyword} onChange={handleInputChange} />
           </Grid>
-          {/* <Grid item xs={12} md={3}>
-            <Button style={{ padding: 15, backgroundColor: '#198754' }} variant="contained" fullWidth>
-              SEARCH
-            </Button>
-          </Grid> */}
         </Grid>
       </Box>
       <Box sx={{ height: 600, width: '100%' }}>
@@ -431,7 +384,7 @@ export default function HolidayGrid() {
           components={{
             Toolbar: GridToolbar,
           }}
-          rows={filteredHoliday.length > 0 ? filteredHoliday : holidays}
+          rows={filteredDesignation.length > 0 ? filteredDesignation : designations}
           columns={columns}
           getRowId={(row) => row._id}
           paginationMode="server"
@@ -444,5 +397,7 @@ export default function HolidayGrid() {
         />
       </Box>
     </Box>
-  );
+  )
 }
+
+export default Designation

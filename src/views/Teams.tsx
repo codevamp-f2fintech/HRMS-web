@@ -143,6 +143,7 @@ export default function TeamGrid() {
       name: '',
       code: ''
     });
+
     const [errors, setErrors] = useState({
       name: '',
       manager_id: '',
@@ -170,6 +171,7 @@ export default function TeamGrid() {
 
     const validateForm = () => {
       let isValid = true;
+
       const newErrors = {
         name: '',
         manager_id: '',
@@ -198,6 +200,7 @@ export default function TeamGrid() {
       }
 
       setErrors(newErrors);
+
       return isValid;
     };
 
@@ -368,7 +371,7 @@ export default function TeamGrid() {
     }
 
     if (employees.length === 0) {
-      dispatch(fetchEmployees({ page: 1, limit: 0, search: '' }));
+      dispatch(fetchEmployees({ page: 1, limit: 0, search: '', designation: '' }));
     }
   }, [dispatch, teams.length, employees.length]);
 
@@ -414,33 +417,43 @@ export default function TeamGrid() {
       headerName: 'No. of Employees',
       editable: true,
       renderCell: (params) => getEmployeeCountByIds(params.value),
-      flex: 1
+
+      flex: 1,
+      headerAlign: 'center',
+      align: 'center',
     },
     {
       field: 'code',
       headerName: 'Code',
       editable: true,
-      flex: 1
+
+      // flex: 1
     },
-    {
-      field: 'edit',
-      headerName: 'Edit',
-      sortable: false,
-      flex: 1,
-      headerAlign: 'center',
-      renderCell: ({ row: { _id } }) => (
-        <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
-          <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleEditTeamClick(_id)}>
-            <DriveFileRenameOutlineOutlined />
-          </Button>
-        </Box>
-      ),
-    },
+    ...(userRole === '1'
+      ? [{
+        field: 'edit',
+        headerName: 'Edit',
+        sortable: false,
+        flex: 1,
+        headerAlign: 'center',
+        renderCell: ({ row: { _id } }) => (
+          <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
+            <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleEditTeamClick(_id)}>
+              <DriveFileRenameOutlineOutlined />
+            </Button>
+          </Box>
+        ),
+      }]
+      : []),
+
     {
       field: 'view',
       headerName: 'View',
       sortable: false,
-      flex: 1,
+      align: 'center',
+
+      // flex: 1,
+
       headerAlign: 'center',
       renderCell: ({ row }) => (
         <Button

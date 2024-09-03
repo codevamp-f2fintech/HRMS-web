@@ -11,6 +11,8 @@ import policiesReducer from './features/policies/policiesSlice';
 import addAssetsReducer from './features/addAssets/addAssetsSlice';
 import employeesReducer from './features/employees/employeesSlice';
 import timesheetsReducer from './features/timesheet/timesheetSlice';
+import designationReducer from '@/redux/features/designation/designationSlice';
+
 
 const store = configureStore({
   reducer: {
@@ -24,6 +26,7 @@ const store = configureStore({
     addAssets: addAssetsReducer,
     employees: employeesReducer,
     timesheets: timesheetsReducer,
+    designations: designationReducer,
   }
 })
 

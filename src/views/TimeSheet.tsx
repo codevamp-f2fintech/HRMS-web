@@ -25,6 +25,8 @@ import {
   FormControl,
   InputLabel
 } from '@mui/material'
+import Tooltip from '@mui/material/Tooltip';
+
 import { useDispatch, useSelector } from 'react-redux';
 import { Add, Remove } from '@mui/icons-material';
 import SearchIcon from '@mui/icons-material/Search';
@@ -32,8 +34,9 @@ import InputAdornment from '@mui/material/InputAdornment';
 
 import type { AppDispatch, RootState } from '@/redux/store';
 import { fetchEmployees, filterEmployees } from '@/redux/features/employees/employeesSlice';
-import { fetchTimeSheet, filterTimesheet } from '@/redux/features/timesheet/timesheetSlice';
+import { fetchTimeSheet, filterTimesheet, resetFilter } from '@/redux/features/timesheet/timesheetSlice';
 import { fetchAttendances } from '@/redux/features/attendances/attendancesSlice';
+import { apiResponse } from '@/utility/apiResponse/employeesResponse';
 
 console.log("filter time sheet", filterTimesheet);
 
@@ -42,7 +45,7 @@ const ITEMS_PER_PAGE = 6;
 export default function TimeSheetGrid() {
   const dispatch: AppDispatch = useDispatch();
 
-  const { timesheets, employees, attendances, filteredTimesheet } = useSelector((state: RootState) => ({
+  const { timesheets, attendances, filteredTimesheet } = useSelector((state: RootState) => ({
     timesheets: state.timesheets.timesheets,
     employees: state.employees.employees,
     attendances: state.attendances.attendances,
@@ -59,11 +62,12 @@ export default function TimeSheetGrid() {
   const [searchName, setSearchName] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [employees, setEmployees] = useState([])
 
 
   const handleSearch = () => {
     console.log("aayay ither")
-    dispatch(filterTimesheet({ name: searchName, status: selectedStatus }));
+    dispatch(filterTimesheet({ name: searchName, status: selectedStatus, month }));
   };
 
   const handleInputChange = (e, field) => {
@@ -75,17 +79,23 @@ export default function TimeSheetGrid() {
   };
 
   useEffect(() => {
+    setPage(1); // Reset to first page after search or filter change
     handleSearch();
-  }, [searchName, selectedStatus]);
+  }, [searchName, selectedStatus, month]);
+
 
   useEffect(() => {
     if (timesheets.length === 0) {
       dispatch(fetchTimeSheet())
     }
 
-    if (employees.length === 0) {
-      dispatch(fetchEmployees({ page, limit: ITEMS_PER_PAGE, search: '' }));
-    }
+    const fetchEmployees = async () => {
+      const data = await apiResponse();
+
+      setEmployees(data);
+    };
+
+    fetchEmployees();
 
     if (attendances.length === 0) {
       dispatch(fetchAttendances())
@@ -103,13 +113,13 @@ export default function TimeSheetGrid() {
 
   const handleEditClick = (row) => {
 
+    const isAttendance = row.attendance_status === 'Present' || row.attendance_status === 'On Half';
+    const isTimeSheet = row._id !== null;
 
-    if (row.attendance_status === 'Present' || row.attendance_status === 'On Half') {
+    if (isAttendance || isTimeSheet) {
       setEditableRows(prev => ({
-
         ...prev,
         [row._id || row.attendance_id]: {
-
           time: row.time || '0',
           status: row.status || 'Pending',
           note: row.note || '',
@@ -120,8 +130,9 @@ export default function TimeSheetGrid() {
       }));
     }
 
-    setDirty(false)
+    setDirty(false);
   }
+
 
   const handleChange = (e, id) => {
     const { name, value } = e.target;
@@ -185,9 +196,12 @@ export default function TimeSheetGrid() {
         toast.success(results[0].message, {
           position: 'top-center',
         });
-        setDirty(true)
+        setDirty(true);
         setEditableRows({});
-        dispatch(fetchTimeSheet());
+        dispatch(fetchTimeSheet()).then(() => {
+          dispatch(filterTimesheet({ name: searchName, status: selectedStatus, month }));
+          setPage(1); // Reset to first page after filtering
+        });
       })
       .catch(error => {
         console.log('Error', error);
@@ -197,14 +211,16 @@ export default function TimeSheetGrid() {
       });
   }
 
+  console.log('user role ', userRole, Number(userRole));
+
   const transformData = () => {
-    const filteredAttendances = userRole === '3'
-      ? attendances.filter(att => att.employee._id === userId && new Date(att.date).getMonth() + 1 === month)
+    const filteredAttendances = Number(userRole) >= 3
+      ? attendances.filter(att => att.employee?._id === userId && new Date(att.date).getMonth() + 1 === month)
       : attendances.filter(att => new Date(att.date).getMonth() + 1 === month);
 
     const updatedData = filteredAttendances.map(attendance => {
       const timesheet = timesheets.find(ts => ts.attendance._id === attendance._id);
-      const employee = employees.find(emp => emp._id === attendance.employee._id);
+      const employee = employees.find(emp => emp._id === attendance.employee?._id);
 
       return {
         _id: timesheet ? timesheet._id : null,
@@ -221,7 +237,23 @@ export default function TimeSheetGrid() {
       };
     });
 
-    return updatedData;
+    const uniqueData = new Map();
+
+    updatedData.forEach(item => {
+      const dateKey = item.attendance_date;
+
+      if (!uniqueData.has(dateKey)) {
+        uniqueData.set(dateKey, item);
+      }
+    });
+
+    // Convert the Map back to an array
+    const uniqueRows = Array.from(uniqueData.values());
+
+    // Sort the data by attendance_date in ascending order
+    uniqueRows.sort((a, b) => new Date(a.attendance_date) - new Date(b.attendance_date));
+
+    return uniqueRows;
   };
 
   const rows = transformData();
@@ -234,7 +266,9 @@ export default function TimeSheetGrid() {
     setPage(value);
   };
 
-  const paginatedRows = rows.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const paginatedRows = (searchName !== '' || selectedStatus !== '' ? filteredTimesheet : rows)
+    .slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
 
   ;
 
@@ -305,7 +339,7 @@ export default function TimeSheetGrid() {
             Save
           </Button>
           <Grid container spacing={2}>
-            {userRole === "1" && <Grid item xs={12} md={4}>
+            {Number(userRole) <= 2 && <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
                 label='Employee Name'
@@ -357,7 +391,7 @@ export default function TimeSheetGrid() {
           <Table>
             <TableHead>
               <TableRow>
-                {userRole === "1" && <TableCell sx={{ fontSize: '1.1em' }}>Employee</TableCell>}
+                {Number(userRole) <= 2 && <TableCell sx={{ fontSize: '1.1em' }}>Employee</TableCell>}
                 <TableCell sx={{ fontSize: '1.1em', textAlign: 'center' }}>Attendance Date</TableCell>
                 <TableCell sx={{ fontSize: '1.1em', textAlign: 'center' }}>Attendance Status</TableCell>
                 <TableCell sx={{ textAlign: 'center', fontSize: '1.1em' }}>Time Hours</TableCell>
@@ -370,19 +404,18 @@ export default function TimeSheetGrid() {
             <TableBody>
               {(searchName !== '' || selectedStatus !== '' ? filteredTimesheet : paginatedRows).map((row) => (
                 <TableRow key={row._id || row.attendance_id}>
-                  {userRole === "1" && <TableCell sx={{ textAlign: 'center', fontSize: '1em' }}>
+                  {Number(userRole) <= 2 && <TableCell sx={{ textAlign: 'center', fontSize: '1em' }}>
                     <Box display="flex" alignItems="center">
                       <Avatar src={searchName !== '' || selectedStatus !== '' ? row.employee.image : row.employee_image} alt={row.employee_name} sx={{ mr: 2 }} />
                       {searchName !== '' || selectedStatus !== ''
                         ? `${row.employee.first_name} ${row.employee.last_name}`
                         : row.employee_name}
-
                     </Box>
                   </TableCell>}
                   <TableCell sx={{ textAlign: 'center', fontSize: '1em' }} >{searchName !== '' || selectedStatus !== '' ? row.attendance.date : row.attendance_date}</TableCell>
                   <TableCell sx={{ textAlign: 'center', fontSize: '1em' }} >{searchName !== '' || selectedStatus !== '' ? row.attendance.status : row.attendance_status}</TableCell>
                   <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }} >
-                    {userRole === "3" && editableRows[row._id || row.attendance_id] ? (
+                    {Number(userRole) >= 3 && editableRows[row._id || row.attendance_id] ? (
                       <Box display="flex" alignItems="center">
                         <IconButton onClick={() => handleDecrementTime(row._id || row.attendance_id)}>
                           <Remove />
@@ -398,12 +431,14 @@ export default function TimeSheetGrid() {
                         </IconButton>
                       </Box>
                     ) : (
-                      <span style={userRole === '3' ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}} onClick={() => userRole === "3" && handleEditClick(row)}>{row.time || '0'}</span>
+                      <Tooltip title="Click here">
+                        <span style={Number(userRole) >= 3 ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}} onClick={() => Number(userRole) >= 3 && handleEditClick(row)}>{row.time || '0'}</span>
+                      </Tooltip>
                     )}
                   </TableCell>
                   <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }} >
                     {editableRows[row._id || row.attendance_id] ? (
-                      userRole === '1' ? (
+                      Number(userRole) <= 2 ? (
                         <Select
                           name="status"
                           value={editableRows[row._id || row.attendance_id].status}
@@ -414,31 +449,36 @@ export default function TimeSheetGrid() {
                           <MenuItem value="Rejected">REJECTED</MenuItem>
                         </Select>
                       ) : (
-                        <span>{row.status}</span>
+
+                        <span>{row.status || 'Pending'}</span>
+
                       )
                     ) : (
-                      <span
-                        style={userRole === '1' ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}}
-                        onClick={() => handleEditClick(row)}
-                      >
-                        {row.status || 'Approved'}
-                      </span>
-
+                      <Tooltip title="Click here">
+                        <span
+                          style={Number(userRole) <= 2 ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}}
+                          onClick={() => handleEditClick(row)}
+                        >
+                          {row.status}
+                        </span>
+                      </Tooltip>
                     )}
                   </TableCell>
                   <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }} >
-                    {userRole === "3" && editableRows[row._id || row.attendance_id] ? (
+                    {Number(userRole) >= 3 && editableRows[row._id || row.attendance_id] ? (
                       <TextField
                         name="note"
                         value={editableRows[row._id || row.attendance_id].note}
                         onChange={(e) => handleChange(e, row._id || row.attendance_id)}
                       />
                     ) : (
-                      <span onClick={() => userRole === "3" && handleEditClick(row)}>{row.note || ''}</span>
+                      <Tooltip title="Click here">
+                        <span onClick={() => Number(userRole) >= 3 && handleEditClick(row)}>{row.note || ''}</span>
+                      </Tooltip>
                     )}
                   </TableCell>
                   <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }} >
-                    {userRole === "3" && editableRows[row._id || row.attendance_id] ? (
+                    {Number(userRole) >= 3 && editableRows[row._id || row.attendance_id] ? (
                       <TextField
                         name="submission_date"
                         type="date"
@@ -446,17 +486,15 @@ export default function TimeSheetGrid() {
                         onChange={(e) => handleChange(e, row._id || row.attendance_id)}
                       />
                     ) : (
-                      <span style={userRole === '3' ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}} onClick={() => userRole === "3" && handleEditClick(row)}>{row.submission_date || ''}</span>
+                      <Tooltip title="Click here">
+                        <span style={Number(userRole) >= 3 ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}} onClick={() => Number(userRole) >= 3 && handleEditClick(row)}>{row.submission_date || ''}</span>
+                      </Tooltip>
                     )}
                   </TableCell>
-                  {/* <TableCell>
-                    {editableRows[row._id || row.attendance_id] && (
-                      <Button onClick={() => handleSaveAll()}>Save All</Button>
-                    )}
-                  </TableCell> */}
                 </TableRow>
               ))}
             </TableBody>
+
           </Table>
         </TableContainer>
       </Box>
