@@ -19,10 +19,6 @@ import {
   TextField,
   Dialog,
   DialogContent,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
   FormHelperText
 } from '@mui/material'
 
@@ -371,19 +367,24 @@ export default function PolicyGrid() {
         <DataGrid
           sx={{
             '& .super-app-theme--header': {
-              fontSize: 15,
-
-              fontWeight: 600
+              fontSize: 17,
+              fontWeight: 600,
+              alignItems: 'center',
             },
             '& .MuiDataGrid-cell': {
-              fontSize: '1em',
-
+              fontSize: '10',
               align: 'center',
             },
             '& .MuiDataGrid-row': {
               '&:nth-of-type(odd)': {
-
+                backgroundColor: 'rgb(46 38 61 / 12%)',
               },
+              '&:nth-of-type(even)': {
+                backgroundColor: '#fffff',
+              },
+              fontWeight: '600',
+              fontSize: '14px',
+              boxSizing: 'border-box',
             },
           }}
           components={{
