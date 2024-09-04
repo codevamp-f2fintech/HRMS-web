@@ -24,7 +24,9 @@ import {
   MenuItem,
   Select,
   Avatar,
-  FormHelperText
+  FormHelperText,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material'
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close'
@@ -53,6 +55,8 @@ export default function LeavesGrid() {
   const [selectedKeyword, setSelectedKeyword] = useState('');
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
+  const [isHalfDay, setIsHalfDay] = useState(false);
+
 
   // const limit = 10;
 
@@ -98,9 +102,8 @@ export default function LeavesGrid() {
 
     // Fetch employees and set the state
     const fetchEmployees = async () => {
-      const data = await apiResponse();
-
-      setEmployees(data);
+      const employeeData = await apiResponse();
+      setEmployees(employeeData);
     };
 
     fetchEmployees();
@@ -156,11 +159,20 @@ export default function LeavesGrid() {
             status: selected.status,
             application: selected.application,
             type: selected.type,
-            day: calculateDaysDifference(selected.start_date, selected.end_date)
+            day: selected ? selected.day : calculateDaysDifference(selected.start_date, selected.end_date)
           })
         }
+        if (selected.day === "0.5") {
+          setIsHalfDay(true);
+        }
+      } else if (userRole !== '1') {
+        // If it's not an admin, set the employee field to the current user's ID
+        setFormData(prevState => ({
+          ...prevState,
+          employee: userId
+        }))
       }
-    }, [leave, leaves])
+    }, [leave, leaves, userRole, userId])
 
     const validateForm = () => {
       let isValid = true;
@@ -214,8 +226,6 @@ export default function LeavesGrid() {
       return isValid;
     };
 
-
-
     const handleChange = (e) => {
       const { name, value } = e.target;
       setFormData(prevState => {
@@ -223,26 +233,29 @@ export default function LeavesGrid() {
           ...prevState,
           [name]: value
         };
+
         if (name === 'start_date' || name === 'end_date') {
-          updatedFormData.day = calculateDaysDifference(updatedFormData.start_date, updatedFormData.end_date);
+          const days = calculateDaysDifference(updatedFormData.start_date, updatedFormData.end_date);
+          updatedFormData.day = isHalfDay ? (days / 2).toString() : days.toString();
         }
 
         return updatedFormData;
       });
-    }
+    };
 
-    const calculateDaysDifference = (start: string, end: string): string => {
+
+    const calculateDaysDifference = (start, end) => {
       if (start && end) {
         const startDate = new Date(start);
         const endDate = new Date(end);
         const differenceInTime = endDate.getTime() - startDate.getTime();
         const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
 
-        return differenceInDays > 0 ? differenceInDays.toString() : '0';
+        return differenceInDays > 0 ? differenceInDays : 0;
       }
-
-      return '';
+      return 0;
     };
+
 
 
     const handleSubmit = () => {
@@ -287,41 +300,56 @@ export default function LeavesGrid() {
       ? employees.filter(emp => emp._id === userId)
       : employees;
 
+    console.log("filteredEmployees", filteredEmployees)
+
     return (
       <Box sx={{ flexGrow: 1, padding: 2 }}>
         <Box display='flex' justifyContent='space-between' alignItems='center'>
           <Typography style={{ fontSize: '2em' }} variant='h5' gutterBottom>
             {leave ? 'Edit Leave' : 'Add Leave'}
           </Typography>
-          <IconButton onClick={handleClose}>
-            <CloseIcon />
-          </IconButton>
+          <Box>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={isHalfDay}
+                  onChange={(e) => setIsHalfDay(e.target.checked)}
+                  name="halfDay"
+                  color="primary"
+                />
+              }
+              label="Half-day Leave"
+            />
+            <IconButton onClick={handleClose}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
         </Box>
         <Grid container spacing={2}>
-          <Grid item xs={12} md={6}>
-            <FormControl fullWidth required>
-              <InputLabel required id='demo-simple-select-label'>Employee</InputLabel>
-              <Select
-                label='Select Employee'
-                labelId='demo-simple-select-label'
-                id='demo-simple-select'
-                name="employee"
-                value={formData.employee}
-                onChange={handleChange}
-                required
-                error={!!errors.employee}
-
-              // disabled={userRole === '3'}
-              >
-                {filteredEmployees.map((employee) => (
-                  <MenuItem key={employee._id} value={employee._id}>
-                    {employee.first_name} {employee.last_name}
-                  </MenuItem>
-                ))}
-              </Select>
-              {errors.employee && <FormHelperText error>{errors.employee}</FormHelperText>}
-            </FormControl>
-          </Grid>
+          {Number(userRole) < 3 &&
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth required>
+                <InputLabel required id='demo-simple-select-label'>Employee</InputLabel>
+                <Select
+                  label='Select Employee'
+                  labelId='demo-simple-select-label'
+                  id='demo-simple-select'
+                  name="employee"
+                  value={formData.employee}
+                  onChange={handleChange}
+                  required
+                  error={!!errors.employee}
+                  disabled={userRole !== '1'}
+                >
+                  {filteredEmployees.map((employee) => (
+                    <MenuItem key={employee._id} value={employee._id}>
+                      {employee.first_name} {employee.last_name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {errors.employee && <FormHelperText error>{errors.employee}</FormHelperText>}
+              </FormControl>
+            </Grid>}
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
@@ -351,35 +379,17 @@ export default function LeavesGrid() {
             />
           </Grid>
           <Grid item xs={12} md={6}>
-            <FormControl fullWidth required error={!!errors.status}>
-              <InputLabel required id='demo-simple-select-label'>Status</InputLabel>
-              <Select
-                label='Select Status'
-                labelId='demo-simple-select-label'
-                id='demo-simple-select'
-                name='status'
-                value={formData.status}
-                onChange={handleChange}
-                disabled={userRole !== '1'}
-              >
-                <MenuItem value='Pending'>Pending</MenuItem>
-                <MenuItem value='Approved' >Approved</MenuItem>
-                <MenuItem value='Rejected' >Rejected</MenuItem>
-              </Select>
-              {errors.status && <Typography color="error">{errors.status}</Typography>}
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={12} md={6}>
             <TextField
               fullWidth
-              label='Application'
-              name='application'
-              value={formData.application}
-              onChange={handleChange}
+              label='Day'
+              name='day'
+              value={formData.day}
+              type='text'  // Ensure the input type is text to handle the string value
+              InputProps={{ readOnly: true }}  // Make the input field read-only
+              InputLabelProps={{ shrink: true }}
               required
-              error={!!errors.application}
-              helperText={errors.application}
+              error={!!errors.day}
+              helperText={errors.day}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -408,17 +418,37 @@ export default function LeavesGrid() {
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
-              label='Day'
-              name='day'
-              value={formData.day}
-              type='text'  // Ensure the input type is text to handle the string value
-              InputProps={{ readOnly: true }}  // Make the input field read-only
-              InputLabelProps={{ shrink: true }}
+              label='Reason'
+              name='application'
+              value={formData.application}
+              onChange={handleChange}
               required
-              error={!!errors.day}
-              helperText={errors.day}
+              error={!!errors.application}
+              helperText={errors.application}
             />
           </Grid>
+
+
+          {Number(userRole) < 3 && <Grid item xs={12} md={6}>
+            <FormControl fullWidth required error={!!errors.status}>
+              <InputLabel required id='demo-simple-select-label'>Status</InputLabel>
+              <Select
+                label='Select Status'
+                labelId='demo-simple-select-label'
+                id='demo-simple-select'
+                name='status'
+                value={formData.status}
+                onChange={handleChange}
+                disabled={userRole !== '1'}
+              >
+                <MenuItem value='Pending'>Pending</MenuItem>
+                <MenuItem value='Approved' >Approved</MenuItem>
+                <MenuItem value='Rejected' >Rejected</MenuItem>
+              </Select>
+              {errors.status && <Typography color="error">{errors.status}</Typography>}
+            </FormControl>
+          </Grid>}
+
           <Grid item xs={12}>
             <Button
               style={{
