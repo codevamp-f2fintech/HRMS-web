@@ -42,6 +42,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { PickersDay, type PickersDayProps } from '@mui/x-date-pickers/PickersDay';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import { DayCalendarSkeleton } from '@mui/x-date-pickers/DayCalendarSkeleton';
+import ClearIcon from '@mui/icons-material/Clear';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 
@@ -345,6 +346,7 @@ export default function AttendanceGrid() {
       employee: prefillEmployee || '',
       date: prefillDate || '',
       status: '',
+      timeComplete: '',
     });
 
     const [errors, setErrors] = useState({
@@ -362,6 +364,7 @@ export default function AttendanceGrid() {
             employee: selected.employee._id,
             date: selected.date,
             status: selected.status,
+            timeComplete: selected.timeComplete || '',
           });
         }
       } else if (prefillEmployee && prefillDate) {
@@ -369,6 +372,7 @@ export default function AttendanceGrid() {
           employee: prefillEmployee,
           date: prefillDate,
           status: '',
+          timeComplete: '',
         });
       }
     }, [attendance, attendances, prefillEmployee, prefillDate]);
@@ -522,6 +526,51 @@ export default function AttendanceGrid() {
                 <MenuItem value='On Leave'>ON_LEAVE</MenuItem>
               </Select>
               <Typography variant="caption" color="error">{errors.status}</Typography>
+            </FormControl>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <FormControl
+              fullWidth
+              error={!!errors.timeComplete} // Remove the required prop
+              sx={{
+                position: 'relative',
+              }}
+            >
+              <InputLabel id="time-complete-select-label">Time Completion</InputLabel> {/* Remove the required prop */}
+              <Select
+                label="Select Time Completion"
+                labelId="time-complete-select-label"
+                id="time-complete-select"
+                name="timeComplete"
+                value={formData.timeComplete}
+                onChange={handleChange}
+                endAdornment={
+                  formData.timeComplete && (
+                    <IconButton
+                      aria-label="clear"
+                      onClick={() => handleChange({ target: { name: 'timeComplete', value: '' } })}
+                      sx={{
+                        visibility: 'visible',
+                        position: 'absolute',
+                        right: 40,
+                        color: 'black',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        opacity: 0.7,
+                        padding: 0,
+                      }}
+                    >
+                      <ClearIcon />
+                    </IconButton>
+                  )
+                }
+                sx={{
+                  pr: 6, // Add padding to the right to ensure space for the ClearIcon
+                }}
+              >
+                <MenuItem value="Not Completed">Not Completed</MenuItem>
+              </Select>
             </FormControl>
           </Grid>
           <Grid item xs={12}>
@@ -727,7 +776,7 @@ export default function AttendanceGrid() {
     const attendanceSource = filteredAttendance.length > 0 ? filteredAttendance : attendances;
 
     const groupedData = attendanceSource.reduce((acc, curr) => {
-      const { employee, date, status, _id } = curr;
+      const { employee, date, status, timeComplete, _id } = curr;
 
       if (!employee) {
         return acc;
@@ -751,8 +800,10 @@ export default function AttendanceGrid() {
           name: `${employee.first_name} ${employee.last_name}`,
           image: employee.image,
           present: 0,
+          presentNotCompleted: 0,
           absent: 0,
           onHalf: 0,
+          onHalfNotCompleted: 0,
           onLeave: 0,
           _id,
         };
@@ -763,13 +814,23 @@ export default function AttendanceGrid() {
 
         acc[employee._id][`day_${day}`] = status;
         acc[employee._id][`day_${day}_id`] = _id;
+        acc[employee._id][`day_${day}_timeComplete`] = timeComplete;
+
 
         if (status === 'Present') {
           acc[employee._id].present += 1;
+
+          if (timeComplete === 'Not Completed') {
+            acc[employee._id].presentNotCompleted += 1;
+          }
         } else if (status === 'Absent') {
           acc[employee._id].absent += 1;
         } else if (status === 'On Half') {
           acc[employee._id].onHalf += 1;
+
+          if (timeComplete === 'Not Completed') {
+            acc[employee._id].onHalfNotCompleted += 1;
+          }
         } else if (status === 'On Leave') {
           acc[employee._id].onLeave += 1;
         }
