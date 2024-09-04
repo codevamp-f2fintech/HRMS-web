@@ -148,7 +148,7 @@ const Profile = () => {
                   <Typography variant="body1" sx={{ mb: 3, lineHeight: 1.6, flexGrow: 1 }}>
                     {bio || "No bio available"}
                   </Typography>
-                  {user.role === '3' && user.id &&
+                  {!id && user.id &&
                     <Button onClick={toggleEditBio} sx={{ ml: 2 }}>
                       Edit
                     </Button>
