@@ -97,8 +97,6 @@ const UserDropdown = () => {
 
   if (!userData) return null
 
-  console.log("userdata", userData);
-
   return (
     <>
       <Badge

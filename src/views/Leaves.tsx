@@ -1,495 +1,109 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable padding-line-between-statements */
 'use client'
-
-import React, { useCallback, useEffect, useState } from 'react'
-
+import React, { useCallback, useEffect, useState, useMemo } from 'react'
 import { debounce } from 'lodash';
-
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import type { GridColDef } from '@mui/x-data-grid';
-import { DataGrid, GridToolbar } from '@mui/x-data-grid'
+import { DataGrid, GridColDef } from '@mui/x-data-grid'
 import {
   Button,
   Typography,
   Box,
   Grid,
-  IconButton,
   TextField,
   Dialog,
   DialogContent,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
   Avatar,
-  FormHelperText,
-  FormControlLabel,
-  Checkbox,
 } from '@mui/material'
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
 import SearchIcon from '@mui/icons-material/Search';
 import InputAdornment from '@mui/material/InputAdornment';
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material'
 import { useDispatch, useSelector } from 'react-redux';
 
-import type { AppDispatch, RootState } from '@/redux/store';
-import { fetchLeaves, filterLeave } from '@/redux/features/leaves/leavesSlice';
-import { fetchEmployees } from '@/redux/features/employees/employeesSlice';
+import { AppDispatch, RootState } from '@/redux/store';
+import { fetchLeaves } from '@/redux/features/leaves/leavesSlice';
 import { apiResponse } from '@/utility/apiResponse/employeesResponse';
+import AddLeavesForm from '@/components/leave/LeaveForm';
+import { format } from 'date-fns';
 
 export default function LeavesGrid() {
-  const dispatch: AppDispatch = useDispatch();
-  const { leaves, loading, error, filteredLeave, total } = useSelector((state: RootState) => state.leaves)
+  const dispatch = useDispatch<AppDispatch>();
+  const { leaves, total } = useSelector((state: RootState) => state.leaves);
 
-  // const { employees } = useSelector((state: RootState) => state.employees)
+  console.log(leaves)
+
   const [showForm, setShowForm] = useState(false)
   const [selectedLeaves, setSelectedLeaves] = useState(null)
   const [userRole, setUserRole] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
   const [employees, setEmployees] = useState([])
-  const [rows, setRows] = useState([]); // Store rows in state
   const [selectedKeyword, setSelectedKeyword] = useState('');
-  const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(10)
-  const [isHalfDay, setIsHalfDay] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
-
-  // const limit = 10;
-
-  const debouncedFetch = useCallback(
-    debounce(() => {
+  const debouncedFetch = useMemo(
+    () => debounce(() => {
       dispatch(fetchLeaves({ page, limit, keyword: selectedKeyword }));
     }, 300),
-    [page, limit, selectedKeyword]
+    [dispatch]
   );
 
-  useEffect(() => {
-    debouncedFetch();
-
-    return debouncedFetch.cancel;
-  }, [page, limit, selectedKeyword, debouncedFetch]);
-
-  const handleInputChange = (e) => {
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedKeyword(e.target.value);
-  };
+  }, []);
 
-  const handlePageChange = (newPage: number, newPageSize: number) => {
+  const handlePageChange = useCallback((newPage: number, newPageSize: number) => {
     setPage(newPage + 1);
     setLimit(newPageSize);
+  }, []);
 
-  };
-
-
-  const handlePaginationModelChange = (params: { page: number; pageSize: number }) => {
+  const handlePaginationModelChange = useCallback((params: { page: number; pageSize: number }) => {
     handlePageChange(params.page, params.pageSize);
     debouncedFetch();
-  };
-
-
-  // useEffect(() => {
-  //   dispatch(fetchLeaves({ page, limit }))
-  //   console.log('page', page, limit)
-  // }, [dispatch, page])
+  }, [handlePageChange, debouncedFetch]);
 
   useEffect(() => {
+    debouncedFetch();
+
     if (leaves.length === 0) {
-      dispatch(fetchLeaves({ page, limit, keyword: selectedKeyword }))
+      dispatch(fetchLeaves({ page, limit, keyword: selectedKeyword }));
     }
 
-    // Fetch employees and set the state
-    const fetchEmployees = async () => {
-      const employeeData = await apiResponse();
-      setEmployees(employeeData);
-    };
+    const user = JSON.parse(localStorage.getItem("user") || '{}');
+    setUserRole(user.role);
+    setUserId(user.id);
 
-    fetchEmployees();
-  }, [dispatch, leaves.length, page])
-
-
-  // useEffect(() => {
-  //   // Fetch employees and set the state
-  //   const fetchEmployees = async () => {
-  //     const data = await apiResponse();
-
-  //     setEmployees(data);
-  //   };
-
-  //   fetchEmployees();
-  // }, [dispatch])
+    return debouncedFetch.cancel;
+  }, [debouncedFetch, dispatch, leaves.length, limit, page, selectedKeyword]);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user") || '{}')
-    setUserRole(user.role)
-    setUserId(user.id)
-  }, [])
-
-  function AddLeavesForm({ handleClose, leave }) {
-    const [formData, setFormData] = useState({
-      employee: '',
-      start_date: '',
-      end_date: '',
-      status: 'Pending',
-      application: '',
-      type: '',
-      day: ''
-    })
-    const [errors, setErrors] = useState({
-      employee: '',
-      start_date: '',
-      end_date: '',
-      status: '',
-      application: '',
-      type: '',
-      day: ''
-    });
-
-
-    useEffect(() => {
-      if (leave) {
-        const selected = leaves.find(l => l._id === leave)
-        if (selected) {
-          setFormData({
-            employee: selected.employee._id,
-            start_date: selected.start_date,
-            end_date: selected.end_date,
-            status: selected.status,
-            application: selected.application,
-            type: selected.type,
-            day: selected ? selected.day : calculateDaysDifference(selected.start_date, selected.end_date)
-          })
-        }
-        if (selected.day === "0.5") {
-          setIsHalfDay(true);
-        }
-      } else if (userRole !== '1') {
-        // If it's not an admin, set the employee field to the current user's ID
-        setFormData(prevState => ({
-          ...prevState,
-          employee: userId
-        }))
-      }
-    }, [leave, leaves, userRole, userId])
-
-    const validateForm = () => {
-      let isValid = true;
-      const newErrors = {
-        employee: '',
-        start_date: '',
-        end_date: '',
-        status: '',
-        application: '',
-        type: '',
-        day: ''
+    if (Number(userRole) < 3 && employees.length === 0) {
+      const fetchEmployees = async () => {
+        const employeeData = await apiResponse();
+        setEmployees(employeeData);
       };
+      fetchEmployees();
+    }
+  }, [userRole, employees.length]);
 
-      if (!formData.employee) {
-        newErrors.employee = 'Employee selection is required';
-        isValid = false;
-      }
-
-      if (!formData.start_date) {
-        newErrors.start_date = 'Start date is required';
-        isValid = false;
-      }
-
-      if (!formData.end_date) {
-        newErrors.end_date = 'End date is required';
-        isValid = false;
-      }
-
-      if (!formData.status) {
-        newErrors.status = 'Status selection is required';
-        isValid = false;
-      }
-
-      if (!formData.application.trim()) {
-        newErrors.application = 'Application is required';
-        isValid = false;
-      }
-
-      if (!formData.type) {
-        newErrors.type = 'Leave type is required';
-        isValid = false;
-      }
-
-      if (!formData.day.trim()) {
-        newErrors.day = 'Day is required';
-        isValid = false;
-      }
-
-      setErrors(newErrors);
-
-      return isValid;
-    };
-
-    const handleChange = (e) => {
-      const { name, value } = e.target;
-      setFormData(prevState => {
-        const updatedFormData = {
-          ...prevState,
-          [name]: value
-        };
-
-        if (name === 'start_date' || name === 'end_date') {
-          const days = calculateDaysDifference(updatedFormData.start_date, updatedFormData.end_date);
-          updatedFormData.day = isHalfDay ? (days / 2).toString() : days.toString();
-        }
-
-        return updatedFormData;
-      });
-    };
-
-
-    const calculateDaysDifference = (start, end) => {
-      if (start && end) {
-        const startDate = new Date(start);
-        const endDate = new Date(end);
-        const differenceInTime = endDate.getTime() - startDate.getTime();
-        const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
-
-        return differenceInDays > 0 ? differenceInDays : 0;
-      }
-      return 0;
-    };
-
-
-
-    const handleSubmit = () => {
-      if (validateForm()) {
-        const method = leave ? 'PUT' : 'POST'
-        const url = leave ? `${process.env.NEXT_PUBLIC_APP_URL}/leaves/update/${leave}` : `${process.env.NEXT_PUBLIC_APP_URL}/leaves/create`
-        console.log("submitted form data", formData);
-
-        fetch(url, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
-        })
-          .then(response => response.json())
-          .then(data => {
-            if (data.message) {
-              if (data.message.includes('success')) {
-                toast.success(data.message, {
-                  position: 'top-center',
-                });
-              } else {
-                toast.error('Error: ' + data.message, {
-                  position: 'top-center',
-                });
-              }
-            } else {
-              toast.error('Unexpected error occurred', {
-                position: 'top-center',
-              });
-            }
-            handleClose();
-            dispatch(fetchLeaves({ page, limit, keyword: selectedKeyword }));
-          })
-          .catch(error => {
-            console.log('Error', error);
-          });
-      }
-    };
-
-    // Filter employees based on user role
-    const filteredEmployees = userRole !== '1'
-      ? employees.filter(emp => emp._id === userId)
-      : employees;
-
-    console.log("filteredEmployees", filteredEmployees)
-
-    return (
-      <Box sx={{ flexGrow: 1, padding: 2 }}>
-        <Box display='flex' justifyContent='space-between' alignItems='center'>
-          <Typography style={{ fontSize: '2em' }} variant='h5' gutterBottom>
-            {leave ? 'Edit Leave' : 'Add Leave'}
-          </Typography>
-          <Box>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={isHalfDay}
-                  onChange={(e) => setIsHalfDay(e.target.checked)}
-                  name="halfDay"
-                  color="primary"
-                />
-              }
-              label="Half-day Leave"
-            />
-            <IconButton onClick={handleClose}>
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </Box>
-        <Grid container spacing={2}>
-          {Number(userRole) < 3 &&
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth required>
-                <InputLabel required id='demo-simple-select-label'>Employee</InputLabel>
-                <Select
-                  label='Select Employee'
-                  labelId='demo-simple-select-label'
-                  id='demo-simple-select'
-                  name="employee"
-                  value={formData.employee}
-                  onChange={handleChange}
-                  required
-                  error={!!errors.employee}
-                  disabled={userRole !== '1'}
-                >
-                  {filteredEmployees.map((employee) => (
-                    <MenuItem key={employee._id} value={employee._id}>
-                      {employee.first_name} {employee.last_name}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {errors.employee && <FormHelperText error>{errors.employee}</FormHelperText>}
-              </FormControl>
-            </Grid>}
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Start Date'
-              name='start_date'
-              value={formData.start_date}
-              type='date'
-              onChange={handleChange}
-              InputLabelProps={{ shrink: true }}
-              required
-              error={!!errors.start_date}
-              helperText={errors.start_date}
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='End Date'
-              name='end_date'
-              type='date'
-              value={formData.end_date}
-              onChange={handleChange}
-              InputLabelProps={{ shrink: true }}
-              required
-              error={!!errors.end_date}
-              helperText={errors.end_date}
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Day'
-              name='day'
-              value={formData.day}
-              type='text'  // Ensure the input type is text to handle the string value
-              InputProps={{ readOnly: true }}  // Make the input field read-only
-              InputLabelProps={{ shrink: true }}
-              required
-              error={!!errors.day}
-              helperText={errors.day}
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <FormControl fullWidth required error={!!errors.type}>
-              <InputLabel required id='demo-simple-select-label'>Type</InputLabel>
-              <Select
-                label='Select Type'
-                labelId='demo-simple-select-label'
-                id='demo-simple-select'
-                name='type'
-                value={formData.type}
-                onChange={handleChange}
-              >
-                <MenuItem value='Annual'>ANNUAL</MenuItem>
-                <MenuItem value='Sick'>SICK</MenuItem>
-                <MenuItem value='Unpaid'>UNPAID</MenuItem>
-                <MenuItem value='Casual'>CASUAL</MenuItem>
-                <MenuItem value='Complimentary'>COMPLIMENTARY</MenuItem>
-                <MenuItem value='Maternity'>MATERNITY</MenuItem>
-                <MenuItem value='Optional'>OPTIONAL</MenuItem>
-              </Select>
-              {errors.type && <Typography color="error">{errors.type}</Typography>}
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Reason'
-              name='application'
-              value={formData.application}
-              onChange={handleChange}
-              required
-              error={!!errors.application}
-              helperText={errors.application}
-            />
-          </Grid>
-
-
-          {Number(userRole) < 3 && <Grid item xs={12} md={6}>
-            <FormControl fullWidth required error={!!errors.status}>
-              <InputLabel required id='demo-simple-select-label'>Status</InputLabel>
-              <Select
-                label='Select Status'
-                labelId='demo-simple-select-label'
-                id='demo-simple-select'
-                name='status'
-                value={formData.status}
-                onChange={handleChange}
-                disabled={userRole !== '1'}
-              >
-                <MenuItem value='Pending'>Pending</MenuItem>
-                <MenuItem value='Approved' >Approved</MenuItem>
-                <MenuItem value='Rejected' >Rejected</MenuItem>
-              </Select>
-              {errors.status && <Typography color="error">{errors.status}</Typography>}
-            </FormControl>
-          </Grid>}
-
-          <Grid item xs={12}>
-            <Button
-              style={{
-                fontSize: '18px',
-                fontWeight: 600,
-                color: 'white',
-                padding: 15,
-                backgroundColor: '#ff902f',
-                width: 200
-              }}
-              variant='contained'
-              fullWidth
-              onClick={handleSubmit}
-            >
-              {leave ? 'UPDATE LEAVE' : 'ADD LEAVE'}
-            </Button>
-          </Grid>
-        </Grid>
-      </Box>
-    )
-  }
-
-  const handleLeaveAddClick = () => {
+  const handleLeaveAddClick = useCallback(() => {
     setSelectedLeaves(null)
     setShowForm(true)
-  }
+  }, []);
 
-  const handleLeaveEditClick = (id) => {
+  const handleLeaveEditClick = useCallback((id) => {
     setSelectedLeaves(id)
     setShowForm(true)
-  }
+  }, []);
 
-
-
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setShowForm(false)
-  }
+  }, []);
 
-
-  const generateColumns = () => {
-    const columns: GridColDef[] = [
+  const generateColumns = useMemo(() => {
+    return [
       ...(userRole === '1' ? [{
         field: 'employee_name',
         headerName: 'Employee',
@@ -497,116 +111,61 @@ export default function LeavesGrid() {
         headerClassName: 'super-app-theme--header',
         sortable: true,
         align: 'center',
-        renderCell: (params) => {
-          // Define basic styles
-          const textStyle = {
-            fontSize: '1em', // Example styling
-            fontWeight: 'bold', // Example styling
-            // Example styling
-          };
-
-          return (
-            <Box display="flex" alignItems="center">
-              <Avatar src={params.row.employee_image} alt={params.row.employee_name} sx={{ mr: 2 }} />
-              <Typography sx={textStyle}>{params.row.employee_name}</Typography>
-            </Box>
-          );
-        },
+        renderCell: (params) => (
+          <Box display="flex" alignItems="center">
+            <Avatar src={params.row.employee_image} alt={params.row.employee_name} sx={{ mr: 2 }} />
+            <Typography sx={{ fontSize: '1em', fontWeight: 'bold' }}>{params.row.employee_name}</Typography>
+          </Box>
+        ),
       }] : []),
-
-      { field: 'start_date', headerName: 'Start Date', headerClassName: 'super-app-theme--header', width: 130, sortable: false },
-      { field: 'end_date', headerName: 'End Date', headerClassName: 'super-app-theme--header', width: 130, sortable: false },
-      { field: 'status', headerName: 'Status', headerClassName: 'super-app-theme--header', width: 110, sortable: false },
-      { field: 'application', headerName: 'Application', headerClassName: 'super-app-theme--header', width: 150, sortable: false },
-      { field: 'type', headerName: 'Type', headerClassName: 'super-app-theme--header', width: 100, sortable: false },
-      { field: 'day', headerName: 'Day', headerClassName: 'super-app-theme--header', width: 180, sortable: false },
+      { field: 'day', headerName: 'Day', headerClassName: 'super-app-theme--header', flex: 1 },
+      {
+        field: 'start_date',
+        headerName: 'Start Date',
+        headerClassName: 'super-app-theme--header',
+        flex: 1,
+        renderCell: (params) => format(new Date(params.value), 'dd-MMM-yyyy').toUpperCase(),
+      },
+      {
+        field: 'end_date',
+        headerName: 'End Date',
+        headerClassName: 'super-app-theme--header',
+        flex: 1,
+        renderCell: (params) => format(new Date(params.value), 'dd-MMM-yyyy').toUpperCase(),
+      },
+      { field: 'type', headerName: 'Type', headerClassName: 'super-app-theme--header', flex: 1 },
+      { field: 'status', headerName: 'Status', headerClassName: 'super-app-theme--header', flex: 1 },
+      { field: 'application', headerName: 'Reason', headerClassName: 'super-app-theme--header', flex: 1 },
       ...(userRole === '1' ? [{
         field: 'edit',
         headerName: 'Edit',
         sortable: false,
         headerAlign: 'center',
         width: 160,
-        headerClassName: 'super-app-theme--header',
         renderCell: ({ row: { _id } }) => (
-          <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
-            <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleLeaveEditClick(_id)}>
+          <Box display="flex" justifyContent="space-around">
+            <Button color="info" variant="contained" onClick={() => handleLeaveEditClick(_id)}>
               <DriveFileRenameOutlineOutlined />
             </Button>
           </Box>
         ),
       }] : [])
     ];
+  }, [userRole]);
 
-    return columns;
-  }
-
-  // Fetch and transform data
-  useEffect(() => {
-    const fetchData = async () => {
-      if (userId) {
-        const transformedData = await transformData();
-        setRows(transformedData);
-      }
-    };
-
-    fetchData();
-  }, [userId, leaves, userRole]);
-
-  const transformData = async () => {
-    let token: string | null = null;
-
-    if (typeof window !== "undefined") {
-      token = localStorage?.getItem('token');
-    }
-
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/leaves/gets/${userId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-
-
-    const data = await response.json();
-
-    const filteredLeaves = Number(userRole) >= 2
-      ? data : leaves;
-
-
-    const groupedData = filteredLeaves?.reduce((acc, curr) => {
-      const { employee, start_date, end_date, status, application, type, day, _id } = curr;
-
-      if (!employee) {
-        // If employee is null or undefined, skip this attendance record
-        return acc;
-      }
-
-      acc.push({
-        _id,
-        employee_id: employee._id,
-        employee_name: `${employee.first_name} ${employee.last_name}`,
-        employee_image: employee.image,
-        start_date,
-        end_date,
-        status,
-        application,
-        type,
-        day,
-      });
-
-      return acc;
-    }, []);
-
-    return groupedData;
-  };
-
-  const columns = generateColumns();
-
-  // const rows = transformData();
-
-
+  const rows = useMemo(() => {
+    return leaves.map((leave) => ({
+      _id: leave._id,
+      employee_name: `${leave.employee?.first_name} ${leave.employee?.last_name}`,
+      employee_image: leave.employee?.image,
+      start_date: leave.start_date,
+      end_date: leave.end_date,
+      type: leave.type,
+      status: leave.status,
+      day: leave.day,
+      application: leave.application,
+    }));
+  }, [leaves]);
 
   return (
     <Box>
@@ -614,7 +173,17 @@ export default function LeavesGrid() {
       <Box sx={{ flexGrow: 1, padding: 2 }}>
         <Dialog open={showForm} onClose={handleClose} fullWidth maxWidth='md'>
           <DialogContent>
-            <AddLeavesForm leave={selectedLeaves} handleClose={handleClose} />
+            {/* <AddLeavesForm leave={selectedLeaves} handleClose={handleClose} /> */}
+            <AddLeavesForm
+              handleClose={handleClose}
+              leave={selectedLeaves}
+              leaves={leaves}
+              userRole={userRole}
+              userId={userId}
+              employees={employees}
+              page={page}
+              limit={limit}
+              selectedKeyword={selectedKeyword} />
           </DialogContent>
         </Dialog>
         <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
@@ -656,23 +225,6 @@ export default function LeavesGrid() {
 
         </Box>
         <Grid container spacing={6} alignItems='center' mb={2}>
-          {/* <Grid item xs={12} md={3}>
-            <FormControl fullWidth>
-              <InputLabel id='status-select-label'>Status</InputLabel>
-              <Select
-                labelId='status-select-label'
-                id='status-select'
-                value={selectedStatus === '' ? 'All' : selectedStatus}
-                label='Status'
-                onChange={(e) => handleInputChange(e, 'selectedStatus')}
-              >
-                <MenuItem value='All'>All</MenuItem>
-                <MenuItem value='Pending'>Pending</MenuItem>
-                <MenuItem value='Approved'>Approved</MenuItem>
-                <MenuItem value='Rejected'>Rejected</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid> */}
           {userRole === "1" && (
             <Grid item xs={12} md={6}>
               <TextField
@@ -692,11 +244,6 @@ export default function LeavesGrid() {
             </Grid>
 
           )}
-          {/* <Grid item xs={12} md={3}>
-            <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>
-              SEARCH
-            </Button>
-          </Grid> */}
         </Grid>
       </Box>
       <Box sx={{ height: 500, width: '100%' }}>
@@ -727,7 +274,7 @@ export default function LeavesGrid() {
             },
           }}
           rows={rows}
-          columns={columns}
+          columns={generateColumns}
           getRowId={(row) => row._id}
           paginationMode="server"
           rowCount={total}

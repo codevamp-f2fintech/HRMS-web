@@ -42,6 +42,8 @@ import type { RootState, AppDispatch } from '../redux/store';
 import { fetchTeams } from '../redux/features/teams/teamsSlice';
 import { fetchEmployees } from '@/redux/features/employees/employeesSlice';
 
+import { utility } from '@/utility';
+
 const theme = createTheme({
   palette: {
     primary: {
@@ -99,6 +101,7 @@ export default function TeamGrid() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [userRole, setUserRole] = useState<string>('');
+  const { capitalizeInput } = utility();
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user") || '{}')
@@ -279,7 +282,7 @@ export default function TeamGrid() {
               label='Name'
               name='name'
               value={formData.name}
-              onChange={handleChange}
+              onChange={(e) => capitalizeInput(e, handleChange)}
               required
               error={!!errors.name}
               helperText={errors.name}
@@ -380,8 +383,6 @@ export default function TeamGrid() {
     setShowForm(true);
   };
 
-
-
   const handleEditTeamClick = (id) => {
     setSelectedTeam(id);
     setShowForm(true);
@@ -395,8 +396,6 @@ export default function TeamGrid() {
   const handleViewDetails = (team: TeamType) => {
     setViewDetails(team);
   };
-
-
 
   const columns: GridColDef[] = [
     {
@@ -426,8 +425,6 @@ export default function TeamGrid() {
       field: 'code',
       headerName: 'Code',
       editable: true,
-
-      // flex: 1
     },
     ...(userRole === '1'
       ? [{
@@ -526,6 +523,7 @@ export default function TeamGrid() {
                     borderRadius: '15px',
                     overflow: 'hidden',
                     transition: 'all 0.3s ease',
+                    height: '100%',
                     '&:hover': { transform: 'translateY(-5px)', boxShadow: 6 }
                   }}>
                     <CardHeader
@@ -562,7 +560,7 @@ export default function TeamGrid() {
                     overflowY: 'auto',
                     transition: 'all 0.3s ease',
                     '&:hover': { transform: 'translateY(-5px)', boxShadow: 6 },
-                    height: "250px",
+                    height: "285px",
                     position: 'relative',
 
 
@@ -626,6 +624,7 @@ export default function TeamGrid() {
                                 borderRadius: '10px',
                                 backgroundColor: '#f3e5f5',
                                 transition: 'all 0.3s ease',
+                                height: '100%',
                                 '&:hover': { backgroundColor: '#e1bee7', transform: 'scale(1.05)' }
                               }}>
                                 <Avatar
