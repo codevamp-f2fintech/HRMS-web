@@ -13,6 +13,7 @@ interface Attendance {
   employee_id: string;
   date: Date;
   status: string;
+  timeComplete: string;
 }
 
 interface attendancesState {
@@ -53,6 +54,31 @@ export const fetchAttendances = createAsyncThunk('attendances/fetchAttendances',
 
   return (await response.json()) as Attendance[]
 })
+
+export const fetchEmployeeAttendances = createAsyncThunk(
+  'attendances/fetchEmployeeAttendances',
+  async (employeeId: string) => {
+    let token: string | null = null;
+
+    if (typeof window !== 'undefined') {
+      token = localStorage.getItem('token');
+    }
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/attendence/employee/${employeeId}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch employee attendances');
+    }
+
+    return (await response.json()) as Attendance[];
+  }
+);
 
 export const attendancesSlice = createSlice({
   name: 'attendances',

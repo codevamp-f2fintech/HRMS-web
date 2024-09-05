@@ -73,7 +73,7 @@ export const timesheetSlice = createSlice({
       console.log("name is", name);
 
       state.filteredTimesheet = state.timesheets.filter(timesheet => {
-        const timesheetMonth = new Date(timesheet.attendance.date).getMonth() + 1;
+        const timesheetMonth = new Date(timesheet.attendance?.date).getMonth() + 1;
 
         return (
           (name ? timesheet.employee?.first_name.toLowerCase().includes(name.toLowerCase()) || timesheet.employee?.last_name.toLowerCase().includes(name.toLowerCase()) : true) &&

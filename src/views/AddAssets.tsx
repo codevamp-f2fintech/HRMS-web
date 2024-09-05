@@ -197,12 +197,15 @@ export default function AddAssets() {
         const handleChange = (e) => {
             const { name, value } = e.target;
 
+            console.log("name", name, "value", value)
+
             setFormData(prevState => ({
                 ...prevState,
                 [name]: value,
             }));
         };
 
+        console.log("formdata", formData)
         const handleSubmit = () => {
             if (validateForm()) {
                 const method = asset ? 'PUT' : 'POST';
@@ -221,15 +224,20 @@ export default function AddAssets() {
                     formPayload.append('attachment', selectedImage);
                 }
 
+                console.log([...formPayload.entries()]);
+
                 fetch(url, {
                     method,
                     body: formPayload,
                 })
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
                         if (data.message) {
-                            console.log("data", data)
-
                             if (data.message.includes('success')) {
                                 toast.success(data.message, {
                                     position: 'top-center',
@@ -255,6 +263,7 @@ export default function AddAssets() {
                     });
             }
         };
+
 
 
 

@@ -177,7 +177,7 @@ const EmployeeAttendanceStatus: React.FC = () => {
   useEffect(() => {
     if (attendances.length > 0) {
       const countsByLocation: LocationAttendanceCounts = {};
-      const uniqueAttendance = new Set<string>(); // Set to track unique employee attendance per day
+      const uniqueAttendance = new Set<string>();
 
       attendances.forEach(attendance => {
         if (attendance.date === todayDate) {
