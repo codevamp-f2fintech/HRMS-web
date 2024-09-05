@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
+import { debounce } from 'lodash';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import {
@@ -62,9 +63,23 @@ export default function TimeSheetGrid() {
   const [employees, setEmployees] = useState([]);
   const [expandedRows, setExpandedRows] = useState({});
 
-  const handleSearch = () => {
-    dispatch(filterTimesheet({ name: searchName, status: selectedStatus, month }));
-  };
+  const debouncedSearch = useCallback(
+    debounce(() => {
+      console.log('Debounced search triggered');
+      dispatch(filterTimesheet({ name: searchName, status: selectedStatus, month }));
+    }, 300),
+    [searchName, selectedStatus, month]
+  );
+
+  useEffect(() => {
+    debouncedSearch();
+
+
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [debouncedSearch]);
+
 
   const handleInputChange = (e, field) => {
     if (field === 'searchName') {
@@ -73,11 +88,6 @@ export default function TimeSheetGrid() {
       setSelectedStatus(e.target.value === 'All' ? '' : e.target.value);
     }
   };
-
-  useEffect(() => {
-    setPage(1);
-    handleSearch();
-  }, [searchName, selectedStatus, month]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -117,11 +127,12 @@ export default function TimeSheetGrid() {
   }, []);
 
   const toggleRow = (employee_id) => {
-    setExpandedRows(prev => ({
+    setExpandedRows((prev) => ({
       ...prev,
-      [employee_id]: !prev[employee_id]
+      [employee_id]: !prev[employee_id],
     }));
   };
+
 
   const handleEditClick = (row) => {
     const isAttendance = row.attendance_status === 'Present' || row.attendance_status === 'On Half';
@@ -204,7 +215,8 @@ export default function TimeSheetGrid() {
         setEditableRows({});
         dispatch(fetchTimeSheet()).then(() => {
           dispatch(filterTimesheet({ name: searchName, status: selectedStatus, month }));
-          setPage(1);
+
+          // setPage(1);
         });
       })
       .catch(error => {
@@ -243,10 +255,10 @@ export default function TimeSheetGrid() {
 
   const rows = transformData();
 
-  // Filter data for the logged-in user only if userRole >= 3
-  const userRows = Number(userRole) >= 3 ? rows.filter(row => row.employee_id === userId) : rows;
 
-  // Group rows by employee ID
+  const userRows = Number(userRole) >= 3 ? rows.filter(row => row.employee_id === userId) : rows;
+  const paginatedUserRows = userRows.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
   const groupedRows = userRows.reduce((acc, row) => {
     const employeeId = row.employee_id;
 
@@ -263,19 +275,27 @@ export default function TimeSheetGrid() {
     return acc;
   }, {});
 
-  // Get the list of employees for pagination
   const employeeIds = Object.keys(groupedRows);
 
-  const pageCount = Math.ceil(employeeIds.length / ITEMS_PER_PAGE);
+  const filteredEmployeeIds = employeeIds.filter((employee_id) => {
+    const employee = groupedRows[employee_id];
+    const fullName = `${employee.employee_name}`.toLowerCase();
 
-  const handlePageChange = (event, value) => {
-    setPage(value);
-  };
+    const statusMatches = !selectedStatus || employee.timesheets.some(row => row.status.toLowerCase() === selectedStatus.toLowerCase());
 
-  // Get the employees to show on the current page
-  const paginatedEmployeeIds = employeeIds.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
-  const paginatedRows = userRows.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+    const nameMatches = !searchName || fullName.includes(searchName.toLowerCase());
+
+    return nameMatches && statusMatches;
+  });
+
+
+  const paginatedEmployeeIds = filteredEmployeeIds.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
+  const pageCount = Math.ceil(userRows.length / ITEMS_PER_PAGE);
+
+
+  const paginatedRows = filteredEmployeeIds.map(employee_id => groupedRows[employee_id]).slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   return (
     <Box>
@@ -324,7 +344,7 @@ export default function TimeSheetGrid() {
             <Pagination
               count={pageCount}
               page={page}
-              onChange={handlePageChange}
+              onChange={(event, value) => setPage(value)}
               variant="outlined"
               shape="rounded"
               color="primary"
@@ -398,153 +418,137 @@ export default function TimeSheetGrid() {
             <TableBody>
               {Number(userRole) <= 2 ? (
 
-                // Filter and map over the employee list based on search criteria
-                paginatedEmployeeIds
-                  .filter((employee_id) => {
-                    const employee = groupedRows[employee_id];
-                    const fullName = `${employee.employee_name}`.toLowerCase();
 
-                    // Check if status matches in any of the timesheets for the employee
-                    const statusMatches = !selectedStatus || employee.timesheets.some(row => row.status.toLowerCase() === selectedStatus.toLowerCase());
+                paginatedRows.map((employee) => (
+                  <React.Fragment key={employee.employee_name}>
 
-                    // Check if the name matches the search criteria
-                    const nameMatches = !searchName || fullName.includes(searchName.toLowerCase());
-
-                    return nameMatches && statusMatches;
-                  })
-                  .map((employee_id) => (
-                    <React.Fragment key={employee_id}>
-                      {/* Employee Row with Collapse Toggle */}
-                      <TableRow>
-                        <TableCell
-                          sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }}
-                          onClick={() => toggleRow(employee_id)}
-                        >
-                          <Box display="flex" alignItems="center">
-                            <Avatar
-                              src={groupedRows[employee_id].employee_image}
-                              alt={groupedRows[employee_id].employee_name}
-                              sx={{ mr: 2 }}
-                            />
-                            {groupedRows[employee_id].employee_name}
-                            <IconButton>
-                              {expandedRows[employee_id] ? <ExpandLess /> : <ExpandMore />}
-                            </IconButton>
-                          </Box>
-                        </TableCell>
-                        <TableCell colSpan={6}></TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell colSpan={7} style={{ paddingBottom: 0, paddingTop: 0 }}>
-                          <Collapse in={expandedRows[employee_id]} timeout="auto" unmountOnExit>
-                            <Box margin={1}>
-                              <Table size="small" aria-label="purchases">
-                                <TableHead>
-                                  <TableRow>
-                                    <TableCell sx={{ fontSize: '1em', textAlign: 'center' }}>Attendance Date</TableCell>
-                                    <TableCell sx={{ fontSize: '1em', textAlign: 'center' }}>Attendance Status</TableCell>
-                                    <TableCell sx={{ fontSize: '1em', textAlign: 'center' }}>Time Hours</TableCell>
-                                    <TableCell sx={{ fontSize: '1em', textAlign: 'center' }}>TimeSheet Status</TableCell>
-                                    <TableCell sx={{ fontSize: '1em', textAlign: 'center' }}>Note</TableCell>
-                                    <TableCell sx={{ fontSize: '1em', textAlign: 'center' }}>Submission Date</TableCell>
+                    <TableRow>
+                      <TableCell
+                        sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }}
+                        onClick={() => toggleRow(employee.employee_id)}
+                      >
+                        <Box display="flex" alignItems="center">
+                          <Avatar
+                            src={employee.employee_image}
+                            alt={employee.employee_name}
+                            sx={{ mr: 2 }}
+                          />
+                          {employee.employee_name}
+                          <IconButton>
+                            {expandedRows[employee.employee_id] ? <ExpandLess /> : <ExpandMore />}
+                          </IconButton>
+                        </Box>
+                      </TableCell>
+                      <TableCell colSpan={6}></TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell colSpan={7} style={{ paddingBottom: 0, paddingTop: 0 }}>
+                        <Collapse in={expandedRows[employee.employee_id]} timeout="auto" unmountOnExit>
+                          <Box margin={1}>
+                            <Table size="small" aria-label="purchases">
+                              <TableHead>
+                                <TableRow>
+                                  <TableCell sx={{ fontSize: '1em', textAlign: 'center' }}>Attendance Date</TableCell>
+                                  <TableCell sx={{ fontSize: '1em', textAlign: 'center' }}>Attendance Status</TableCell>
+                                  <TableCell sx={{ fontSize: '1em', textAlign: 'center' }}>Time Hours</TableCell>
+                                  <TableCell sx={{ fontSize: '1em', textAlign: 'center' }}>TimeSheet Status</TableCell>
+                                  <TableCell sx={{ fontSize: '1em', textAlign: 'center' }}>Note</TableCell>
+                                  <TableCell sx={{ fontSize: '1em', textAlign: 'center' }}>Submission Date</TableCell>
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                {employee.timesheets.map((row) => (
+                                  <TableRow key={row._id || row.attendance_id}>
+                                    <TableCell sx={{ textAlign: 'center', fontSize: '1em' }}>{row.attendance_date}</TableCell>
+                                    <TableCell sx={{ textAlign: 'center', fontSize: '1em' }}>{row.attendance_status}</TableCell>
+                                    <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }}>
+                                      {editableRows[row._id || row.attendance_id] && userRole >= 3 ? (
+                                        <Box display="flex" alignItems="center">
+                                          <IconButton onClick={() => handleDecrementTime(row._id || row.attendance_id)}>
+                                            <Remove />
+                                          </IconButton>
+                                          <TextField
+                                            name="time"
+                                            value={editableRows[row._id || row.attendance_id].time}
+                                            onChange={(e) => handleChange(e, row._id || row.attendance_id)}
+                                            style={{ width: '50px' }}
+                                          />
+                                          <IconButton onClick={() => handleIncrementTime(row._id || row.attendance_id)}>
+                                            <Add />
+                                          </IconButton>
+                                        </Box>
+                                      ) : (
+                                        <Tooltip title="Click here">
+                                          <span style={Number(userRole) >= 3 ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}} onClick={() => Number(userRole) >= 3 && handleEditClick(row)}>
+                                            {row.time || '0'}
+                                          </span>
+                                        </Tooltip>
+                                      )}
+                                    </TableCell>
+                                    <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }}>
+                                      {editableRows[row._id || row.attendance_id] ? (
+                                        Number(userRole) <= 2 ? (
+                                          <Select
+                                            name="status"
+                                            value={editableRows[row._id || row.attendance_id].status}
+                                            onChange={(e) => handleChange(e, row._id || row.attendance_id)}
+                                          >
+                                            <MenuItem value="Pending">PENDING</MenuItem>
+                                            <MenuItem value="Approved">APPROVED</MenuItem>
+                                            <MenuItem value="Rejected">REJECTED</MenuItem>
+                                          </Select>
+                                        ) : (
+                                          <span>{row.status || 'Pending'}</span>
+                                        )
+                                      ) : (
+                                        <Tooltip title="Click here">
+                                          <span
+                                            style={Number(userRole) <= 2 ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}}
+                                            onClick={() => handleEditClick(row)}
+                                          >
+                                            {row.status}
+                                          </span>
+                                        </Tooltip>
+                                      )}
+                                    </TableCell>
+                                    <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }}>
+                                      {userRole >= 3 && editableRows[row._id || row.attendance_id] ? (
+                                        <TextField
+                                          name="note"
+                                          value={editableRows[row._id || row.attendance_id].note}
+                                          onChange={(e) => handleChange(e, row._id || row.attendance_id)}
+                                        />
+                                      ) : (
+                                        <span onClick={() => handleEditClick(row)}>{row.note || ''}</span>
+                                      )}
+                                    </TableCell>
+                                    <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }}>
+                                      {userRole >= 3 && editableRows[row._id || row.attendance_id] ? (
+                                        <TextField
+                                          name="submission_date"
+                                          type="date"
+                                          value={editableRows[row._id || row.attendance_id].submission_date}
+                                          onChange={(e) => handleChange(e, row._id || row.attendance_id)}
+                                        />
+                                      ) : (
+                                        <Tooltip title="Click here">
+                                          <span style={Number(userRole) >= 3 ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}} onClick={() => handleEditClick(row)}>{row.submission_date || ''}</span>
+                                        </Tooltip>
+                                      )}
+                                    </TableCell>
                                   </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                  {groupedRows[employee_id].timesheets.map((row) => (
-                                    <TableRow key={row._id || row.attendance_id}>
-                                      <TableCell sx={{ textAlign: 'center', fontSize: '1em' }}>{row.attendance_date}</TableCell>
-                                      <TableCell sx={{ textAlign: 'center', fontSize: '1em' }}>{row.attendance_status}</TableCell>
-                                      <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }}>
-                                        {Number(userRole) >= 3 && editableRows[row._id || row.attendance_id] ? (
-                                          <Box display="flex" alignItems="center">
-                                            <IconButton onClick={() => handleDecrementTime(row._id || row.attendance_id)}>
-                                              <Remove />
-                                            </IconButton>
-                                            <TextField
-                                              name="time"
-                                              value={editableRows[row._id || row.attendance_id].time}
-                                              onChange={(e) => handleChange(e, row._id || row.attendance_id)}
-                                              style={{ width: '50px' }}
-                                            />
-                                            <IconButton onClick={() => handleIncrementTime(row._id || row.attendance_id)}>
-                                              <Add />
-                                            </IconButton>
-                                          </Box>
-                                        ) : (
-                                          <Tooltip title="Click here">
-                                            <span style={Number(userRole) >= 3 ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}} onClick={() => Number(userRole) >= 3 && handleEditClick(row)}>
-                                              {row.time || '0'}
-                                            </span>
-                                          </Tooltip>
-                                        )}
-                                      </TableCell>
-                                      <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }}>
-                                        {editableRows[row._id || row.attendance_id] ? (
-                                          Number(userRole) <= 2 ? (
-                                            <Select
-                                              name="status"
-                                              value={editableRows[row._id || row.attendance_id].status}
-                                              onChange={(e) => handleChange(e, row._id || row.attendance_id)}
-                                            >
-                                              <MenuItem value="Pending">PENDING</MenuItem>
-                                              <MenuItem value="Approved">APPROVED</MenuItem>
-                                              <MenuItem value="Rejected">REJECTED</MenuItem>
-                                            </Select>
-                                          ) : (
-                                            <span>{row.status || 'Pending'}</span>
-                                          )
-                                        ) : (
-                                          <Tooltip title="Click here">
-                                            <span
-                                              style={Number(userRole) <= 2 ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}}
-                                              onClick={() => handleEditClick(row)}
-                                            >
-                                              {row.status}
-                                            </span>
-                                          </Tooltip>
-                                        )}
-                                      </TableCell>
-                                      <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }}>
-                                        {Number(userRole) >= 3 && editableRows[row._id || row.attendance_id] ? (
-                                          <TextField
-                                            name="note"
-                                            value={editableRows[row._id || row.attendance_id].note}
-                                            onChange={(e) => handleChange(e, row._id || row.attendance_id)}
-                                          />
-                                        ) : (
-                                          <Tooltip title="Click here">
-                                            <span onClick={() => handleEditClick(row)}>{row.note || ''}</span>
-                                          </Tooltip>
-                                        )}
-                                      </TableCell>
-                                      <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }}>
-                                        {Number(userRole) >= 3 && editableRows[row._id || row.attendance_id] ? (
-                                          <TextField
-                                            name="submission_date"
-                                            type="date"
-                                            value={editableRows[row._id || row.attendance_id].submission_date}
-                                            onChange={(e) => handleChange(e, row._id || row.attendance_id)}
-                                          />
-                                        ) : (
-                                          <Tooltip title="Click here">
-                                            <span style={Number(userRole) >= 3 ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}} onClick={() => handleEditClick(row)}>{row.submission_date || ''}</span>
-                                          </Tooltip>
-                                        )}
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
-                            </Box>
-                          </Collapse>
-                        </TableCell>
-                      </TableRow>
-                    </React.Fragment>
-                  ))
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </Box>
+                        </Collapse>
+                      </TableCell>
+                    </TableRow>
+                  </React.Fragment>
+                ))
               ) : (
 
-                // For userRole >= 3, directly filter based on status and name
-                paginatedRows
+                paginatedUserRows
                   .filter(row => {
                     const statusMatches = !selectedStatus || row.status.toLowerCase() === selectedStatus.toLowerCase();
 
@@ -556,7 +560,7 @@ export default function TimeSheetGrid() {
                       <TableCell sx={{ textAlign: 'center', fontSize: '1em' }}>{row.attendance_date}</TableCell>
                       <TableCell sx={{ textAlign: 'center', fontSize: '1em' }}>{row.attendance_status}</TableCell>
                       <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }}>
-                        {editableRows[row._id || row.attendance_id] ? (
+                        {userRole >= 3 && editableRows[row._id || row.attendance_id] ? (
                           <Box display="flex" alignItems="center">
                             <IconButton onClick={() => handleDecrementTime(row._id || row.attendance_id)}>
                               <Remove />
@@ -578,29 +582,18 @@ export default function TimeSheetGrid() {
                         )}
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }}>
-                        {editableRows[row._id || row.attendance_id] ? (
-                          Number(userRole) <= 2 ? (
-                            <Select
-                              name="status"
-                              value={editableRows[row._id || row.attendance_id].status}
-                              onChange={(e) => handleChange(e, row._id || row.attendance_id)}
-                            >
-                              <MenuItem value="Pending">PENDING</MenuItem>
-                              <MenuItem value="Approved">APPROVED</MenuItem>
-                              <MenuItem value="Rejected">REJECTED</MenuItem>
-                            </Select>
-                          ) : (
-                            <span>{row.status || 'Pending'}</span>
-                          )
+                        {userRole >= 3 ? (
+                          <span>{row.status || 'Pending'}</span>
                         ) : (
-                          <Tooltip title="Click here">
-                            <span
-                              style={Number(userRole) <= 2 ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}}
-                              onClick={() => handleEditClick(row)}
-                            >
-                              {row.status}
-                            </span>
-                          </Tooltip>
+                          <Select
+                            name="status"
+                            value={editableRows[row._id || row.attendance_id].status}
+                            onChange={(e) => handleChange(e, row._id || row.attendance_id)}
+                          >
+                            <MenuItem value="Pending">PENDING</MenuItem>
+                            <MenuItem value="Approved">APPROVED</MenuItem>
+                            <MenuItem value="Rejected">REJECTED</MenuItem>
+                          </Select>
                         )}
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }}>
@@ -611,9 +604,7 @@ export default function TimeSheetGrid() {
                             onChange={(e) => handleChange(e, row._id || row.attendance_id)}
                           />
                         ) : (
-                          <Tooltip title="Click here">
-                            <span onClick={() => handleEditClick(row)}>{row.note || ''}</span>
-                          </Tooltip>
+                          <span onClick={() => handleEditClick(row)}>{row.note || ''}</span>
                         )}
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }}>
@@ -625,17 +616,13 @@ export default function TimeSheetGrid() {
                             onChange={(e) => handleChange(e, row._id || row.attendance_id)}
                           />
                         ) : (
-                          <Tooltip title="Click here">
-                            <span style={{ border: '1px black solid', padding: '5px 10px 5px 10px' }} onClick={() => handleEditClick(row)}>{row.submission_date || ''}</span>
-                          </Tooltip>
+                          <span style={{ border: '1px black solid', padding: '5px 10px 5px 10px' }} onClick={() => handleEditClick(row)}>{row.submission_date || ''}</span>
                         )}
                       </TableCell>
                     </TableRow>
                   ))
               )}
             </TableBody>
-
-
 
           </Table>
         </TableContainer>
