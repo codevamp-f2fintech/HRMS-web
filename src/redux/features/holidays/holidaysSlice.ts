@@ -8,7 +8,7 @@ interface Holiday {
   start_date: Date;
   end_date: Date;
   note: string;
-  year: string;
+  day: string;
 }
 
 interface holidaysState {
