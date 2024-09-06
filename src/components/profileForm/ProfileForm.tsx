@@ -1,8 +1,9 @@
 'use client'
 import React, { useState, useEffect } from 'react';
-import { Typography, Button, Box, Chip, Tabs, Tab, TextField, Divider } from '@mui/material';
+import { Typography, Button, Box, Chip, Tabs, Tab, TextField, Divider, DialogContent, Dialog, IconButton } from '@mui/material';
 import { styled } from '@mui/system';
 import { Autocomplete } from '@mui/material';
+import { Close } from '@mui/icons-material';
 
 
 const StyledTabs = styled(Tabs)(({ theme }) => ({
@@ -26,6 +27,8 @@ const ProfileForm = ({ profileId, logedUser, calculateFilledTabsCount, setCalcul
     const [tabValue, setTabValue] = useState(0);
     const [updating, setUpdating] = useState(false);
     const [verifyTrigger, setVerifyTrigger] = useState(0);
+    const [open, setOpen] = useState(false);
+    const [selectedImage, setSelectedImage] = useState({ src: null, alt: null });
     const [formData, setFormData] = useState({
         employeeId: '',
         skills: [],
@@ -217,6 +220,30 @@ const ProfileForm = ({ profileId, logedUser, calculateFilledTabsCount, setCalcul
             <h6 className="text-lg font-semibold text-blue-700">{title}</h6>
         </div>
     );
+
+    const handleClickOpen = (imageSrc, imageAlt) => {
+        setOpen(true);
+        setSelectedImage({ src: imageSrc, alt: imageAlt });
+    }
+    const handleClose = () => {
+        setOpen(false);
+    };
+    const RenderImage = ({ imageSrc, imageAlt }) => (
+        <img
+            src={imageSrc instanceof File ? URL.createObjectURL(imageSrc) : imageSrc}
+            alt={imageAlt}
+            style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                marginTop: '8px',
+                borderRadius: '4px',
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
+                cursor: 'pointer'
+            }}
+        />
+    );
+
 
     const tabContent = [
         {
@@ -450,6 +477,7 @@ const ProfileForm = ({ profileId, logedUser, calculateFilledTabsCount, setCalcul
                                             : formData.bankDetails.panCardImage}
                                         alt="PAN Card"
                                         style={{ width: '100px', height: '100px', objectFit: 'cover', marginTop: '8px', borderRadius: '4px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)' }}
+                                        onClick={() => handleClickOpen(formData.bankDetails.panCardImage, "PAN Card")}
                                     />
                                 </Box>
                             )}
@@ -472,6 +500,7 @@ const ProfileForm = ({ profileId, logedUser, calculateFilledTabsCount, setCalcul
                                                 : formData.addressDetails.aadhaarFrontImage}
                                             alt="Aadhaar Front"
                                             style={{ width: '100px', height: '100px', objectFit: 'cover', marginTop: '8px', borderRadius: '4px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)' }}
+                                            onClick={() => handleClickOpen(formData.addressDetails.aadhaarFrontImage, "Aadhaar Front")}
                                         />
                                     </Box>
                                 )}
@@ -484,6 +513,7 @@ const ProfileForm = ({ profileId, logedUser, calculateFilledTabsCount, setCalcul
                                                 : formData.addressDetails.aadhaarBackImage}
                                             alt="Aadhaar Back"
                                             style={{ width: '100px', height: '100px', objectFit: 'cover', marginTop: '8px', borderRadius: '4px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)' }}
+                                            onClick={() => handleClickOpen(formData.addressDetails.aadhaarBackImage, "Aadhaar Back")}
                                         />
                                     </Box>
                                 )}
@@ -569,25 +599,27 @@ const ProfileForm = ({ profileId, logedUser, calculateFilledTabsCount, setCalcul
         }
     }, [calculateFilledTabs()]);
 
-    const areDetailsComplete = () => {
-        const bankDetailsComplete =
-            formData.bankDetails.bankName &&
-            formData.bankDetails.accountNumber &&
-            formData.bankDetails.ifscCode &&
-            formData.bankDetails.panCardNumber;
-
-        const addressDetailsComplete =
-            formData.addressDetails.permanentAddress &&
-            formData.addressDetails.currentAddress &&
-            formData.addressDetails.aadhaarCardNumber;
-
-        return bankDetailsComplete && addressDetailsComplete;
-    };
-
     if (logedUser.id === profileId || Number(logedUser.role) < 3) {
         return (
             <>
                 <form onSubmit={handleSubmit}>
+                    <Dialog
+                        open={open}
+                        onClose={handleClose}
+                        maxWidth={false}
+                    >
+                        <DialogContent sx={{ position: 'relative' }}>
+                            <IconButton
+                                onClick={handleClose}
+                                sx={{ position: 'absolute', top: '10px', right: '10px', color: '#fff' }}
+                            >
+                                <Close color='primary' />
+                            </IconButton>
+                            {selectedImage.src && (
+                                <RenderImage imageSrc={selectedImage.src} imageAlt={selectedImage.alt} />
+                            )}
+                        </DialogContent>
+                    </Dialog>
 
                     <StyledTabs value={tabValue} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
                         {tabContent.map((tab, index) => (
