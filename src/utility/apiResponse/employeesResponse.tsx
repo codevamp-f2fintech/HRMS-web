@@ -25,7 +25,6 @@ export const apiResponse = async () => {
     }
 
     const employees = await response.json();
-    console.log('employees:', employees);
     return employees;
   } catch (error) {
     console.error('Error fetching employees:', error);

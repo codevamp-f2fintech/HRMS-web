@@ -3,11 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { Box, Grid, TextField, Typography, IconButton, Button, FormControl, InputLabel, Select, MenuItem, InputAdornment, Autocomplete } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { useDispatch } from 'react-redux';
-
 import { toast, ToastContainer } from 'react-toastify';
 
 import type { AppDispatch } from '../../redux/store';
 import { addOrUpdateEmployee } from '@/redux/features/employees/employeesSlice';
+import { utility } from '@/utility';
 
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -39,6 +39,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
   const [isPasswordShown, setIsPasswordShown] = useState(false);
   const [errors, setErrors] = useState({});
   const dispatch: AppDispatch = useDispatch();
+  const { capitalizeInput } = utility();
 
   useEffect(() => {
     if (employee) {
@@ -213,7 +214,14 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
             label='First Name'
             name='first_name'
             value={formData.first_name}
-            onChange={handleChange}
+            onChange={(e) => {
+              const { name, value } = e.target;
+              const capitalizedValue = value
+                .split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+              handleChange({ target: { name, value: capitalizedValue } });
+            }}
             required
             error={!!errors.first_name}
             helperText={errors.first_name}
@@ -225,7 +233,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
             label='Last Name'
             name='last_name'
             value={formData.last_name}
-            onChange={handleChange}
+            onChange={(e) => capitalizeInput(e, handleChange)}
             required
             error={!!errors.last_name}
             helperText={errors.last_name}

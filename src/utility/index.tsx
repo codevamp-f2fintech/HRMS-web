@@ -20,6 +20,27 @@ export const utility = () => {
     };
 
     /**
+ * Capitalizes the first letter of each word in the input value and passes the modified value
+ * to the provided `handleChange` function.
+ *
+ * @param {Object} e - The event object triggered by the input change event.
+ * @param {Function} handleChange - A callback function to handle the change of the input value.
+ */
+    const capitalizeInput = (e: any, handleChange: any) => {
+        const { name, value } = e.target;
+
+        // Capitalize each word in the input value
+        const capitalizedValue = value
+            .split(' ')
+            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+
+        // Pass the modified event object to the handleChange function
+        handleChange({ target: { name, value: capitalizedValue } });
+    };
+
+
+    /**
      * Gets the value associated with a key from local storage.
      * @param {string} key - The key for which to retrieve the value from local storage.
      * @returns {any | null} - The value associated with the key, or null if the key is not found.
@@ -67,6 +88,8 @@ export const utility = () => {
         getRole,
         getLocalStorage,
         remLocalStorage,
-        setLocalStorage
+        setLocalStorage,
+        capitalizeInput
     };
 };
+
