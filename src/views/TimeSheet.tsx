@@ -127,11 +127,13 @@ export default function TimeSheetGrid() {
   }, []);
 
   const toggleRow = (employee_id) => {
+    console.log('employeee dataaaaaaaa', employee_id);
     setExpandedRows((prev) => ({
       ...prev,
       [employee_id]: !prev[employee_id],
     }));
   };
+
 
 
   const handleEditClick = (row) => {
@@ -425,7 +427,7 @@ export default function TimeSheetGrid() {
                     <TableRow>
                       <TableCell
                         sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }}
-                        onClick={() => toggleRow(employee.employee_id)}
+                        onClick={() => toggleRow(employee.timesheets[0].employee_id)}
                       >
                         <Box display="flex" alignItems="center">
                           <Avatar
@@ -435,7 +437,7 @@ export default function TimeSheetGrid() {
                           />
                           {employee.employee_name}
                           <IconButton>
-                            {expandedRows[employee.employee_id] ? <ExpandLess /> : <ExpandMore />}
+                            {expandedRows[employee.timesheets[0].employee_id] ? <ExpandLess /> : <ExpandMore />}
                           </IconButton>
                         </Box>
                       </TableCell>
@@ -443,7 +445,7 @@ export default function TimeSheetGrid() {
                     </TableRow>
                     <TableRow>
                       <TableCell colSpan={7} style={{ paddingBottom: 0, paddingTop: 0 }}>
-                        <Collapse in={expandedRows[employee.employee_id]} timeout="auto" unmountOnExit>
+                        <Collapse in={expandedRows[employee.timesheets[0].employee_id]} timeout="auto" unmountOnExit>
                           <Box margin={1}>
                             <Table size="small" aria-label="purchases">
                               <TableHead>
@@ -462,7 +464,7 @@ export default function TimeSheetGrid() {
                                     <TableCell sx={{ textAlign: 'center', fontSize: '1em' }}>{row.attendance_date}</TableCell>
                                     <TableCell sx={{ textAlign: 'center', fontSize: '1em' }}>{row.attendance_status}</TableCell>
                                     <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }}>
-                                      {editableRows[row._id || row.attendance_id] && userRole >= 3 ? (
+                                      {editableRows[row._id || row.attendance_id] ? (
                                         <Box display="flex" alignItems="center">
                                           <IconButton onClick={() => handleDecrementTime(row._id || row.attendance_id)}>
                                             <Remove />
@@ -478,8 +480,11 @@ export default function TimeSheetGrid() {
                                           </IconButton>
                                         </Box>
                                       ) : (
-                                        <Tooltip title="Click here">
-                                          <span style={Number(userRole) >= 3 ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}} onClick={() => Number(userRole) >= 3 && handleEditClick(row)}>
+                                        <Tooltip title="Click to edit time">
+                                          <span
+                                            style={{ border: '1px black solid', padding: '5px 10px 5px 10px' }}
+                                            onClick={() => handleEditClick(row)}
+                                          >
                                             {row.time || '0'}
                                           </span>
                                         </Tooltip>
@@ -487,43 +492,40 @@ export default function TimeSheetGrid() {
                                     </TableCell>
                                     <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }}>
                                       {editableRows[row._id || row.attendance_id] ? (
-                                        Number(userRole) <= 2 ? (
-                                          <Select
-                                            name="status"
-                                            value={editableRows[row._id || row.attendance_id].status}
-                                            onChange={(e) => handleChange(e, row._id || row.attendance_id)}
-                                          >
-                                            <MenuItem value="Pending">PENDING</MenuItem>
-                                            <MenuItem value="Approved">APPROVED</MenuItem>
-                                            <MenuItem value="Rejected">REJECTED</MenuItem>
-                                          </Select>
-                                        ) : (
-                                          <span>{row.status || 'Pending'}</span>
-                                        )
+
+                                        <Select
+                                          name="status"
+                                          value={editableRows[row._id || row.attendance_id].status}
+                                          onChange={(e) => handleChange(e, row._id || row.attendance_id)}
+                                        >
+                                          <MenuItem value="Pending">PENDING</MenuItem>
+                                          <MenuItem value="Approved">APPROVED</MenuItem>
+                                          <MenuItem value="Rejected">REJECTED</MenuItem>
+                                        </Select>
+
                                       ) : (
-                                        <Tooltip title="Click here">
-                                          <span
-                                            style={Number(userRole) <= 2 ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}}
-                                            onClick={() => handleEditClick(row)}
-                                          >
-                                            {row.status}
-                                          </span>
+                                        <Tooltip title="Click to Edit & View status">
+                                          <span>{row.status || 'Pending'}</span>
                                         </Tooltip>
                                       )}
                                     </TableCell>
                                     <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }}>
-                                      {userRole >= 3 && editableRows[row._id || row.attendance_id] ? (
-                                        <TextField
-                                          name="note"
-                                          value={editableRows[row._id || row.attendance_id].note}
-                                          onChange={(e) => handleChange(e, row._id || row.attendance_id)}
-                                        />
+                                      {editableRows[row._id || row.attendance_id] ? (
+                                        <Tooltip title="Edit note">
+                                          <TextField
+                                            name="note"
+                                            value={editableRows[row._id || row.attendance_id].note}
+                                            onChange={(e) => handleChange(e, row._id || row.attendance_id)}
+                                          />
+                                        </Tooltip>
                                       ) : (
-                                        <span onClick={() => handleEditClick(row)}>{row.note || ''}</span>
+                                        <Tooltip title="Click to view or edit note">
+                                          <span onClick={() => handleEditClick(row)}>{row.note || ''}</span>
+                                        </Tooltip>
                                       )}
                                     </TableCell>
                                     <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }}>
-                                      {userRole >= 3 && editableRows[row._id || row.attendance_id] ? (
+                                      {editableRows[row._id || row.attendance_id] ? (
                                         <TextField
                                           name="submission_date"
                                           type="date"
@@ -531,14 +533,18 @@ export default function TimeSheetGrid() {
                                           onChange={(e) => handleChange(e, row._id || row.attendance_id)}
                                         />
                                       ) : (
-                                        <Tooltip title="Click here">
-                                          <span style={Number(userRole) >= 3 ? { border: '1px black solid', padding: '5px 10px 5px 10px' } : {}} onClick={() => handleEditClick(row)}>{row.submission_date || ''}</span>
+                                        <Tooltip title="Click to view or edit">
+                                          <span style={{ border: '1px black solid', padding: '5px 10px 5px 10px' }} onClick={() => handleEditClick(row)}>
+                                            {row.submission_date || ''}
+                                          </span>
                                         </Tooltip>
                                       )}
                                     </TableCell>
                                   </TableRow>
                                 ))}
                               </TableBody>
+
+
                             </Table>
                           </Box>
                         </Collapse>
