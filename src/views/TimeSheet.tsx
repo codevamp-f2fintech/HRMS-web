@@ -292,12 +292,28 @@ export default function TimeSheetGrid() {
   });
 
 
-  const paginatedEmployeeIds = filteredEmployeeIds.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
-  const pageCount = Math.ceil(userRows.length / ITEMS_PER_PAGE);
+  const employeeCount = filteredEmployeeIds.length;
+
+  const pageCount = userRole <= 2
+    ? Math.ceil(employeeCount / ITEMS_PER_PAGE)
+    : Math.ceil(userRows.length / ITEMS_PER_PAGE);
 
 
-  const paginatedRows = filteredEmployeeIds.map(employee_id => groupedRows[employee_id]).slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const paginatedRows = userRole <= 2
+    ? filteredEmployeeIds.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE).map(id => groupedRows[id])
+    : userRows.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
+  const handleCancelEdit = (id) => {
+
+    setEditableRows(prev => {
+      const { [id]: value, ...rest } = prev;
+
+
+      return rest;
+    });
+  };
+
 
   return (
     <Box>
@@ -489,6 +505,8 @@ export default function TimeSheetGrid() {
                                           </span>
                                         </Tooltip>
                                       )}
+
+
                                     </TableCell>
                                     <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }}>
                                       {editableRows[row._id || row.attendance_id] ? (
@@ -540,6 +558,17 @@ export default function TimeSheetGrid() {
                                         </Tooltip>
                                       )}
                                     </TableCell>
+                                    <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }}>
+                                      {editableRows[row._id || row.attendance_id] ? (
+                                        <Button
+                                          variant="outlined"
+                                          color="secondary"
+                                          onClick={() => handleCancelEdit(row._id || row.attendance_id)}
+                                        >
+                                          Cancel
+                                        </Button>
+                                      ) : null}
+                                    </TableCell>
                                   </TableRow>
                                 ))}
                               </TableBody>
@@ -587,6 +616,7 @@ export default function TimeSheetGrid() {
                           </Tooltip>
                         )}
                       </TableCell>
+
                       <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }}>
                         {userRole >= 3 ? (
                           <span>{row.status || 'Pending'}</span>
@@ -624,6 +654,17 @@ export default function TimeSheetGrid() {
                         ) : (
                           <span style={{ border: '1px black solid', padding: '5px 10px 5px 10px' }} onClick={() => handleEditClick(row)}>{row.submission_date || ''}</span>
                         )}
+                      </TableCell>
+                      <TableCell sx={{ textAlign: 'center', fontSize: '1em', cursor: 'pointer' }}>
+                        {editableRows[row._id || row.attendance_id] ? (
+                          <Button
+                            variant="outlined"
+                            color="secondary"
+                            onClick={() => handleCancelEdit(row._id || row.attendance_id)}
+                          >
+                            Cancel
+                          </Button>
+                        ) : null}
                       </TableCell>
                     </TableRow>
                   ))
