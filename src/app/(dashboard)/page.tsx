@@ -1,3 +1,6 @@
+'use client'
+import { useEffect, useState } from 'react'
+
 // MUI Imports
 import Grid from '@mui/material/Grid'
 
@@ -9,11 +12,19 @@ import TotalEarning from '@views/dashboard/TotalEarning'
 import LineChart from '@views/dashboard/LineChart'
 import DistributedColumnChart from '@views/dashboard/DistributedColumnChart'
 import DepositWithdraw from '@views/dashboard/DepositWithdraw'
-import SalesByCountries from '@views/dashboard/SalesByCountries'
 import CardStatVertical from '@components/card-statistics/Vertical'
 import Table from '@views/dashboard/Table'
-
+import TotalHolidays from '@/views/dashboard/TotolHolidays'
+import TotalLeaves from '@/views/dashboard/TotalLeaves'
 const DashboardAnalytics = () => {
+  const [userRole, setUserRole] = useState<string>("");
+
+  useEffect(() => {
+    if (userRole === "") {
+      const user = JSON.parse(localStorage.getItem("user") || '{}');
+      setUserRole(user.role);
+    }
+  }, [userRole]);
   return (
     <Grid container spacing={6}>
       <Grid item xs={12} md={4}>
@@ -60,8 +71,11 @@ const DashboardAnalytics = () => {
           </Grid>
         </Grid>
       </Grid>
-      <Grid item xs={12} md={6} lg={4}>
-        <SalesByCountries />
+      <Grid item xs={12} md={6} >
+        {userRole !== '' && < TotalLeaves />}
+      </Grid>
+      <Grid item xs={12} md={6} >
+        {userRole !== '' && < TotalHolidays />}
       </Grid>
       <Grid item xs={12} lg={8}>
         <DepositWithdraw />
