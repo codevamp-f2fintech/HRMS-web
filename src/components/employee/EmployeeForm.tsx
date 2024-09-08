@@ -80,7 +80,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
 
   useEffect(() => {
     dispatch(fetchDesignations({ page: 1, limit: 0, keyword: "" }));
-
+    console.log("designation", designations)
   }, [])
 
   const handleClickShowPassword = () => setIsPasswordShown(show => !show);
