@@ -19,6 +19,7 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import type { AppDispatch, RootState } from '@/redux/store';
 import { fetchAssests, filterAssest } from '@/redux/features/assests/assestsSlice';
+import { fetchAddAssets } from '@/redux/features/addAssets/addAssetsSlice';
 import { fetchEmployees } from '@/redux/features/employees/employeesSlice';
 import { apiResponse } from '@/utility/apiResponse/employeesResponse';
 
@@ -26,7 +27,8 @@ import { apiResponse } from '@/utility/apiResponse/employeesResponse';
 
 export default function AssestsGrid() {
   const dispatch: AppDispatch = useDispatch();
-  const { assests, loading, error, filteredAssest, total } = useSelector((state: RootState) => state.assests);
+  const { assests, filteredAssest, total } = useSelector((state: RootState) => state.assests);
+  const { addassets } = useSelector((state: RootState) => state.addAssets);
 
   // const { employees } = useSelector((state: RootState) => state.employees)
   const [showForm, setShowForm] = useState(false)
@@ -82,6 +84,9 @@ export default function AssestsGrid() {
   useEffect(() => {
     if (assests.length === 0) {
       dispatch(fetchAssests({ page, limit, keyword: selectedKeyword }))
+    }
+    if (addassets.length === 0) {
+      dispatch(fetchAddAssets({ page: 1, limit: 0, keyword: "" }))
     }
 
     // Fetch employees and set the state
@@ -268,6 +273,8 @@ export default function AssestsGrid() {
       }
     };
 
+    console.log("adassets", addassets)
+
     return (
       <Box sx={{ flexGrow: 1, padding: 2 }}>
         <Box display='flex' justifyContent='space-between' alignItems='center'>
@@ -314,16 +321,21 @@ export default function AssestsGrid() {
             />
           </Grid>
           <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Asset Name'
-              name='name'
-              value={formData.name}
-              onChange={handleTextFieldChange}
-              required
-              error={!!errors.name}
-              helperText={errors.name}
-            />
+            <FormControl fullWidth required error={!!errors.name}>
+              <InputLabel>Asset Name</InputLabel>
+              <Select
+                value={formData.name}
+                onChange={handleSelectChange}
+                name="name"
+              >
+                {addassets.map((asset) => (
+                  <MenuItem key={asset._id} value={asset.assetName}>
+                    {asset.assetName}
+                  </MenuItem>
+                ))}
+              </Select>
+              {errors.name && <FormHelperText>{errors.name}</FormHelperText>}
+            </FormControl>
           </Grid>
           <Grid item xs={12} md={6}>
             <TextField

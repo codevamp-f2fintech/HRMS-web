@@ -35,7 +35,8 @@ export default function EmployeeGrid() {
   const { employees, hasMore, loading, error } = useSelector((state: RootState) => state.employees);
 
   const [showForm, setShowForm] = useState(false);
-  const [userRole, setUserRole] = useState("");
+
+  
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [searchName, setSearchName] = useState('');
   const [selectedDesignation, setSelectedDesignation] = useState('');
