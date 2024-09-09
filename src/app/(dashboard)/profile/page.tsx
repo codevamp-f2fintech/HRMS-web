@@ -1,7 +1,7 @@
 'use client'
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Card, CardContent, Avatar, Typography, Box, Grid, Chip } from '@mui/material';
+import { Card, CardContent, Avatar, Typography, Box, Grid, Chip, TextField, Button } from '@mui/material';
 import { styled } from '@mui/system';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
@@ -41,6 +41,8 @@ const InfoChip = styled(Chip)(({ theme }) => ({
 
 const Profile = () => {
   const [userData, setUserData] = useState(null);
+  const [bio, setBio] = useState('');
+  const [isEditingBio, setIsEditingBio] = useState(false);
   const [calculateFilledTabsCount, setCalculateFilledTabsCount] = useState(0);
 
   const searchParams = useSearchParams();
@@ -53,6 +55,7 @@ const Profile = () => {
         const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/employees/get/${profile}`);
         const data = await response.json();
         setUserData(data);
+        setBio(data.bio || "");  // Set the initial bio value
       } catch (error) {
         console.error("Error fetching user data:", error);
       }
@@ -64,6 +67,43 @@ const Profile = () => {
       fetchUserData(user.id);
     }
   }, [id, user.id]);
+
+  // Function to handle bio change
+  const handleBioChange = (e) => {
+    setBio(e.target.value);
+  };
+
+  // Function to handle bio update
+  const handleBioUpdate = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/employees/${user.id}/update-bio`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ bio: bio }),
+      });
+      const data = await response.json();
+      console.log('Bio updated successfully:', data);
+    } catch (error) {
+      console.error('Error updating bio:', error);
+    }
+  };
+
+  // Toggle edit mode for bio
+  const toggleEditBio = () => {
+    if (isEditingBio) {
+      handleBioUpdate(); // If we're exiting edit mode, trigger update
+    }
+    setIsEditingBio(!isEditingBio);
+  };
+
+  // Save changes on blur
+  const handleBlur = () => {
+    if (isEditingBio) {
+      toggleEditBio();
+    }
+  };
 
   return (
     <Box sx={{ minHeight: '100vh', background: 'linear-gradient(135deg, #8C57FF 0%, #5B3AFF 100%)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
@@ -90,9 +130,32 @@ const Profile = () => {
                 <InfoChip icon={<PhoneIcon />} label={userData?.contact} />
               </Box>
 
-              <Typography variant="body1" sx={{ mb: 3, lineHeight: 1.6 }}>
-                {userData?.bio || "No bio available"}
-              </Typography>
+              {/* Editable Bio Field */}
+              {isEditingBio ? (
+                <TextField
+                  label="Bio"
+                  multiline
+                  fullWidth
+                  variant="outlined"
+                  value={bio}
+                  onChange={handleBioChange}
+                  onBlur={handleBlur}
+                  autoFocus
+                  sx={{ mb: 3 }}
+                />
+              ) : (
+                <Box display="flex" alignItems="center">
+                  <Typography variant="body1" sx={{ mb: 3, lineHeight: 1.6, flexGrow: 1 }}>
+                    {bio || "No bio available"}
+                  </Typography>
+                  {!id && user.id &&
+                    <Button onClick={toggleEditBio} sx={{ ml: 2 }}>
+                      Edit
+                    </Button>
+                  }
+
+                </Box>
+              )}
             </Box>
 
             <Box sx={{ marginBottom: 2, width: '120px' }}>
