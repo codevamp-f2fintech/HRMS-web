@@ -84,9 +84,7 @@ const TotalHolidays = () => {
                   <Button
                     style={{ borderRadius: 50, backgroundColor: '#ff902f' }}
                     variant='contained'
-                    color='warning'
-                    startIcon={<AddIcon />}
-                    onClick={handleLeaveAddClick}
+                    href="/leaves"
                   >
                     Apply Leave
                   </Button>

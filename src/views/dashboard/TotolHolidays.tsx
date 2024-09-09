@@ -44,7 +44,7 @@ const SalesByCountries = () => {
   return (
     <Card>
       <CardHeader
-        title='Total Holidays'
+        title='Holidays'
         action={<OptionMenu iconClassName='text-textPrimary' options={['Last 28 Days', 'Last Month', 'Last Year']} />}
       ></CardHeader>
       <div className='overflow-x-auto'>
