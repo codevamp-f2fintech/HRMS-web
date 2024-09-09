@@ -24,7 +24,8 @@ import {
   MenuItem,
   Select,
   Avatar,
-  FormHelperText
+  FormHelperText,
+  CircularProgress
 } from '@mui/material'
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close'
@@ -41,7 +42,7 @@ import { apiResponse } from '@/utility/apiResponse/employeesResponse';
 
 export default function LeavesGrid() {
   const dispatch: AppDispatch = useDispatch();
-  const { leaves, loading, error, filteredLeave, total } = useSelector((state: RootState) => state.leaves)
+  const { leaves, error, filteredLeave, total } = useSelector((state: RootState) => state.leaves)
 
   // const { employees } = useSelector((state: RootState) => state.employees)
   const [showForm, setShowForm] = useState(false)
@@ -53,6 +54,7 @@ export default function LeavesGrid() {
   const [selectedKeyword, setSelectedKeyword] = useState('');
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
+  const [loading, setLoading] = useState(false);
 
   // const limit = 10;
 
@@ -245,42 +247,42 @@ export default function LeavesGrid() {
     };
 
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
       if (validateForm()) {
-        const method = leave ? 'PUT' : 'POST'
-        const url = leave ? `${process.env.NEXT_PUBLIC_APP_URL}/leaves/update/${leave}` : `${process.env.NEXT_PUBLIC_APP_URL}/leaves/create`
-        console.log("submitted form data", formData);
+        setLoading(true);
+        const method = leave ? 'PUT' : 'POST';
+        const url = leave ? `${process.env.NEXT_PUBLIC_APP_URL}/leaves/update/${leave}` : `${process.env.NEXT_PUBLIC_APP_URL}/leaves/create`;
 
-        fetch(url, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
-        })
-          .then(response => response.json())
-          .then(data => {
-            if (data.message) {
-              if (data.message.includes('success')) {
-                toast.success(data.message, {
-                  position: 'top-center',
-                });
-              } else {
-                toast.error('Error: ' + data.message, {
-                  position: 'top-center',
-                });
-              }
-            } else {
-              toast.error('Unexpected error occurred', {
-                position: 'top-center',
-              });
-            }
-            handleClose();
-            dispatch(fetchLeaves({ page, limit, keyword: selectedKeyword }));
-          })
-          .catch(error => {
-            console.log('Error', error);
+        try {
+          const response = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData),
           });
+          const data = await response.json();
+
+          if (data.message) {
+            if (data.message.includes('success')) {
+              toast.success(data.message, { position: 'top-center' });
+
+              // Re-fetch leaves after successful update
+              dispatch(fetchLeaves({ page, limit, keyword: selectedKeyword }));
+
+            } else {
+              toast.error('Error: ' + data.message, { position: 'top-center' });
+            }
+          } else {
+            toast.error('Unexpected error occurred', { position: 'top-center' });
+          }
+        } catch (error) {
+          toast.error('Unexpected error occurred', { position: 'top-center' });
+        } finally {
+          setLoading(false);
+          handleClose();
+        }
       }
     };
+
 
     // Filter employees based on user role
     const filteredEmployees = userRole !== '1'
@@ -433,7 +435,7 @@ export default function LeavesGrid() {
               fullWidth
               onClick={handleSubmit}
             >
-              {leave ? 'UPDATE LEAVE' : 'ADD LEAVE'}
+              {loading ? <CircularProgress size={24} /> : leave ? 'Update Leave' : 'Add Leave'}
             </Button>
           </Grid>
         </Grid>
