@@ -13,7 +13,11 @@ import {
   createTheme,
   Avatar,
   Tooltip,
-  Divider
+  Divider,
+  DialogContent,
+  ListItem,
+  Dialog,
+  List
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -99,7 +103,7 @@ const theme = createTheme({
   },
 });
 
-const StatusCard: React.FC<{ count: number; status: string }> = ({ count, status }) => {
+const StatusCard: React.FC<{ count: number; status: string; employees: string[]; onClick: () => void }> = ({ count, status, employees, onClick }) => {
   const theme = useTheme();
 
   const getStatusInfo = () => {
@@ -134,7 +138,9 @@ const StatusCard: React.FC<{ count: number; status: string }> = ({ count, status
           transform: 'translateY(-5px)',
           boxShadow: '0 8px 12px rgba(0,0,0,0.15)',
         },
+        cursor: 'pointer',
       }}
+      onClick={onClick}
     >
       <Avatar sx={{ bgcolor: color, width: 56, height: 56, mb: 2 }}>
         {icon}
@@ -149,14 +155,25 @@ const StatusCard: React.FC<{ count: number; status: string }> = ({ count, status
   );
 };
 
+
 const EmployeeAttendanceStatus: React.FC = () => {
   const [totalEmployees, setTotalEmployees] = useState<number>(0);
   const [attendanceCountsByLocation, setAttendanceCountsByLocation] = useState<LocationAttendanceCounts>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
+  const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
+  const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+  const [dialogTitle, setDialogTitle] = useState<string>('');
 
   const todayDate = dayjs().format('YYYY-MM-DD');
   const attendances = useSelector((state: RootState) => state.attendances.attendances);
+
+
+  const handleStatusClick = (status: string, employees: string[]) => {
+    setSelectedEmployees(employees);
+    setDialogTitle(status);
+    setDialogOpen(true);
+  };
 
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -173,6 +190,7 @@ const EmployeeAttendanceStatus: React.FC = () => {
 
     fetchEmployees();
   }, []);
+
 
   useEffect(() => {
     if (attendances.length > 0) {
@@ -191,17 +209,20 @@ const EmployeeAttendanceStatus: React.FC = () => {
             if (location !== 'Unknown') {
               if (!countsByLocation[location]) {
                 countsByLocation[location] = {
-                  Present: 0,
-                  Absent: 0,
-                  OnLeave: 0,
-                  OnHalf: 0,
+                  Present: { count: 0, employees: [] },
+                  Absent: { count: 0, employees: [] },
+                  OnLeave: { count: 0, employees: [] },
+                  OnHalf: { count: 0, employees: [] },
                 };
               }
 
               const status = attendance.status.replace(' ', '') as keyof AttendanceCounts;
 
-              if (status in countsByLocation[location]) {
-                countsByLocation[location][status] += 1;
+              if (countsByLocation[location][status]) {
+                countsByLocation[location][status].count += 1;
+
+
+                countsByLocation[location][status].employees.push(`${attendance.employee.first_name} ${attendance.employee.last_name}`);
               }
             }
           }
@@ -212,21 +233,6 @@ const EmployeeAttendanceStatus: React.FC = () => {
     }
   }, [attendances, todayDate]);
 
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <CircularProgress size={60} />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <Typography color="error" variant="h6">{error}</Typography>
-      </Box>
-    );
-  }
 
   return (
     <ThemeProvider theme={theme}>
@@ -253,7 +259,6 @@ const EmployeeAttendanceStatus: React.FC = () => {
             </Grid>
           </Grid>
         </Paper>
-
         <Grid container spacing={4}>
           {Object.entries(attendanceCountsByLocation).map(([location, counts]) => (
             <Grid item xs={12} md={6} lg={4} key={location}>
@@ -266,9 +271,15 @@ const EmployeeAttendanceStatus: React.FC = () => {
                 </Box>
                 <Divider sx={{ mb: 2 }} />
                 <Grid container spacing={2}>
-                  {Object.entries(counts).map(([status, count]) => (
+                  {Object.entries(counts).map(([status, data]) => (
                     <Grid item xs={6} key={status}>
-                      <StatusCard count={count} status={status.replace(/([A-Z])/g, ' $1').trim()} />
+
+                      <StatusCard
+                        count={data.count}
+                        status={status.replace(/([A-Z])/g, ' $1').trim()}
+                        employees={data.employees}
+                        onClick={() => handleStatusClick(status, data.employees || [])}
+                      />
                     </Grid>
                   ))}
                 </Grid>
@@ -276,6 +287,20 @@ const EmployeeAttendanceStatus: React.FC = () => {
             </Grid>
           ))}
         </Grid>
+
+        {/* Dialog to show employee names */}
+        <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+          <DialogContent>
+            <Typography variant="h6" gutterBottom>
+              {dialogTitle}
+            </Typography>
+            <List>
+              {selectedEmployees.map((employee, index) => (
+                <ListItem key={index}>{employee}</ListItem>
+              ))}
+            </List>
+          </DialogContent>
+        </Dialog>
       </Box>
     </ThemeProvider>
   );
