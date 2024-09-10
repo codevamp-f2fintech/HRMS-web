@@ -445,7 +445,9 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
           <FormControl fullWidth error={!!errors.designation}>
             <Autocomplete
               id="designation-select"
-              options={designations.map(designation => designation.title)}
+              options={designations
+                .map((designation) => designation.title)
+                .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))}
               getOptionLabel={(option) => option}
               renderInput={(params) => (
                 <TextField {...params} label="Select Designation" variant="outlined" />
@@ -460,7 +462,6 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
             )}
           </FormControl>
         </Grid>
-
 
         <Grid item xs={12} md={6}>
           <TextField
