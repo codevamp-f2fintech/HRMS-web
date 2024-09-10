@@ -12,6 +12,7 @@ import addAssetsReducer from './features/addAssets/addAssetsSlice';
 import employeesReducer from './features/employees/employeesSlice';
 import timesheetsReducer from './features/timesheet/timesheetSlice';
 import designationReducer from '@/redux/features/designation/designationSlice';
+import UpcomingBirthdaysReducer from '@/redux/features/employees/employeesSlice';
 
 
 const store = configureStore({
@@ -27,6 +28,7 @@ const store = configureStore({
     employees: employeesReducer,
     timesheets: timesheetsReducer,
     designations: designationReducer,
+    upcomingBirthdays: UpcomingBirthdaysReducer
   }
 })
 

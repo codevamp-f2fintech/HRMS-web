@@ -1,25 +1,27 @@
-'use client';
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from "@/redux/store";
 import { fetchLeaves } from '@/redux/features/leaves/leavesSlice';
 import AddLeavesForm from '@/components/leave/LeaveForm';
 
-// MUI Imports
-import AddIcon from '@mui/icons-material/Add';
-import { Button, Dialog, DialogContent } from "@mui/material";
-import Card from '@mui/material/Card';
-import Chip from '@mui/material/Chip';
-import tableStyles from '@core/styles/table.module.css';
-
-import CardHeader from '@mui/material/CardHeader';
-import Typography from '@mui/material/Typography';
-
-// Third-party Imports
-import classnames from 'classnames';
-
-// Components Imports
-import OptionMenu from '@core/components/option-menu';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  Card,
+  CardHeader,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination,
+  Chip,
+  IconButton
+} from "@mui/material";
+import { Add as AddIcon, MoreVert as MoreVertIcon } from '@mui/icons-material';
 
 const TotalHolidays = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -29,10 +31,10 @@ const TotalHolidays = () => {
   const [userId, setUserId] = useState<string>("");
   const [employees, setEmployees] = useState([]);
   const [selectedKeyword, setSelectedKeyword] = useState('');
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
-  const { leaves } = useSelector((state: RootState) => state.leaves);
+  const { leaves, total } = useSelector((state: RootState) => state.leaves);
 
   const handleLeaveAddClick = () => {
     setShowForm(true);
@@ -42,15 +44,44 @@ const TotalHolidays = () => {
     setShowForm(false);
   };
 
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
   useEffect(() => {
-    dispatch(fetchLeaves({ page: 1, limit: 5, keyword: "" }));
-  }, [dispatch]);
+    dispatch(fetchLeaves({ page: page + 1, limit: rowsPerPage, keyword: selectedKeyword }));
+  }, [dispatch, page, rowsPerPage, selectedKeyword]);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'warning';
+      case 'inactive':
+        return 'secondary';
+      default:
+        return 'success';
+    }
+  };
 
   return (
-    <Card>
+    <Card >
       <CardHeader
         title='Leaves'
-        action={<OptionMenu iconClassName='text-textPrimary' options={['Last 28 Days', 'Last Month', 'Last Year']} />}
+        action={
+          <Button
+            variant='contained'
+            color="primary"
+            href="/leaves"
+            startIcon={<AddIcon />}
+          >
+            Apply Leave
+          </Button>
+        }
       />
       <Dialog open={showForm} onClose={handleClose} fullWidth maxWidth='md'>
         <DialogContent>
@@ -61,72 +92,51 @@ const TotalHolidays = () => {
             userRole={userRole}
             userId={userId}
             employees={employees}
-            page={page}
-            limit={limit}
+            page={page + 1}
+            limit={rowsPerPage}
             selectedKeyword={selectedKeyword}
           />
         </DialogContent>
       </Dialog>
-      <div className='overflow-x-auto'>
-        <table className={tableStyles.table}>
-          <thead>
-            <tr>
-              <th>Days</th>
-              <th>Start date</th>
-              <th>End date</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {leaves?.length === 0 && userRole !== '1' ? (
-              <tr>
-                <td colSpan={4} style={{ textAlign: 'center' }}>
-                  <Button
-                    style={{ borderRadius: 50, backgroundColor: '#ff902f' }}
-                    variant='contained'
-                    href="/leaves"
-                  >
-                    Apply Leave
-                  </Button>
-                </td>
-              </tr>
-            ) : (
+      <TableContainer sx={{ height: '55vh' }}>
+        <Table >
+          <TableHead>
+            <TableRow>
+              <TableCell>Days</TableCell>
+              <TableCell>Start date</TableCell>
+              <TableCell>End date</TableCell>
+              <TableCell>Status</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody >
+            {
               leaves.map((row, index) => (
-                <tr key={index}>
-                  <td className='!plb-1'>
-                    <div className='flex gap-2'>
-                      <Typography>{row.day}</Typography>
-                    </div>
-                  </td>
-                  <td className='!plb-1'>
-                    <div className='flex gap-2'>
-                      <Typography>{row.start_date}</Typography>
-                    </div>
-                  </td>
-                  <td className='!plb-1'>
-                    <div className='flex gap-2'>
-                      <Typography color='text.primary'>{row.end_date}</Typography>
-                    </div>
-                  </td>
-                  <td className='!pb-1'>
+                <TableRow key={index}>
+                  <TableCell>{row.day}</TableCell>
+                  <TableCell>{row.start_date}</TableCell>
+                  <TableCell>{row.end_date}</TableCell>
+                  <TableCell>
                     <Chip
-                      className='capitalize'
-                      variant='tonal'
-                      color={
-                        row.status === 'pending' ? 'warning' :
-                          row.status === 'inactive' ? 'secondary' :
-                            'success'
-                      }
                       label={row.status}
+                      color={getStatusColor(row.status)}
                       size='small'
                     />
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
-            )}
-          </tbody>
-        </table>
-      </div>
+            }
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <TablePagination
+        rowsPerPageOptions={[5, 10, 25]}
+        component="div"
+        count={total || 0}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={handleChangePage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+      />
     </Card>
   );
 };

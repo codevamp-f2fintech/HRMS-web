@@ -1,96 +1,109 @@
-
-'use client'
-import { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from "@/redux/store";
 import { fetchHolidays } from '@/redux/features/holidays/holidaysSlice';
 
-// MUI Imports
-import Card from '@mui/material/Card'
-import Chip from '@mui/material/Chip'
-import tableStyles from '@core/styles/table.module.css'
+import { Card, CardHeader, CardContent, Typography, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Pagination } from '@mui/material';
+import { styled } from '@mui/material/styles';
 
+const StyledCard = styled(Card)(({ theme }) => ({
+  backgroundColor: theme.palette.background.paper,
+  boxShadow: theme.shadows[2],
+  borderRadius: theme.shape.borderRadius,
+}));
 
-import CardHeader from '@mui/material/CardHeader'
-import CardContent from '@mui/material/CardContent'
-import Typography from '@mui/material/Typography'
+const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
+  maxHeight: 440,
+  '&::-webkit-scrollbar': {
+    width: '0.4em',
+    height: '0.4em',
+  },
+  '&::-webkit-scrollbar-track': {
+    boxShadow: 'inset 0 0 6px rgba(0,0,0,0.00)',
+    webkitBoxShadow: 'inset 0 0 6px rgba(0,0,0,0.00)',
+  },
+  '&::-webkit-scrollbar-thumb': {
+    backgroundColor: 'rgba(0,0,0,.1)',
+    outline: '1px solid slategrey',
+    borderRadius: 4,
+  },
+}));
 
-// Third-party Imports
-import classnames from 'classnames'
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  fontWeight: 'bold',
+}));
 
-// Type Imports
-import type { ThemeColor } from '@core/types'
-
-// Components Imports
-import OptionMenu from '@core/components/option-menu'
-import CustomAvatar from '@core/components/mui/Avatar'
-
-
-
-const SalesByCountries = () => {
+const HolidaysTable = () => {
   const dispatch = useDispatch<AppDispatch>();
-
-  const { holidays } = useSelector((state: RootState) => state.holidays);
-
+  const { holidays, totalPages } = useSelector((state: RootState) => state.holidays);
+  const [page, setPage] = useState(1);
+  const limit = 5;
 
   useEffect(() => {
-    dispatch(fetchHolidays({ page: 1, limit: 5, keyword: "" }));
+    dispatch(fetchHolidays({ page, limit, keyword: "" }));
+  }, [dispatch, page]);
 
-  }, [])
+  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+    setPage(value);
+  };
 
-  console.log('holidays', holidays)
-
+  const getChipColor = (title: string) => {
+    switch (title.toLowerCase()) {
+      case 'pending':
+        return 'warning';
+      case 'inactive':
+        return 'error';
+      default:
+        return 'success';
+    }
+  };
 
   return (
-    <Card>
+    <StyledCard>
       <CardHeader
-        title='Holidays'
-        action={<OptionMenu iconClassName='text-textPrimary' options={['Last 28 Days', 'Last Month', 'Last Year']} />}
-      ></CardHeader>
-      <div className='overflow-x-auto'>
-        <table className={tableStyles.table}>
-          <thead>
-            <tr>
-              <th>Days</th>
-              <th>Start date</th>
-              <th>End date</th>
-              <th>Title</th>
-            </tr>
-          </thead>
-          <tbody>
-            {holidays.map((row, index) => (
-              <tr key={index}>
-                <td className='!plb-1'>
-                  <div className='flex gap-2'>
-                    <Typography>{row.day}</Typography>
-                  </div>
-                </td>
-                <td className='!plb-1'>
-                  <div className='flex gap-2'>
-                    <Typography>{row.start_date}</Typography>
-                  </div>
-                </td>
-                <td className='!plb-1'>
-                  <div className='flex gap-2'>
-                    <Typography color='text.primary'>{row.end_date}</Typography>
-                  </div>
-                </td>
-                <td className='!pb-1'>
-                  <Chip
-                    className='capitalize'
-                    variant='tonal'
-                    color={row.title === 'pending' ? 'warning' : row.title === 'inactive' ? 'secondary' : 'success'}
-                    label={row.title}
-                    size='small'
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Card>
-  )
-}
+        title={<Typography variant="h6">Holidays</Typography>}
+      />
+      <CardContent>
+        <StyledTableContainer component={Paper}>
+          <Table stickyHeader aria-label="holidays table">
+            <TableHead>
+              <TableRow>
+                <StyledTableCell>Days</StyledTableCell>
+                <StyledTableCell>Start Date</StyledTableCell>
+                <StyledTableCell>End Date</StyledTableCell>
+                <StyledTableCell>Title</StyledTableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {holidays.map((row, index) => (
+                <TableRow key={index} hover>
+                  <TableCell>{row.day}</TableCell>
+                  <TableCell>{row.start_date}</TableCell>
+                  <TableCell>{row.end_date}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={row.title}
+                      color={getChipColor(row.title)}
+                      size="small"
+                      variant="outlined"
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </StyledTableContainer>
+        <Pagination
+          count={totalPages}
+          page={page}
+          onChange={handlePageChange}
+          color="primary"
+          size="large"
+          sx={{ marginTop: 2, display: 'flex', justifyContent: 'center' }}
+        />
+      </CardContent>
+    </StyledCard>
+  );
+};
 
-export default SalesByCountries
+export default HolidaysTable;
