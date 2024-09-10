@@ -1,7 +1,6 @@
 'use client'
-import { useEffect, useState } from 'react'
-
-// MUI Imports
+import { useEffect, useState, useRef } from 'react'
+import { motion, useInView } from 'framer-motion'
 import Grid from '@mui/material/Grid'
 
 // Components Imports
@@ -10,13 +9,17 @@ import Transactions from '@views/dashboard/Transactions'
 import UpcomingBirthdays from '@/views/dashboard/UpcomingBirthdays'
 import TotalEarning from '@views/dashboard/TotalEarning'
 import DepositWithdraw from '@views/dashboard/DepositWithdraw'
-import CardStatVertical from '@components/card-statistics/Vertical'
-import Table from '@views/dashboard/Table'
 import TotalHolidays from '@/views/dashboard/TotolHolidays'
 import TotalLeaves from '@/views/dashboard/TotalLeaves'
-import LineChart from '@/views/dashboard/LineChart'
+
+const MotionGrid = motion(Grid)
+
 const DashboardAnalytics = () => {
   const [userRole, setUserRole] = useState<string>("");
+  const bottomLeftRef = useRef(null);
+  const bottomRightRef = useRef(null);
+  const isBottomLeftInView = useInView(bottomLeftRef, { once: true, amount: 0.5 });
+  const isBottomRightInView = useInView(bottomRightRef, { once: true, amount: 0.5 });
 
   useEffect(() => {
     if (userRole === "") {
@@ -24,33 +27,55 @@ const DashboardAnalytics = () => {
       setUserRole(user.role);
     }
   }, [userRole]);
+
+  const fadeInLeft = {
+    initial: { opacity: 0, x: -30 },
+    animate: { opacity: 1, x: 0 },
+    transition: { duration: 1.2, ease: "easeOut" }
+  };
+
+  const fadeInRight = {
+    initial: { opacity: 0, x: 30 },
+    animate: { opacity: 1, x: 0 },
+    transition: { duration: 1.2, ease: "easeOut" }
+  };
+
   return (
     <Grid container spacing={6}>
-      <Grid item xs={12} md={4}>
+      <MotionGrid item xs={12} md={4} {...fadeInLeft} transition={{ delay: 0.2 }}>
         <Award />
-      </Grid>
-      <Grid item xs={12} md={8} lg={8}>
+      </MotionGrid>
+      <MotionGrid item xs={12} md={8} lg={8} {...fadeInRight} transition={{ delay: 0.4 }}>
         <Transactions />
-      </Grid>
-      <Grid item xs={12} md={5} lg={5}>
+      </MotionGrid>
+      <MotionGrid item xs={12} md={5} lg={5} {...fadeInLeft} transition={{ delay: 0.6 }}>
         <UpcomingBirthdays />
-      </Grid>
-      <Grid item xs={12} md={7} lg={7}>
+      </MotionGrid>
+      <MotionGrid item xs={12} md={7} lg={7} {...fadeInRight} transition={{ delay: 0.8 }}>
         <TotalEarning />
-      </Grid>
-      <Grid item xs={12} md={6} >
-        {userRole === '3' && < TotalLeaves />}
-        {userRole !== '3' && <DepositWithdraw />}
-      </Grid>
-      <Grid item xs={12} md={6} >
-        < TotalHolidays />
-      </Grid>
-      <Grid item xs={12} lg={8}>
-        {/* <DepositWithdraw /> */}
-      </Grid>
-      <Grid item xs={12}>
-        {/* <Table /> */}
-      </Grid>
+      </MotionGrid>
+      <MotionGrid
+        item
+        xs={12}
+        md={6}
+        ref={bottomLeftRef}
+        initial={{ opacity: 0, x: -30 }}
+        animate={isBottomLeftInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -30 }}
+        transition={{ duration: 1.2, ease: "easeOut" }}
+      >
+        {userRole === '3' ? <TotalLeaves /> : <DepositWithdraw />}
+      </MotionGrid>
+      <MotionGrid
+        item
+        xs={12}
+        md={6}
+        ref={bottomRightRef}
+        initial={{ opacity: 0, x: 30 }}
+        animate={isBottomRightInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 30 }}
+        transition={{ duration: 1.2, ease: "easeOut" }}
+      >
+        <TotalHolidays />
+      </MotionGrid>
     </Grid>
   )
 }
