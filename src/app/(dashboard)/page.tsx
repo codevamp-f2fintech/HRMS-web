@@ -14,6 +14,7 @@ import CardStatVertical from '@components/card-statistics/Vertical'
 import Table from '@views/dashboard/Table'
 import TotalHolidays from '@/views/dashboard/TotolHolidays'
 import TotalLeaves from '@/views/dashboard/TotalLeaves'
+import LineChart from '@/views/dashboard/LineChart'
 const DashboardAnalytics = () => {
   const [userRole, setUserRole] = useState<string>("");
 
@@ -38,10 +39,11 @@ const DashboardAnalytics = () => {
         <TotalEarning />
       </Grid>
       <Grid item xs={12} md={6} >
-        {userRole !== '' && < TotalLeaves />}
+        {userRole === '3' && < TotalLeaves />}
+        {userRole !== '3' && <DepositWithdraw />}
       </Grid>
       <Grid item xs={12} md={6} >
-        {userRole !== '' && < TotalHolidays />}
+        < TotalHolidays />
       </Grid>
       <Grid item xs={12} lg={8}>
         {/* <DepositWithdraw /> */}

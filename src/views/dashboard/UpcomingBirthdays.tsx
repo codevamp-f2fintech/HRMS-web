@@ -37,7 +37,7 @@ const UpcomingBirthdays = () => {
   };
 
   return (
-    <Card sx={{ maxWidth: 400, margin: 'auto' }}>
+    <Card>
       <CardHeader
         title={
           <Typography variant="h6" component="div" sx={{ display: 'flex', alignItems: 'center' }}>

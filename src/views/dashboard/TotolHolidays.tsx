@@ -13,7 +13,7 @@ const StyledCard = styled(Card)(({ theme }) => ({
 }));
 
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
-  maxHeight: 440,
+  // maxHeight: 440,
   '&::-webkit-scrollbar': {
     width: '0.4em',
     height: '0.4em',
@@ -74,7 +74,7 @@ const HolidaysTable = () => {
                 <StyledTableCell>Title</StyledTableCell>
               </TableRow>
             </TableHead>
-            <TableBody>
+            <TableBody sx={{ height: '340px' }}>
               {holidays.map((row, index) => (
                 <TableRow key={index} hover>
                   <TableCell>{row.day}</TableCell>
