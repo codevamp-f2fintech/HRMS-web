@@ -1,7 +1,7 @@
 
 
 
-export const apiResponse = async () => {
+export const apiResponse = async (): Promise<any> => {
   const page = 1;
   const limit = 0;
   const keyword = '';
