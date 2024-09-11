@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Box, Grid, TextField, Typography, IconButton, Button } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { toast } from 'react-toastify'; // Assuming you're using react-toastify for notifications
-
+import { utility } from '@/utility';
 const AddHolidayForm = ({ handleClose, holiday, holidays, isHalfDay, debouncedFetch }) => {
+  const { capitalizeInput } = utility();
   const [formData, setFormData] = useState({
     title: '',
     note: '',
@@ -100,6 +101,9 @@ const AddHolidayForm = ({ handleClose, holiday, holidays, isHalfDay, debouncedFe
     if (start && end) {
       const startDate = new Date(start);
       const endDate = new Date(end);
+      if (startDate.toDateString() === endDate.toDateString()) {
+        return 0.5;
+      }
       const differenceInTime = endDate.getTime() - startDate.getTime();
       const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
 
@@ -156,14 +160,7 @@ const AddHolidayForm = ({ handleClose, holiday, holidays, isHalfDay, debouncedFe
             label='Title'
             name='title'
             value={formData.title}
-            onChange={(e) => {
-              const { name, value } = e.target;
-              const capitalizedValue = value
-                .split(' ')
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(' ');
-              handleChange({ target: { name, value: capitalizedValue } });
-            }}
+            onChange={(e) => capitalizeInput(e, handleChange)}
             required
             error={!!errors.title}
             helperText={errors.title}
@@ -173,7 +170,7 @@ const AddHolidayForm = ({ handleClose, holiday, holidays, isHalfDay, debouncedFe
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label='Start Date'
+            label='Closing Date'
             name='start_date'
             value={formData.start_date}
             type='date'
@@ -188,7 +185,7 @@ const AddHolidayForm = ({ handleClose, holiday, holidays, isHalfDay, debouncedFe
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label='End Date'
+            label='Opening Date'
             name='end_date'
             type='date'
             value={formData.end_date}
@@ -220,7 +217,15 @@ const AddHolidayForm = ({ handleClose, holiday, holidays, isHalfDay, debouncedFe
             label='Note'
             name='note'
             value={formData.note}
-            onChange={handleChange}
+            onChange={(e) => {
+              const { name, value } = e.target;
+              const [firstWord, ...rest] = value.split(' ');
+              const capitalizedFirstWord = firstWord.charAt(0).toUpperCase() + firstWord.slice(1);
+              const capitalizedValue = [capitalizedFirstWord, ...rest].join(' ');
+              handleChange({ target: { name, value: capitalizedValue } });
+            }}
+
+
             required
             error={!!errors.note}
             helperText={errors.note}
