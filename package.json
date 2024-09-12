@@ -29,6 +29,7 @@
     "@netlify/plugin-nextjs": "^5.6.0",
     "@reduxjs/toolkit": "^2.2.6",
     "apexcharts": "^3.49.1",
+    "browser-image-compression": "^2.0.2",
     "chart.js": "^4.4.3",
     "classnames": "^2.5.1",
     "date-fns": "^2.30.0",
