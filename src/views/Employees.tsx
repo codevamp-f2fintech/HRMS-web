@@ -152,18 +152,6 @@ export default function EmployeeGrid() {
           </Typography>
         </Box>
         <Box display='flex' alignItems='center'>
-          <IconButton
-            style={{ backgroundColor: '#ff902f', borderRadius: 10, color: 'white', marginRight: 10 }}
-            aria-label='grid view'
-          >
-            <ViewModuleIcon />
-          </IconButton>
-          <IconButton
-            style={{ backgroundColor: '#fff', color: '#4d5154', borderRadius: 10, marginRight: 10 }}
-            aria-label='list view'
-          >
-            <ViewListIcon />
-          </IconButton>
           {userRole === '1' && <Button
             style={{ borderRadius: 50, backgroundColor: '#ff902f' }}
             variant='contained'

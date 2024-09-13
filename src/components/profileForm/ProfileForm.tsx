@@ -28,7 +28,7 @@ const StyledTab = styled(Tab)(({ theme }) => ({
     },
 }));
 
-const ProfileForm = ({ profileId, logedUser, calculateFilledTabsCount, setCalculateFilledTabsCount }) => {
+const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setCheckVerify }) => {
     const [tabValue, setTabValue] = useState(0);
     const [updating, setUpdating] = useState(false);
     const [verifyTrigger, setVerifyTrigger] = useState(0);
@@ -125,6 +125,7 @@ const ProfileForm = ({ profileId, logedUser, calculateFilledTabsCount, setCalcul
                     const data = await checkResponse.json();
                     setUpdating(true); // Profile exists
                     populateFormData(data);
+                    setCheckVerify(data.verify)
                 } else if (checkResponse.status === 404) {
                     setUpdating(false); // Profile does not exist
                 }
