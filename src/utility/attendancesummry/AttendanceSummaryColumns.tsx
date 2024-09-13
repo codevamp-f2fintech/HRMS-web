@@ -11,10 +11,11 @@ export const AttendanceSummaryColumns: GridColDef[] = [
     headerName: 'Status Count',
     headerAlign: 'center',
     align: 'center',
+    width: 200,
     renderCell: (params) => (
       <Box
         display="grid"
-        gridTemplateColumns="repeat(3, 1fr)" // 3 columns
+        gridTemplateColumns="repeat(4, 1fr)" // 3 columns
         gridTemplateRows="repeat(2, 1fr)"  // 2 rows
         gap={1}
         justifyContent="center"
@@ -120,6 +121,19 @@ export const AttendanceSummaryColumns: GridColDef[] = [
             }}
           >
             {params.row.onLeave}
+          </Typography>
+        </Box>
+        <Box display="flex" justifyContent="center" alignItems="center" position="relative">
+          <CircleIcon sx={{ color: '#673ab7', fontSize: 30 }} />
+          <Typography
+            variant="caption"
+            sx={{
+              position: 'absolute',
+              color: 'white',
+              fontWeight: 'bold',
+            }}
+          >
+            {params.row.onField}
           </Typography>
         </Box>
       </Box>
