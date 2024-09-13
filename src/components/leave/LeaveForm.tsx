@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 
-import { Box, Button, Checkbox, CircularProgress, FormControl, FormControlLabel, FormHelperText, Grid, IconButton, InputLabel, MenuItem, Select, TextField, Typography } from '@mui/material';
+import {
+  Box, Button, Checkbox, CircularProgress, FormControl, FormControlLabel, FormHelperText, Grid, IconButton, InputLabel, MenuItem, Select, TextField, Typography
+} from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { toast } from 'react-toastify';
 import { useDispatch } from 'react-redux';
@@ -15,7 +17,8 @@ const AddLeavesForm = ({ handleClose, leave, leaves, userRole, userId, employees
     status: 'Pending',
     application: '',
     type: '',
-    day: ''
+    day: '',
+    half_day_period: null // Set half_day_period to null initially
   });
 
   const [errors, setErrors] = useState({
@@ -25,7 +28,8 @@ const AddLeavesForm = ({ handleClose, leave, leaves, userRole, userId, employees
     status: '',
     application: '',
     type: '',
-    day: ''
+    day: '',
+    half_day_period: ''
   });
 
   const [isHalfDay, setIsHalfDay] = useState(false);
@@ -44,7 +48,8 @@ const AddLeavesForm = ({ handleClose, leave, leaves, userRole, userId, employees
           status: selected.status,
           application: selected.application,
           type: selected.type,
-          day: selected ? selected.day : calculateDaysDifference(selected.start_date, selected.end_date)
+          day: selected.day ? selected.day : calculateDaysDifference(selected.start_date, selected.end_date),
+          half_day_period: selected.day === "0.5" ? selected.half_day_period : null // Set half_day_period only if half-day
         });
 
         if (selected.day === "0.5") {
@@ -61,14 +66,22 @@ const AddLeavesForm = ({ handleClose, leave, leaves, userRole, userId, employees
 
   const validateForm = () => {
     let isValid = true;
-    const newErrors = { ...errors };
+    const newErrors = {};
 
-    Object.keys(formData).forEach((key) => {
-      if (!formData[key] || formData[key].trim() === '') {
-        newErrors[key] = `${key.replace('_', ' ').toUpperCase()} is required`;
+    // Always required fields, excluding half_day_period
+    const requiredFields = ['employee', 'start_date', 'status', 'application', 'type', 'day'];
+
+    requiredFields.forEach(field => {
+      if (!formData[field] || formData[field].trim() === '') {
+        newErrors[field] = `${field.replace('_', ' ').toUpperCase()} is required`;
         isValid = false;
       }
     });
+
+    if (isHalfDay && (!formData.half_day_period || formData.half_day_period.trim() === '')) {
+      newErrors.half_day_period = 'Half-day period is required';
+      isValid = false;
+    }
 
     setErrors(newErrors);
 
@@ -84,7 +97,7 @@ const AddLeavesForm = ({ handleClose, leave, leaves, userRole, userId, employees
       if (name === 'start_date' || name === 'end_date') {
         const days = calculateDaysDifference(updatedFormData.start_date, updatedFormData.end_date);
 
-        updatedFormData.day = isHalfDay ? (days / 2).toString() : days.toString();
+        updatedFormData.day = isHalfDay ? '0.5' : days.toString();
       }
 
       return updatedFormData;
@@ -98,23 +111,59 @@ const AddLeavesForm = ({ handleClose, leave, leaves, userRole, userId, employees
       const differenceInTime = endDate.getTime() - startDate.getTime();
       const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
 
-      return differenceInDays > 0 ? differenceInDays : 0;
+      // Return 1 if start and end dates are the same
+      return differenceInDays === 0 ? 1 : differenceInDays;
     }
-
 
     return 0;
   };
 
+  const handleHalfDayChange = (e) => {
+    const checked = e.target.checked;
+
+    setIsHalfDay(checked);
+
+    if (checked) {
+      setFormData(prevState => ({
+        ...prevState,
+        day: '0.5', // Automatically set day to 0.5 for half-day leave
+        half_day_period: '' // Reset half_day_period
+      }));
+    } else {
+      // Recalculate the number of full days if unchecking
+      setFormData(prevState => {
+        const days = calculateDaysDifference(prevState.start_date, prevState.end_date);
+
+        return {
+          ...prevState,
+          day: days.toString(), // Reset to full days
+          half_day_period: null // Set half_day_period to null when not half-day leave
+        };
+      });
+    }
+  };
+
   const handleSubmit = () => {
     if (validateForm()) {
-      setLoading(true);  // Start loading spinner
+      setLoading(true);
+
+      // Prepare the formData, exclude half_day_period if not a half-day leave
+      const leaveData = { ...formData };
+
+      if (!isHalfDay) {
+        delete leaveData.half_day_period;
+      }
+
       const method = leave ? 'PUT' : 'POST';
-      const url = leave ? `${process.env.NEXT_PUBLIC_APP_URL}/leaves/update/${leave}` : `${process.env.NEXT_PUBLIC_APP_URL}/leaves/create`;
+
+      const url = leave
+        ? `${process.env.NEXT_PUBLIC_APP_URL}/leaves/update/${leave}`
+        : `${process.env.NEXT_PUBLIC_APP_URL}/leaves/create`;
 
       fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(leaveData),
       })
         .then(response => response.json())
         .then(data => {
@@ -135,11 +184,10 @@ const AddLeavesForm = ({ handleClose, leave, leaves, userRole, userId, employees
           console.error('Error:', error);
         })
         .finally(() => {
-          setLoading(false);  // Stop loading spinner after API call
+          setLoading(false); // Stop loading spinner after API call
         });
     }
   };
-
 
   const filteredEmployees = userRole !== '1' ? employees.filter(emp => emp._id === userId) : employees;
 
@@ -154,7 +202,7 @@ const AddLeavesForm = ({ handleClose, leave, leaves, userRole, userId, employees
             control={
               <Checkbox
                 checked={isHalfDay}
-                onChange={(e) => setIsHalfDay(e.target.checked)}
+                onChange={handleHalfDayChange}
                 name="halfDay"
                 color="primary"
               />
@@ -206,20 +254,19 @@ const AddLeavesForm = ({ handleClose, leave, leaves, userRole, userId, employees
             helperText={errors.start_date}
           />
         </Grid>
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label='End Date'
-            name='end_date'
-            type='date'
-            value={formData.end_date}
-            onChange={handleChange}
-            InputLabelProps={{ shrink: true }}
-            required
-            error={!!errors.end_date}
-            helperText={errors.end_date}
-          />
-        </Grid>
+        {!isHalfDay && (
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label='End Date'
+              name='end_date'
+              type='date'
+              value={formData.end_date}
+              onChange={handleChange}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+        )}
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
@@ -234,6 +281,28 @@ const AddLeavesForm = ({ handleClose, leave, leaves, userRole, userId, employees
             helperText={errors.day}
           />
         </Grid>
+
+        {/* Conditionally Render "First Half" or "Second Half" dropdown if isHalfDay is true */}
+        {isHalfDay && (
+          <Grid item xs={12} md={6}>
+            <FormControl fullWidth required error={!!errors.half_day_period}>
+              <InputLabel required id="half-day-select-label">Half-day Period</InputLabel>
+              <Select
+                label="Select Half-day Period"
+                labelId="half-day-select-label"
+                id="half-day-select"
+                name="half_day_period"
+                value={formData.half_day_period}
+                onChange={handleChange}
+              >
+                <MenuItem value="First Half">First Half</MenuItem>
+                <MenuItem value="Second Half">Second Half</MenuItem>
+              </Select>
+              {errors.half_day_period && <Typography color="error">{errors.half_day_period}</Typography>}
+            </FormControl>
+          </Grid>
+        )}
+
         <Grid item xs={12} md={6}>
           <FormControl fullWidth required error={!!errors.type}>
             <InputLabel required id='demo-simple-select-label'>Type</InputLabel>
@@ -251,7 +320,7 @@ const AddLeavesForm = ({ handleClose, leave, leaves, userRole, userId, employees
               <MenuItem value='Casual'>CASUAL</MenuItem>
               <MenuItem value='Complimentary'>COMPLIMENTARY</MenuItem>
               <MenuItem value='Maternity'>MATERNITY</MenuItem>
-              <MenuItem value='Optional'>OPTIONAL</MenuItem>
+              <MenuItem value='Others'>OTHERS</MenuItem>
             </Select>
             {errors.type && <Typography color="error">{errors.type}</Typography>}
           </FormControl>
@@ -302,7 +371,7 @@ const AddLeavesForm = ({ handleClose, leave, leaves, userRole, userId, employees
             variant='contained'
             fullWidth
             onClick={handleSubmit}
-            disabled={loading}  // Disable button when loading
+            disabled={loading}
           >
             {loading ? <CircularProgress size={24} color="inherit" /> : (leave ? 'UPDATE LEAVE' : 'ADD LEAVE')}
           </Button>

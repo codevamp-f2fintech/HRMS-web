@@ -17,7 +17,7 @@ import {
   DialogContent,
   ListItem,
   Dialog,
-  List
+  List,
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -25,7 +25,8 @@ import {
   EventAvailable as PresentIcon,
   BeachAccess as LeaveIcon,
   AccessTime as HalfDayIcon,
-  LocationOn as LocationIcon
+  LocationOn as LocationIcon,
+  DirectionsRun as OnFieldIcon,
 } from '@mui/icons-material';
 
 import { apiResponse } from '@/utility/apiResponse/employeesResponse';
@@ -40,10 +41,21 @@ interface AttendanceCounts {
   Absent: number;
   OnLeave: number;
   OnHalf: number;
+  OnField: number;
 }
 
 interface LocationAttendanceCounts {
-  [location: string]: AttendanceCounts;
+  [location: string]: {
+    counts: AttendanceCounts;
+    totalEmployeesToday: number;
+    employeesByStatus: {
+      Present: string[];
+      Absent: string[];
+      OnLeave: string[];
+      OnHalf: string[];
+      OnField: string[];
+    };
+  };
 }
 
 interface RootState {
@@ -54,6 +66,9 @@ interface RootState {
       employee: {
         _id: string;
         location: string;
+        first_name: string;
+        last_name: string;
+        code: string;
       };
     }>;
   };
@@ -116,6 +131,8 @@ const StatusCard: React.FC<{ count: number; status: string; employees: string[];
         return { icon: <LeaveIcon />, color: theme.palette.warning.main, backgroundColor: theme.palette.warning.light };
       case 'On Half':
         return { icon: <HalfDayIcon />, color: theme.palette.info.main, backgroundColor: theme.palette.info.light };
+      case 'On Field':
+        return { icon: <OnFieldIcon />, color: theme.palette.primary.main, backgroundColor: theme.palette.primary.light };
       default:
         return { icon: <PersonIcon />, color: theme.palette.grey[500], backgroundColor: theme.palette.grey[200] };
     }
@@ -145,16 +162,15 @@ const StatusCard: React.FC<{ count: number; status: string; employees: string[];
       <Avatar sx={{ bgcolor: color, width: 56, height: 56, mb: 2 }}>
         {icon}
       </Avatar>
-      <Typography variant="h5" sx={{ color: theme.palette.text.primary, fontWeight: 'bold', mb: 1 }}>
+      <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}>
         {count}
       </Typography>
-      <Typography variant="body2" sx={{ color: theme.palette.text.secondary, textAlign: 'center' }}>
+      <Typography variant="body2" sx={{ color: 'white', textAlign: 'center' }}>
         {status}
       </Typography>
     </Paper>
   );
 };
-
 
 const EmployeeAttendanceStatus: React.FC = () => {
   const [totalEmployees, setTotalEmployees] = useState<number>(0);
@@ -168,9 +184,10 @@ const EmployeeAttendanceStatus: React.FC = () => {
   const todayDate = dayjs().format('YYYY-MM-DD');
   const attendances = useSelector((state: RootState) => state.attendances.attendances);
 
-
   const handleStatusClick = (status: string, employees: string[]) => {
-    setSelectedEmployees(employees);
+    const sortedEmployees = employees.sort((a, b) => a.localeCompare(b));
+
+    setSelectedEmployees(sortedEmployees);
     setDialogTitle(status);
     setDialogOpen(true);
   };
@@ -191,13 +208,12 @@ const EmployeeAttendanceStatus: React.FC = () => {
     fetchEmployees();
   }, []);
 
-
   useEffect(() => {
     if (attendances.length > 0) {
       const countsByLocation: LocationAttendanceCounts = {};
       const uniqueAttendance = new Set<string>();
 
-      attendances.forEach(attendance => {
+      attendances.forEach((attendance) => {
         if (attendance.date === todayDate) {
           const uniqueKey = `${attendance.date}-${attendance.employee?._id}`;
 
@@ -209,20 +225,32 @@ const EmployeeAttendanceStatus: React.FC = () => {
             if (location !== 'Unknown') {
               if (!countsByLocation[location]) {
                 countsByLocation[location] = {
-                  Present: { count: 0, employees: [] },
-                  Absent: { count: 0, employees: [] },
-                  OnLeave: { count: 0, employees: [] },
-                  OnHalf: { count: 0, employees: [] },
+                  counts: {
+                    Present: 0,
+                    Absent: 0,
+                    OnLeave: 0,
+                    OnHalf: 0,
+                    OnField: 0,
+                  },
+                  totalEmployeesToday: 0,
+                  employeesByStatus: {
+                    Present: [],
+                    Absent: [],
+                    OnLeave: [],
+                    OnHalf: [],
+                    OnField: [],
+                  },
                 };
               }
 
               const status = attendance.status.replace(' ', '') as keyof AttendanceCounts;
 
-              if (countsByLocation[location][status]) {
-                countsByLocation[location][status].count += 1;
 
+              countsByLocation[location].totalEmployeesToday += 1;
 
-                countsByLocation[location][status].employees.push(`${attendance.employee.first_name} ${attendance.employee.last_name}`);
+              if (countsByLocation[location].counts[status] !== undefined) {
+                countsByLocation[location].counts[status] += 1;
+                countsByLocation[location].employeesByStatus[status].push(`${attendance.employee.first_name} ${attendance.employee.last_name} - ${attendance.employee.code}`);
               }
             }
           }
@@ -232,7 +260,6 @@ const EmployeeAttendanceStatus: React.FC = () => {
       setAttendanceCountsByLocation(countsByLocation);
     }
   }, [attendances, todayDate]);
-
 
   return (
     <ThemeProvider theme={theme}>
@@ -260,25 +287,30 @@ const EmployeeAttendanceStatus: React.FC = () => {
           </Grid>
         </Paper>
         <Grid container spacing={4}>
-          {Object.entries(attendanceCountsByLocation).map(([location, counts]) => (
+          {Object.entries(attendanceCountsByLocation).map(([location, data]) => (
             <Grid item xs={12} md={6} lg={4} key={location}>
               <Paper elevation={3} sx={{ p: 3 }}>
-                <Box display="flex" alignItems="center" mb={2}>
-                  <LocationIcon sx={{ color: theme.palette.primary.main, mr: 1 }} />
-                  <Typography variant="h6" color="primary" sx={{ textTransform: 'uppercase' }}>
-                    {location}
+                <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                  <Box display="flex" alignItems="center">
+                    <LocationIcon sx={{ color: theme.palette.primary.main, mr: 1 }} />
+                    <Typography variant="h6" color="primary" sx={{ textTransform: 'uppercase' }}>
+                      {location}
+                    </Typography>
+                  </Box>
+                  {/* Display Today Total just right to the location */}
+                  <Typography variant="subtitle1" color="text.secondary">
+                    Today Total: {data.totalEmployeesToday}
                   </Typography>
                 </Box>
                 <Divider sx={{ mb: 2 }} />
                 <Grid container spacing={2}>
-                  {Object.entries(counts).map(([status, data]) => (
-                    <Grid item xs={6} key={status}>
-
+                  {Object.entries(data.counts).map(([status, count]) => (
+                    <Grid item xs={12} sm={6} key={status}>
                       <StatusCard
-                        count={data.count}
+                        count={count}
                         status={status.replace(/([A-Z])/g, ' $1').trim()}
-                        employees={data.employees}
-                        onClick={() => handleStatusClick(status, data.employees || [])}
+                        employees={data.employeesByStatus[status]}
+                        onClick={() => handleStatusClick(status, data.employeesByStatus[status] || [])}
                       />
                     </Grid>
                   ))}
@@ -288,7 +320,6 @@ const EmployeeAttendanceStatus: React.FC = () => {
           ))}
         </Grid>
 
-        {/* Dialog to show employee names */}
         <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
           <DialogContent>
             <Typography variant="h6" gutterBottom>
@@ -296,7 +327,19 @@ const EmployeeAttendanceStatus: React.FC = () => {
             </Typography>
             <List>
               {selectedEmployees.map((employee, index) => (
-                <ListItem key={index}>{employee}</ListItem>
+                <ListItem key={index} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Avatar sx={{ bgcolor: '#3f51b5', mr: 2 }}>
+                    {employee.split(' ')[0][0]}{employee.split(' ')[1]?.[0]}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                      {employee.split(' - ')[0]} {/* Employee name */}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Code: {employee.split(' - ')[1]} {/* Employee code */}
+                    </Typography>
+                  </Box>
+                </ListItem>
               ))}
             </List>
           </DialogContent>
