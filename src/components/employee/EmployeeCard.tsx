@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     Card, CardContent, Box, IconButton, Menu, MenuItem,
-    Avatar, Typography, Chip, styled
+    Avatar, Typography, Chip, styled, Tooltip
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import PermIdentityIcon from '@mui/icons-material/PermIdentity';
@@ -33,19 +33,28 @@ const StyledAvatar = styled(Avatar)(({ theme }) => ({
 const StyledChip = styled(Chip)(({ theme }) => ({
     fontWeight: 'bold',
     textTransform: 'uppercase',
+    margin: theme.spacing(2, 0),
 }));
 
-
-const EmailTypography = styled(Typography)(({ emailLength }) => ({
-    fontSize: emailLength > 40 ? '0.875rem' : `calc(1rem - 0.01rem * ${emailLength})`,
-    whiteSpace: emailLength > 40 ? 'normal' : 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    wordBreak: emailLength > 40 ? 'break-word' : 'normal',
-    display: 'block',
-    maxWidth: '100%',
+const EmailContainer = styled(Box)(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.palette.grey[100],
+    borderRadius: theme.shape.borderRadius,
+    padding: theme.spacing(1),
+    marginTop: theme.spacing(2),
+    wordBreak: 'break-all',
 }));
 
+const EmailTypography = styled(Typography)(({ theme }) => ({
+    fontSize: '0.875rem',
+    textAlign: 'center',
+    color: theme.palette.text.secondary,
+    '&:hover': {
+        color: theme.palette.primary.main,
+    },
+}));
 
 const EmployeeCard = ({ employee, id, handleEditEmployeeClick, capitalizeWords }) => {
     const [anchorEl, setAnchorEl] = useState(null);
@@ -54,6 +63,7 @@ const EmployeeCard = ({ employee, id, handleEditEmployeeClick, capitalizeWords }
     const router = useRouter();
 
     const handleMenuOpen = (event) => {
+        event.stopPropagation();
         setAnchorEl(event.currentTarget);
     };
 
@@ -83,6 +93,11 @@ const EmployeeCard = ({ employee, id, handleEditEmployeeClick, capitalizeWords }
         }, 500);
     };
 
+    const handleEmailClick = (e) => {
+        e.stopPropagation();
+        window.location.href = `mailto:${employee.email}`;
+    };
+
     return (
         <StyledCard onClick={handleCardClick}>
             {loading ? (
@@ -92,7 +107,7 @@ const EmployeeCard = ({ employee, id, handleEditEmployeeClick, capitalizeWords }
             ) : (
                 <CardContent>
                     <Box display='flex' justifyContent='flex-end'>
-                        <IconButton aria-label='settings' onClick={(e) => { e.stopPropagation(); handleMenuOpen(e); }}>
+                        <IconButton aria-label='settings' onClick={handleMenuOpen}>
                             <MoreVertIcon />
                         </IconButton>
                         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
@@ -122,21 +137,17 @@ const EmployeeCard = ({ employee, id, handleEditEmployeeClick, capitalizeWords }
                             size='small'
                         />
                     </Box>
-                    <Box sx={{ mt: 2 }}>
-                        <EmailTypography
-                            variant='body2'
-                            emailLength={employee.email.length}
-                            sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                mb: 1
-                            }}
-                        >
-                            <EmailIcon fontSize='small' sx={{ mr: 1 }} />
-                            {employee.email}
-                        </EmailTypography>
-                    </Box>
+                    <EmailContainer>
+                        <Tooltip title="Click to send email" arrow>
+                            <EmailTypography onClick={handleEmailClick}>
+                                <EmailIcon fontSize='small' sx={{ mr: 1, verticalAlign: 'middle' }} />
+                                {employee.email}
+                            </EmailTypography>
+                        </Tooltip>
+                    </EmailContainer>
+                    <Typography variant='subtitle1' color='text.secondary' align='center' sx={{ mt: 2 }}>
+                        {employee.code}
+                    </Typography>
                 </CardContent>
             )}
         </StyledCard>
