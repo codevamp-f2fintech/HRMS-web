@@ -32,6 +32,8 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import type { AppDispatch, RootState } from '@/redux/store';
 import { fetchPolicies } from '@/redux/features/policies/policiesSlice';
+import { utility } from '@/utility';
+
 
 export default function PolicyGrid() {
   const dispatch: AppDispatch = useDispatch()
@@ -87,6 +89,7 @@ export default function PolicyGrid() {
       description: '',
       file: null
     });
+    const { capitalizeInput } = utility();
 
     const [errors, setErrors] = useState({
       name: '',
@@ -201,7 +204,7 @@ export default function PolicyGrid() {
               label='Name'
               name='name'
               value={formData.name}
-              onChange={handleChange}
+              onChange={(e) => capitalizeInput(e, handleChange)}
               required
               error={!!errors.name}
               helperText={errors.name}
@@ -214,7 +217,14 @@ export default function PolicyGrid() {
               label='Description'
               name='description'
               value={formData.description}
-              onChange={handleChange}
+              onChange={(e) => {
+                const { name, value } = e.target;
+                const [firstWord, ...rest] = value.split(' ');
+                const capitalizedFirstWord = firstWord.charAt(0).toUpperCase() + firstWord.slice(1);
+                const capitalizedValue = [capitalizedFirstWord, ...rest].join(' ');
+                handleChange({ target: { name, value: capitalizedValue } });
+              }}
+
               required
               error={!!errors.description}
               helperText={errors.description}
