@@ -135,7 +135,7 @@ export default function EmployeeGrid() {
     <Box sx={{ flexGrow: 1, padding: 2 }}>
       <Dialog open={showForm} onClose={handleClose} fullWidth maxWidth='md'>
         <DialogContent>
-          <EmployeeForm employee={selectedEmployee} handleClose={handleClose} />
+          <EmployeeForm employee={selectedEmployee} handleClose={handleClose} employees={employees} fetchEmployees={fetchEmployees} page={page} />
         </DialogContent>
       </Dialog>
       <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
