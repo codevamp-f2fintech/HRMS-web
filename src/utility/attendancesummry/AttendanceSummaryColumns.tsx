@@ -23,7 +23,7 @@ export const AttendanceSummaryColumns: GridColDef[] = [
         position="relative"
       >
         {/* Row 1 - Present, Present Not Completed, Absent */}
-        <Tooltip title="This is for Present">
+        <Tooltip title="Present with shift completed">
           <Box display="flex" justifyContent="center" alignItems="center" position="relative" sx={{ cursor: 'pointer' }}>
             <CircleIcon sx={{ color: 'green', fontSize: 30 }} />
             <Typography
@@ -39,7 +39,7 @@ export const AttendanceSummaryColumns: GridColDef[] = [
           </Box>
         </Tooltip>
 
-        <Tooltip title="This is for Present but time Not Completed">
+        <Tooltip title="Present but shift Not Completed">
           <Box display="flex" justifyContent="center" alignItems="center" position="relative" sx={{ cursor: 'pointer' }}>
             <CircleIcon sx={{ color: 'lightgreen', fontSize: 30 }} />
             <Typography
@@ -55,7 +55,7 @@ export const AttendanceSummaryColumns: GridColDef[] = [
           </Box>
         </Tooltip>
 
-        <Tooltip title="This is for Absent">
+        <Tooltip title="Absent">
           <Box display="flex" justifyContent="center" alignItems="center" position="relative" sx={{ cursor: 'pointer' }}>
             <CircleIcon sx={{ color: 'red', fontSize: 30 }} />
             <Typography
@@ -72,7 +72,7 @@ export const AttendanceSummaryColumns: GridColDef[] = [
         </Tooltip>
 
         {/* Row 2 - On Half, On Half Not Completed, On Leave */}
-        <Tooltip title="This is for On Half">
+        <Tooltip title="On Half with shift completed">
           <Box display="flex" justifyContent="center" alignItems="center" position="relative" sx={{ cursor: 'pointer' }}>
             <ContrastIcon
               sx={{
@@ -96,7 +96,7 @@ export const AttendanceSummaryColumns: GridColDef[] = [
           </Box>
         </Tooltip>
 
-        <Tooltip title="This is for On Half but time Not Completed">
+        <Tooltip title="On Half but shift Not Completed">
           <Box display="flex" justifyContent="center" alignItems="center" position="relative" sx={{ cursor: 'pointer' }}>
             <ContrastIcon
               sx={{
@@ -120,7 +120,7 @@ export const AttendanceSummaryColumns: GridColDef[] = [
           </Box>
         </Tooltip>
 
-        <Tooltip title="This is for On Leave">
+        <Tooltip title="On Leave">
           <Box display="flex" justifyContent="center" alignItems="center" position="relative" sx={{ cursor: 'pointer' }}>
             <CircleIcon sx={{ color: 'orange', fontSize: 30 }} />
             <Typography
@@ -136,7 +136,7 @@ export const AttendanceSummaryColumns: GridColDef[] = [
           </Box>
         </Tooltip>
 
-        <Tooltip title="This is for On Field">
+        <Tooltip title="On Field">
           <Box display="flex" justifyContent="center" alignItems="center" position="relative" sx={{ cursor: 'pointer' }}>
             <CircleIcon sx={{ color: '#673ab7', fontSize: 30 }} />
             <Typography
@@ -152,7 +152,7 @@ export const AttendanceSummaryColumns: GridColDef[] = [
           </Box>
         </Tooltip>
 
-        <Tooltip title="This is for Work From Home (WFH)">
+        <Tooltip title="Work From Home (WFH)">
           <Box display="flex" justifyContent="center" alignItems="center" position="relative" sx={{ cursor: 'pointer' }}>
             <CircleIcon sx={{ color: 'rgb(247, 51, 120)', fontSize: 30 }} />
             <Typography
