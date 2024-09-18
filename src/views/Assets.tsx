@@ -6,7 +6,7 @@ import { debounce } from 'lodash';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import type { SelectChangeEvent } from '@mui/material';
-import { Avatar, Button, Dialog, DialogContent, FormControl, Grid, IconButton, InputLabel, MenuItem, Select, TextField, Typography, FormHelperText } from '@mui/material';
+import { Avatar, Button, Dialog, DialogContent, FormControl, Grid, IconButton, InputLabel, MenuItem, Select, TextField, Typography, FormHelperText, Autocomplete } from '@mui/material';
 import Box from '@mui/material/Box';
 import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { DataGrid } from '@mui/x-data-grid';
@@ -20,6 +20,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '@/redux/store';
 import { fetchAssests, filterAssest } from '@/redux/features/assests/assestsSlice';
 import { fetchEmployees } from '@/redux/features/employees/employeesSlice';
+import { fetchAddAssets } from '@/redux/features/addAssets/addAssetsSlice';
 import { apiResponse } from '@/utility/apiResponse/employeesResponse';
 
 
@@ -28,11 +29,9 @@ export default function AssestsGrid() {
   const dispatch: AppDispatch = useDispatch();
   const { assests, loading, error, filteredAssest, total } = useSelector((state: RootState) => state.assests);
 
-  // const { employees } = useSelector((state: RootState) => state.employees)
   const [showForm, setShowForm] = useState(false)
   const [selectedAsset, setSelectedAsset] = useState<string>("");
   const [userRole, setUserRole] = useState<string>("");
-  const [employees, setEmployees] = useState([])
   const [selectedKeyword, setSelectedKeyword] = useState('');
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
@@ -66,43 +65,12 @@ export default function AssestsGrid() {
     handlePageChange(params.page, params.pageSize);
     debouncedFetch();
   };
-
-  // const apiResponse = async () => {
-  //   const response = await fetch(
-  //     `${process.env.NEXT_PUBLIC_APP_URL}/employees/get?page=${page}&limit=${limit}`
-  //   );
-
-  //   const employees = await response.json();
-
-  //   console.log('employees is ', employees)
-
-  //   setEmployees(employees)
-  // }
-
   useEffect(() => {
     if (assests.length === 0) {
       dispatch(fetchAssests({ page, limit, keyword: selectedKeyword }))
     }
-
-    // Fetch employees and set the state
-    const fetchEmployees = async () => {
-      const data = await apiResponse();
-
-      setEmployees(data);
-    };
-
-    fetchEmployees();
   }, [dispatch, assests?.length, page, limit, selectedKeyword]);
 
-  // const handlePageChange = (newPage, newPageSize) => {
-  //   setPage(newPage + 1); // Page index starts from 0, so increment by 1
-  //   setLimit(newPageSize); // Update the limit with the new page size
-  //   dispatch(fetchAssests({ page: newPage + 1, limit: newPageSize })); // Dispatch the action with the updated page and limit
-  // };
-
-  // const handlePaginationModelChange = (params) => {
-  //   handlePageChange(params.page, params.pageSize); // Pass page and pageSize to the handler
-  // };
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user") || '{}')
@@ -112,6 +80,9 @@ export default function AssestsGrid() {
   })
 
   const AddAssetForm: React.FC<AddAssetFormProps> = ({ handleClose, asset }) => {
+    const { employees } = useSelector((state: RootState) => state.employees)
+    const { addassets } = useSelector((state: RootState) => state.addAssets);
+
     const [formData, setFormData] = useState({
       employee: '',
       description: '',
@@ -153,6 +124,16 @@ export default function AssestsGrid() {
       }
     }, [asset, assests])
 
+    useEffect(() => {
+      dispatch(fetchEmployees({ page: 1, limit: 0, search: "" }))
+      console.log("employee", employees)
+
+    }, [])
+
+    useEffect(() => {
+      dispatch(fetchAddAssets({ page: 1, limit: 0, keyword: "" }))
+    }, [])
+
     const validateForm = () => {
       let isValid = true;
 
@@ -172,40 +153,40 @@ export default function AssestsGrid() {
         isValid = false;
       }
 
-      if (!formData.description.trim()) {
-        newErrors.description = 'Required';
-        isValid = false;
-      }
+      // if (!formData.description.trim()) {
+      //   newErrors.description = 'Required';
+      //   isValid = false;
+      // }
 
-      if (!formData.model.trim()) {
-        newErrors.model = 'Required';
-        isValid = false;
-      }
+      // if (!formData.model.trim()) {
+      //   newErrors.model = 'Required';
+      //   isValid = false;
+      // }
 
       if (!formData.name.trim()) {
         newErrors.name = 'Required';
         isValid = false;
       }
 
-      if (!formData.sno.trim()) {
-        newErrors.sno = 'Required';
-        isValid = false;
-      }
+      // if (!formData.sno.trim()) {
+      //   newErrors.sno = 'Required';
+      //   isValid = false;
+      // }
 
-      if (!formData.type.trim()) {
-        newErrors.type = 'Type is not defined';
-        isValid = false;
-      }
+      // if (!formData.type.trim()) {
+      //   newErrors.type = 'Type is not defined';
+      //   isValid = false;
+      // }
 
-      if (!formData.assignment_date.trim()) {
-        newErrors.assignment_date = 'Date is required';
-        isValid = false;
-      }
+      // if (!formData.assignment_date.trim()) {
+      //   newErrors.assignment_date = 'Date is required';
+      //   isValid = false;
+      // }
 
-      if (!formData.return_date.trim()) {
-        newErrors.return_date = 'Date is required';
-        isValid = false;
-      }
+      // if (!formData.return_date.trim()) {
+      //   newErrors.return_date = 'Date is required';
+      //   isValid = false;
+      // }
 
       setErrors(newErrors);
 
@@ -243,6 +224,7 @@ export default function AssestsGrid() {
         })
           .then(response => response.json())
           .then(data => {
+            console.log('data', data)
             if (data.message) {
               if (data.message.includes('success')) {
                 toast.success(data.message, {
@@ -281,27 +263,35 @@ export default function AssestsGrid() {
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
             <FormControl fullWidth required>
-              <InputLabel required id='demo-simple-select-label'>Employee</InputLabel>
-              <Select
-                label='Select Employee'
-                labelId='demo-simple-select-label'
-                id='demo-simple-select'
-                name="employee"
-                value={formData.employee}
-                onChange={handleSelectChange}
-                required
-                error={!!errors.employee}
-              >
-                {employees.map((employee) => (
-                  <MenuItem key={employee._id} value={employee._id}>
-                    {employee.first_name} {employee.last_name}
-                  </MenuItem>
-                ))}
-              </Select>
-              {errors.employee && <FormHelperText error>{errors.employee}</FormHelperText>}
+              <Autocomplete
+                id='Select Employee'
+                options={
+                  employees
+                    .slice()
+                    .sort((a, b) => {
+                      const nameA = `${a.first_name} ${a.last_name}`.toLowerCase();
+                      const nameB = `${b.first_name} ${b.last_name}`.toLowerCase();
+                      return nameA.localeCompare(nameB);
+                    })
+                }
+                getOptionLabel={(option) => `${option.first_name} ${option.last_name}`}
+                renderInput={(params) => (
+                  <TextField {...params} label="Select Employee" variant="outlined" />
+                )}
+                value={employees.find(emp => emp._id === formData.employee) || null}
+                onChange={(event, newValue) => {
+                  if (newValue) {
+                    handleSelectChange({ target: { name: "employee", value: newValue._id } });
+                  }
+                }}
+              />
+              {errors.employee && (
+                <Typography color="error">{errors.employee}</Typography>
+              )}
             </FormControl>
+
           </Grid>
-          <Grid item xs={12} md={6}>
+          {/* <Grid item xs={12} md={6}>
             <TextField
               fullWidth
               label='Model'
@@ -312,20 +302,52 @@ export default function AssestsGrid() {
               error={!!errors.name}
               helperText={errors.name}
             />
-          </Grid>
+          </Grid> */}
           <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Asset Name'
-              name='name'
-              value={formData.name}
-              onChange={handleTextFieldChange}
-              required
-              error={!!errors.name}
-              helperText={errors.name}
-            />
+            <FormControl fullWidth required>
+              <Autocomplete
+                id="Select Assets"
+                options={addassets
+                  .slice()
+                  .sort((a, b) => {
+                    const nameA = `${a.assetName}`.toLowerCase();
+                    const nameB = `${b.assetName}`.toLowerCase();
+                    return nameA.localeCompare(nameB);
+                  })}
+                getOptionLabel={(option) => `${option.assetName}-${option.model}-${option.serialNo}`}
+                renderOption={(props, option) => (
+                  <li {...props} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
+                    <span style={{ width: '100%', textAlign: 'center' }}>{option.assetName}</span>
+                    <span style={{ width: '100%', textAlign: 'center' }}>{option.model}</span>
+                    <span style={{ width: '100%', textAlign: 'center' }}>{option.serialNo}</span>
+                  </li>
+                )}
+                renderInput={(params) => (
+                  <TextField {...params} label="Select Assets" variant="outlined" />
+                )}
+                PaperComponent={({ children }) => (
+                  <div style={{ backgroundColor: '#fff', border: '1px solid #ccc', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', padding: '8px', borderBottom: '1px solid #ccc' }}>
+                      <span style={{ width: '100%', textAlign: 'center' }}>AssetName</span>
+                      <span style={{ width: '100%', textAlign: 'center' }}>Model</span>
+                      <span style={{ width: '100%', textAlign: 'center' }}>SerialNo</span>
+                    </div>
+                    {children}
+                  </div>
+                )}
+                value={addassets.find(asset => `${asset.assetName}-${asset.model}-${asset.serialNo}` === formData.name) || null}
+                onChange={(event, newValue) => {
+                  if (newValue) {
+                    handleSelectChange({ target: { name: "name", value: `${newValue.assetName}-${newValue.model}-${newValue.serialNo}` } });
+                  }
+                }}
+              />
+              {errors.name && (
+                <Typography color="error">{errors.name}</Typography>
+              )}
+            </FormControl>
           </Grid>
-          <Grid item xs={12} md={6}>
+          {/* <Grid item xs={12} md={6}>
             <TextField
               fullWidth
               label='SNO'
@@ -360,7 +382,7 @@ export default function AssestsGrid() {
               error={!!errors.name}
               helperText={errors.name}
             />
-          </Grid>
+          </Grid> */}
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
@@ -454,34 +476,6 @@ export default function AssestsGrid() {
         field: 'name',
         headerName: 'Asset Name',
         width: 180,
-        headerClassName: 'super-app-theme--header',
-      },
-      {
-        field: 'model',
-        headerName: 'Model Name',
-        width: 180,
-        editable: true,
-        headerClassName: 'super-app-theme--header',
-      },
-      {
-        field: 'sno',
-        headerName: 'SNO',
-        width: 180,
-        editable: true,
-        headerClassName: 'super-app-theme--header',
-      },
-      {
-        field: 'description',
-        headerName: 'Description',
-        width: 250,
-        editable: true,
-        headerClassName: 'super-app-theme--header',
-      },
-      {
-        field: 'type',
-        headerName: 'Type',
-        width: 150,
-        editable: true,
         headerClassName: 'super-app-theme--header',
       },
       {
