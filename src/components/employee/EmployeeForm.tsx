@@ -469,7 +469,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
           />
         </Grid>
         <Grid item xs={12} md={6}>
-          <FormControl fullWidth >
+          <FormControl fullWidth error={!!errors.location}>
             <InputLabel id='demo-simple-select-label'>Select Location</InputLabel>
             <Select
               label='Select Location'
@@ -480,10 +480,11 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
               onChange={handleChange}
               fullWidth
             >
-              <MenuItem value='noida'>Noida</MenuItem>
-              <MenuItem value='bareilly'>Bareilly</MenuItem>
-              <MenuItem value='patel nagar'>Patel Nagar</MenuItem>
+              <MenuItem value='Noida'>Noida</MenuItem>
+              <MenuItem value='Bareilly'>Bareilly</MenuItem>
+              <MenuItem value='Patel Nagar'>Patel Nagar</MenuItem>
             </Select>
+            {errors.location && <Typography color='error'>{errors.location}</Typography>}
           </FormControl>
         </Grid>
         <Grid item xs={12} md={6}>

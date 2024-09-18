@@ -41,8 +41,8 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
         skills: [],
         bankDetails: { bankName: '', accountNumber: '', ifscCode: '', panCardNumber: '', panCardImage: null },
         addressDetails: { permanentAddress: '', currentAddress: '', aadhaarCardNumber: '', aadhaarFrontImage: null, aadhaarBackImage: null },
-        academics: { tenthDetails: '', twelfthDetails: '', graduationDetails: '' },
-        pastExperience: [{ companyName: '', fromYear: '', toYear: '' }],
+        academics: [{ level: '10th', institution: '', fromYear: '', toYear: '', details: '' }],
+        pastExperience: [{ companyName: '', fromYear: '', toYear: '', lastCtc: '', designation: '', referenceName: '', referenceContact: '' }],
         verify: false
     });
 
@@ -52,13 +52,38 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
         setTabValue(newValue);
     };
 
-    const handleInputChange = (section, field, value) => {
+    const handleInputChange = (section, index, field, value) => {
+        if (section === 'academics') {
+            setFormData(prevData => ({
+                ...prevData,
+                academics: prevData.academics.map((item, i) =>
+                    i === index ? { ...item, [field]: value } : item
+                ),
+            }));
+        } else {
+            // For other sections
+            setFormData(prevData => ({
+                ...prevData,
+                [section]: {
+                    ...prevData[section],
+                    [field]: value,
+                },
+            }));
+        }
+    };
+
+
+    const addAcademic = () => {
         setFormData(prevData => ({
             ...prevData,
-            [section]: {
-                ...prevData[section],
-                [field]: value,
-            },
+            academics: [...prevData.academics, { level: '', institution: '', fromYear: '', toYear: '', details: '' }],
+        }));
+    };
+
+    const removeAcademic = (index) => {
+        setFormData(prevData => ({
+            ...prevData,
+            academics: prevData.academics.filter((_, i) => i !== index),
         }));
     };
 
@@ -167,12 +192,12 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                 aadhaarFrontImage: data.addressDetails?.aadhaarFrontImageUrl, // URL from AWS
                 aadhaarBackImage: data.addressDetails?.aadhaarBackImageUrl, // URL from AWS
             },
-            academics: {
-                tenthDetails: data.academics?.tenthDetails || '',
-                twelfthDetails: data.academics?.twelfthDetails || '',
-                graduationDetails: data.academics?.graduationDetails || '',
-            },
-            pastExperience: data.pastExperience.length > 0 ? data.pastExperience : [{ companyName: '', fromYear: '', toYear: '' }],
+            academics: Array.isArray(data.academics)
+                ? data.academics
+                : [
+                    { level: '10th', institution: '', fromYear: '', toYear: '', details: '' }
+                ],
+            pastExperience: data.pastExperience.length > 0 ? data.pastExperience : [{ companyName: '', fromYear: '', toYear: '', lastCtc: '', designation: '', referenceName: '', referenceContact: '' }],
             verify: data.verify
         })
     };
@@ -203,8 +228,12 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
             appendData(`addressDetails_${key}`, value);
         });
 
-        Object.entries(formData.academics).forEach(([key, value]) => {
-            appendData(`academics_${key}`, value);
+        formData.academics.forEach((academic, index) => {
+            appendData(`academics_${index}_level`, academic.level);
+            appendData(`academics_${index}_institution`, academic.institution);
+            appendData(`academics_${index}_fromYear`, academic.fromYear);
+            appendData(`academics_${index}_toYear`, academic.toYear);
+            appendData(`academics_${index}_details`, academic.details);
         });
 
         formData.pastExperience.forEach((exp, index) => {
@@ -342,28 +371,28 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                         fullWidth
                         margin="normal"
                         value={formData.bankDetails.bankName}
-                        onChange={(e) => handleInputChange('bankDetails', 'bankName', e.target.value)}
+                        onChange={(e) => handleInputChange('bankDetails', '', 'bankName', e.target.value)}
                     />
                     <TextField
                         label="Account Number"
                         fullWidth
                         margin="normal"
                         value={formData.bankDetails.accountNumber}
-                        onChange={(e) => handleInputChange('bankDetails', 'accountNumber', e.target.value)}
+                        onChange={(e) => handleInputChange('bankDetails', '', 'accountNumber', e.target.value)}
                     />
                     <TextField
                         label="IFSC Code"
                         fullWidth
                         margin="normal"
                         value={formData.bankDetails.ifscCode}
-                        onChange={(e) => handleInputChange('bankDetails', 'ifscCode', e.target.value)}
+                        onChange={(e) => handleInputChange('bankDetails', '', 'ifscCode', e.target.value)}
                     />
                     <TextField
                         label="PAN Card Number"
                         fullWidth
                         margin="normal"
                         value={formData.bankDetails.panCardNumber}
-                        onChange={(e) => handleInputChange('bankDetails', 'panCardNumber', e.target.value)}
+                        onChange={(e) => handleInputChange('bankDetails', '', 'panCardNumber', e.target.value)}
                     />
                     <input
                         type="file"
@@ -383,7 +412,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                         multiline
                         rows={4}
                         value={formData.addressDetails.permanentAddress}
-                        onChange={(e) => handleInputChange('addressDetails', 'permanentAddress', e.target.value)}
+                        onChange={(e) => handleInputChange('addressDetails', '', 'permanentAddress', e.target.value)}
                     />
                     <TextField
                         label="Current Address"
@@ -392,7 +421,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                         multiline
                         rows={4}
                         value={formData.addressDetails.currentAddress}
-                        onChange={(e) => handleInputChange('addressDetails', 'currentAddress', e.target.value)}
+                        onChange={(e) => handleInputChange('addressDetails', '', 'currentAddress', e.target.value)}
                     />
 
                     <TextField
@@ -400,7 +429,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                         fullWidth
                         margin="normal"
                         value={formData.addressDetails.aadhaarCardNumber}
-                        onChange={(e) => handleInputChange('addressDetails', 'aadhaarCardNumber', e.target.value)}
+                        onChange={(e) => handleInputChange('addressDetails', '', 'aadhaarCardNumber', e.target.value)}
                     />
                     <Box sx={{ mt: 2 }}>
                         <Typography variant="subtitle2">Aadhaar Card Front Image</Typography>
@@ -423,33 +452,53 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
             label: 'Academics',
             content: (
                 <>
-                    <TextField
-                        label="10th Details"
-                        fullWidth
-                        margin="normal"
-                        multiline
-                        rows={2}
-                        value={formData.academics.tenthDetails}
-                        onChange={(e) => handleInputChange('academics', 'tenthDetails', e.target.value)}
-                    />
-                    <TextField
-                        label="12th Details"
-                        fullWidth
-                        margin="normal"
-                        multiline
-                        rows={2}
-                        value={formData.academics.twelfthDetails}
-                        onChange={(e) => handleInputChange('academics', 'twelfthDetails', e.target.value)}
-                    />
-                    <TextField
-                        label="Graduation Details"
-                        fullWidth
-                        margin="normal"
-                        multiline
-                        rows={3}
-                        value={formData.academics.graduationDetails}
-                        onChange={(e) => handleInputChange('academics', 'graduationDetails', e.target.value)}
-                    />
+                    {formData.academics.map((academic, index) => (
+                        <Box key={index} sx={{ border: '1px solid #ddd', padding: 2, marginBottom: 2, borderRadius: 2 }}>
+                            <TextField
+                                label="Education Level"
+                                fullWidth
+                                margin="normal"
+                                value={academic.level}
+                                onChange={(e) => handleInputChange('academics', index, 'level', e.target.value)}
+                            />
+                            <TextField
+                                label="Institution"
+                                fullWidth
+                                margin="normal"
+                                value={academic.institution}
+                                onChange={(e) => handleInputChange('academics', index, 'institution', e.target.value)}
+                            />
+                            <TextField
+                                label="From Year"
+                                fullWidth
+                                margin="normal"
+                                value={academic.fromYear}
+                                onChange={(e) => handleInputChange('academics', index, 'fromYear', e.target.value)}
+                            />
+                            <TextField
+                                label="To Year"
+                                fullWidth
+                                margin="normal"
+                                value={academic.toYear}
+                                onChange={(e) => handleInputChange('academics', index, 'toYear', e.target.value)}
+                            />
+                            <TextField
+                                label="Details"
+                                fullWidth
+                                margin="normal"
+                                multiline
+                                rows={2}
+                                value={academic.details}
+                                onChange={(e) => handleInputChange('academics', index, 'details', e.target.value)}
+                            />
+                            <Button variant="outlined" color="secondary" onClick={() => removeAcademic(index)}>
+                                Remove
+                            </Button>
+                        </Box>
+                    ))}
+                    <Button variant="contained" color="primary" onClick={addAcademic}>
+                        Add More Education
+                    </Button>
                 </>
             ),
         },
@@ -493,13 +542,62 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                                     setFormData(prev => ({ ...prev, pastExperience: newExperience }));
                                 }}
                             />
+                            <TextField
+                                label="Last CTC in (Rupees)"
+                                type='number'
+                                fullWidth
+                                margin="normal"
+                                value={exp.lastCtc}
+                                onChange={(e) => {
+                                    const newExperience = [...formData.pastExperience];
+                                    newExperience[index].lastCtc = e.target.value;
+                                    setFormData(prev => ({ ...prev, pastExperience: newExperience }));
+                                }}
+                            />
+                            <TextField
+                                label="Designation"
+                                fullWidth
+                                margin="normal"
+                                value={exp.designation}
+                                onChange={(e) => {
+                                    const capitalizedDesignation = e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1);
+                                    const newExperience = [...formData.pastExperience];
+                                    newExperience[index].designation = capitalizedDesignation;
+                                    setFormData(prev => ({ ...prev, pastExperience: newExperience }));
+                                }}
+                            />
+                            <TextField
+                                label="Reference Name"
+                                fullWidth
+                                margin="normal"
+                                value={exp.referenceName}
+                                onChange={(e) => {
+                                    const newExperience = [...formData.pastExperience];
+                                    newExperience[index].referenceName = e.target.value;
+                                    setFormData(prev => ({ ...prev, pastExperience: newExperience }));
+                                }}
+                            />
+                            <TextField
+                                label="Reference Contact"
+                                fullWidth
+                                margin="normal"
+                                value={exp.referenceContact}
+                                onChange={(e) => {
+                                    const newExperience = [...formData.pastExperience];
+                                    newExperience[index].referenceContact = e.target.value;
+                                    setFormData(prev => ({ ...prev, pastExperience: newExperience }));
+                                }}
+                            />
                         </Box>
                     ))}
                     <Button
                         variant="outlined"
                         onClick={() => setFormData(prev => ({
                             ...prev,
-                            pastExperience: [...prev.pastExperience, { companyName: '', fromYear: '', toYear: '' }]
+                            pastExperience: [
+                                ...prev.pastExperience,
+                                { companyName: '', fromYear: '', toYear: '', lastCtc: '', designation: '', referenceName: '', referenceContact: '' }
+                            ]
                         }))}
                     >
                         Add More Experience
@@ -508,7 +606,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
             ),
         },
         {
-            label: 'Preview & Submit',
+            label: Number(logedUser.role) < 3 ? 'Preview' : 'Preview & Submit',
             content: (
                 <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl mx-auto">
                     <h4 className="text-center mb-6 text-2xl font-bold text-gray-800">Preview</h4>
@@ -586,9 +684,18 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                         <section>
                             <SectionTitle iconClass="ri-book-open-line" title="Academics" />
                             <div className="grid grid-cols-2 gap-2 text-gray-700">
-                                <p>10th Details: {formData.academics.tenthDetails || 'N/A'}</p>
-                                <p>12th Details: {formData.academics.twelfthDetails || 'N/A'}</p>
-                                <p className="col-span-2">Graduation Details: {formData.academics.graduationDetails || 'N/A'}</p>
+
+                                {formData.academics.map(aca => {
+                                    return (
+                                        <>
+                                            <p><b>{aca.level} Details: </b></p>
+                                            <p>{aca.institution}</p>
+                                            <p>{aca.details}</p>
+                                            <p>{aca.toYear}-{aca.fromYear}</p>
+                                        </>
+                                    )
+                                })}
+
                             </div>
                         </section>
 
@@ -600,10 +707,14 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                                 <div className="space-y-4">
                                     {formData.pastExperience.map((exp, index) => (
                                         <div key={index} className="bg-gray-50 p-3 rounded-md">
-                                            <p className="font-semibold">{exp.companyName || 'N/A'}</p>
+                                            <p ><b>Company Name: </b>{exp.companyName || 'N/A'}</p>
                                             <p className="text-sm text-gray-600">
                                                 {exp.fromYear || 'N/A'} - {exp.toYear || 'N/A'}
                                             </p>
+                                            <p ><b>Last CTC: </b>{exp.lastCtc || 'N/A'}</p>
+                                            <p ><b>Designation: </b>{exp.designation || 'N/A'}</p>
+                                            <p ><b>Exp. Reference Name: </b>{exp.referenceName || 'N/A'}</p>
+                                            <p ><b>Exp. Reference Contact: </b>{exp.referenceContact || 'N/A'}</p>
                                         </div>
                                     ))}
                                 </div>
@@ -613,13 +724,13 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                         </section>
                     </div>
 
-                    <Button
+                    {Number(logedUser.role) < 3 ? null : <Button
                         onClick={handleSubmit}
                         disabled={isCompressing || loading}
                         className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300"
                     >
                         {isCompressing ? 'Wait Compressing Images...' : updating ? 'Update' : 'Submit'}
-                    </Button>
+                    </Button>}
                 </div>
             ),
         }
@@ -632,25 +743,35 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
         filledCount += Math.min(formData.skills.length, 3) / 3;
 
         // Bank Details tab (up to 1 point)
-        if (formData.bankDetails.bankName) filledCount += 1 / 4;
-        if (formData.bankDetails.accountNumber) filledCount += 1 / 4;
-        if (formData.bankDetails.ifscCode) filledCount += 1 / 4;
-        if (formData.bankDetails.panCardNumber) filledCount += 1 / 4;
+        if (formData.bankDetails.bankName) filledCount += 1 / 5;
+        if (formData.bankDetails.accountNumber) filledCount += 1 / 5;
+        if (formData.bankDetails.ifscCode) filledCount += 1 / 5;
+        if (formData.bankDetails.panCardNumber) filledCount += 1 / 5;
+        if (formData.bankDetails.panCardImage) filledCount += 1 / 5;
 
         // Address Details tab (up to 1 point)
-        if (formData.addressDetails.permanentAddress) filledCount += 1 / 3;
-        if (formData.addressDetails.currentAddress) filledCount += 1 / 3;
-        if (formData.addressDetails.aadhaarCardNumber) filledCount += 1 / 3;
+        if (formData.addressDetails.permanentAddress) filledCount += 1 / 5;
+        if (formData.addressDetails.currentAddress) filledCount += 1 / 5;
+        if (formData.addressDetails.aadhaarCardNumber) filledCount += 1 / 5;
+        if (formData.addressDetails.aadhaarFrontImage) filledCount += 1 / 5
+        if (formData.addressDetails.aadhaarBackImage) filledCount += 1 / 5
 
         // Academics tab (up to 1 point)
-        if (formData.academics.tenthDetails) filledCount += 1 / 3;
-        if (formData.academics.twelfthDetails) filledCount += 1 / 3;
-        if (formData.academics.graduationDetails) filledCount += 1 / 3;
+        if (formData.academics.some(aca => aca.level)) filledCount += 1 / 5;
+        if (formData.academics.some(aca => aca.institution)) filledCount += 1 / 5;
+        if (formData.academics.some(aca => aca.fromYear)) filledCount += 1 / 5;
+        if (formData.academics.some(aca => aca.toYear)) filledCount += 1 / 5;
+        if (formData.academics.some(aca => aca.details)) filledCount += 1 / 5;
 
         // Past Experience tab (up to 1 point)
-        if (formData.pastExperience.some(exp => exp.companyName)) filledCount += 1 / 3;
-        if (formData.pastExperience.some(exp => exp.fromYear)) filledCount += 1 / 3;
-        if (formData.pastExperience.some(exp => exp.toYear)) filledCount += 1 / 3;
+        if (formData.pastExperience.some(exp => exp.companyName)) filledCount += 1 / 7;
+        if (formData.pastExperience.some(exp => exp.fromYear)) filledCount += 1 / 7;
+        if (formData.pastExperience.some(exp => exp.toYear)) filledCount += 1 / 7;
+        if (formData.pastExperience.some(exp => exp.lastCtc)) filledCount += 1 / 7;
+        if (formData.pastExperience.some(exp => exp.designation)) filledCount += 1 / 7;
+        if (formData.pastExperience.some(exp => exp.referenceContact)) filledCount += 1 / 7;
+        if (formData.pastExperience.some(exp => exp.referenceName)) filledCount += 1 / 7;
+
 
         return (filledCount / (tabContent.length - 1)) * 100;
     };
@@ -666,6 +787,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
             <>
                 <form onSubmit={handleSubmit}>
                     {loading && (
+
                         <Box
                             sx={{
                                 position: 'fixed',
@@ -683,7 +805,6 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                             <Loader />
                         </Box>
                     )}
-                    <ToastContainer />
                     <Dialog
                         open={open}
                         onClose={handleClose}
@@ -738,6 +859,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                         }
                     </Box>
                 }
+                <ToastContainer />
             </>
         );
     } else {
