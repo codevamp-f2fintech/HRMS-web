@@ -19,6 +19,8 @@ import {
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import SearchIcon from '@mui/icons-material/Search';
+import ContrastIcon from '@mui/icons-material/Contrast';
+
 import InputAdornment from '@mui/material/InputAdornment';
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material'
 import { useDispatch, useSelector } from 'react-redux';
@@ -104,12 +106,21 @@ export default function LeavesGrid() {
     setShowForm(false)
   }, []);
 
+  function capitalizeFirstLetterEachWord(str) {
+    return str
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
+
+
   const generateColumns = useMemo(() => {
     return [
       ...(userRole === '1' ? [{
         field: 'employee_name',
         headerName: 'Employee',
-        width: 220,
+        flex: 1,
+        minWidth: 200,
         headerClassName: 'super-app-theme--header',
         sortable: true,
         align: 'center',
@@ -120,30 +131,119 @@ export default function LeavesGrid() {
           </Box>
         ),
       }] : []),
-      { field: 'day', headerName: 'Day', headerClassName: 'super-app-theme--header', flex: 1 },
+      {
+        field: 'day',
+        headerName: 'Day',
+        flex: 0.5,
+        headerAlign: 'center',
+        headerClassName: 'super-app-theme--header',
+        renderCell: (params) => {
+          const dayValue = parseFloat(params.value);
+          const halfDayPeriod = params.row.half_day_period;
+
+          if (dayValue === 0.5 && halfDayPeriod) {
+            return (
+              <Box
+                sx={{
+                  position: 'relative',
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <ContrastIcon
+                  sx={{
+                    color: '#989c9a',
+                    fontSize: 40,
+                  }}
+                />
+
+                <Typography
+                  fontWeight="bold"
+                  fontSize="0.9em"
+                  color="black"
+                  sx={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                  }}
+                >
+                  {halfDayPeriod === 'First Half' ? 'FH' : 'SH'}
+                </Typography>
+              </Box>
+            );
+          }
+
+          return (
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                width: '100%',
+                height: '100%',
+              }}
+            >
+              <Typography fontWeight="bold">
+                {dayValue}
+              </Typography>
+            </Box>
+          );
+        },
+      },
       {
         field: 'start_date',
         headerName: 'Start Date',
-        headerClassName: 'super-app-theme--header',
         flex: 1,
-        renderCell: (params) => format(new Date(params.value), 'dd-MMM-yyyy').toUpperCase(),
+        minWidth: 150,
+        headerClassName: 'super-app-theme--header',
+        renderCell: (params) => {
+          if (params.value) {
+            try {
+              const date = new Date(params.value);
+
+              return !isNaN(date.getTime()) ? format(date, 'dd-MMM-yyyy').toUpperCase() : 'Invalid Date';
+            } catch (error) {
+              return 'Invalid Date';
+            }
+          }
+
+          return 'No Date';
+        },
       },
       {
         field: 'end_date',
         headerName: 'End Date',
-        headerClassName: 'super-app-theme--header',
         flex: 1,
-        renderCell: (params) => format(new Date(params.value), 'dd-MMM-yyyy').toUpperCase(),
+        minWidth: 150,
+        headerClassName: 'super-app-theme--header',
+        renderCell: (params) => {
+          const endDateValue = params.value || params.row.start_date;
+          if (endDateValue) {
+            try {
+              const date = new Date(endDateValue);
+
+              return !isNaN(date.getTime()) ? format(date, 'dd-MMM-yyyy').toUpperCase() : 'Invalid Date';
+            } catch (error) {
+              return 'Invalid Date';
+            }
+          }
+
+          return 'No End Date';
+        },
       },
-      { field: 'type', headerName: 'Type', headerClassName: 'super-app-theme--header', flex: 1 },
-      { field: 'status', headerName: 'Status', headerClassName: 'super-app-theme--header', flex: 1 },
-      { field: 'application', headerName: 'Reason', headerClassName: 'super-app-theme--header', flex: 1 },
+      { field: 'type', headerName: 'Type', flex: 0.6, headerClassName: 'super-app-theme--header' },
+      { field: 'status', headerName: 'Status', flex: 1, headerClassName: 'super-app-theme--header' },
+      { field: 'application', headerName: 'Reason', flex: 1, minWidth: 150, headerClassName: 'super-app-theme--header', renderCell: (params) => capitalizeFirstLetterEachWord(params.value || ''), },
       ...(userRole === '1' ? [{
         field: 'edit',
         headerName: 'Edit',
-        sortable: false,
+        flex: 0.5,
         headerAlign: 'center',
-        width: 160,
+        headerClassName: 'super-app-theme--header',
         renderCell: ({ row: { _id } }) => (
           <Box display="flex" justifyContent="space-around">
             <Button color="info" variant="contained" onClick={() => handleLeaveEditClick(_id)}>
@@ -151,7 +251,7 @@ export default function LeavesGrid() {
             </Button>
           </Box>
         ),
-      }] : [])
+      }] : []),
     ];
   }, [userRole]);
 
@@ -166,6 +266,7 @@ export default function LeavesGrid() {
       status: leave.status,
       day: leave.day,
       application: leave.application,
+      half_day_period: leave.half_day_period,
     }));
   }, [leaves]);
 
@@ -202,17 +303,7 @@ export default function LeavesGrid() {
             </Typography>
           </Box>
           <Box display='flex' alignItems='center'>
-            {userRole === "1" ? (
-              <Button
-                style={{ borderRadius: 50, backgroundColor: '#ff902f' }}
-                variant='contained'
-                color='warning'
-                startIcon={<AddIcon />}
-                onClick={handleLeaveAddClick}
-              >
-                Add Leave
-              </Button>
-            ) : Number(userRole) >= 2 ? (
+            {Number(userRole) >= 2 && (
               <Button
                 style={{ borderRadius: 50, backgroundColor: '#ff902f' }}
                 variant='contained'
@@ -222,7 +313,7 @@ export default function LeavesGrid() {
               >
                 Apply Leave
               </Button>
-            ) : null}
+            )}
           </Box>
 
         </Box>

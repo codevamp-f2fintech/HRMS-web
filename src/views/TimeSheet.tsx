@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { debounce } from 'lodash';
 import { ToastContainer, toast } from 'react-toastify';
@@ -40,7 +40,7 @@ import { fetchTimeSheet, filterTimesheet, resetFilter } from '@/redux/features/t
 import { fetchAttendances, fetchEmployeeAttendances } from '@/redux/features/attendances/attendancesSlice';
 import { apiResponse } from '@/utility/apiResponse/employeesResponse';
 
-const ITEMS_PER_PAGE = 6;
+
 
 export default function TimeSheetGrid() {
   const dispatch: AppDispatch = useDispatch();
@@ -62,6 +62,8 @@ export default function TimeSheetGrid() {
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [employees, setEmployees] = useState([]);
   const [expandedRows, setExpandedRows] = useState({});
+
+  const ITEMS_PER_PAGE = useMemo(() => (Number(userRole) <= 2 ? 10 : 6), [userRole]);
 
   const debouncedSearch = useCallback(
     debounce(() => {
@@ -190,6 +192,18 @@ export default function TimeSheetGrid() {
   }
 
   const handleSaveAll = () => {
+    const hasLessThanNineHours = Object.values(editableRows).some(row => parseInt(row.time, 10) < 9);
+
+
+    if (hasLessThanNineHours) {
+      const confirmation = window.confirm('Some entries have less than 9 hours marked. Are you sure you want to save?');
+
+      if (!confirmation) {
+
+        return;
+      }
+    }
+
     const savePromises = Object.keys(editableRows).map(id => {
       const method = id.toString() !== editableRows[id].attendance ? 'PUT' : 'POST';
       const url = id.toString() !== editableRows[id].attendance ? `${process.env.NEXT_PUBLIC_APP_URL}/timesheets/update/${id}` : `${process.env.NEXT_PUBLIC_APP_URL}/timesheets/create`;
@@ -233,24 +247,29 @@ export default function TimeSheetGrid() {
       att => new Date(att.date).getMonth() + 1 === month
     );
 
-    const updatedData = filteredAttendances.map(attendance => {
-      const timesheet = timesheets.find(ts => ts.attendance?._id === attendance._id);
-      const employee = employees.find(emp => emp._id === attendance.employee?._id);
+    const updatedData = filteredAttendances
+      .filter((attendance) => {
 
-      return {
-        _id: timesheet ? timesheet._id : null,
-        employee_id: employee ? employee._id : '',
-        employee_name: employee ? `${employee.first_name} ${employee.last_name}` : '',
-        employee_image: employee ? employee.image : '',
-        attendance_id: attendance._id,
-        attendance_date: attendance.date,
-        attendance_status: attendance.status,
-        time: timesheet ? timesheet.time : '0',
-        status: timesheet ? timesheet.status : 'Pending',
-        note: timesheet ? timesheet.note : '',
-        submission_date: timesheet ? timesheet.submission_date : ''
-      };
-    });
+        return employees.some((emp) => emp._id === attendance.employee?._id);
+      })
+      .map((attendance) => {
+        const timesheet = timesheets.find((ts) => ts.attendance?._id === attendance._id);
+        const employee = employees.find((emp) => emp._id === attendance.employee?._id);
+
+        return {
+          _id: timesheet ? timesheet._id : null,
+          employee_id: employee ? employee._id : '',
+          employee_name: employee ? `${employee.first_name} ${employee.last_name}` : '',
+          employee_image: employee ? employee.image : '',
+          attendance_id: attendance._id,
+          attendance_date: attendance.date,
+          attendance_status: attendance.status,
+          time: timesheet ? timesheet.time : '0',
+          status: timesheet ? timesheet.status : 'Pending',
+          note: timesheet ? timesheet.note : '',
+          submission_date: timesheet ? timesheet.submission_date : ''
+        };
+      });
 
     return updatedData;
   };
@@ -422,9 +441,9 @@ export default function TimeSheetGrid() {
       <Box sx={{ flexGrow: 1, padding: 2 }}>
         <TableContainer component={Paper}>
           <Table>
-            <TableHead>
+            {Number(userRole) >= 2 && <TableHead>
               <TableRow>
-                {Number(userRole) <= 2 && <TableCell sx={{ fontSize: '1.1em' }}>Employee</TableCell>}
+
                 <TableCell sx={{ fontSize: '1.1em', textAlign: 'center' }}>Attendance Date</TableCell>
                 <TableCell sx={{ fontSize: '1.1em', textAlign: 'center' }}>Attendance Status</TableCell>
                 <TableCell sx={{ textAlign: 'center', fontSize: '1.1em' }}>Time Hours</TableCell>
@@ -432,7 +451,7 @@ export default function TimeSheetGrid() {
                 <TableCell sx={{ fontSize: '1.1em', textAlign: 'center' }}>Note</TableCell>
                 <TableCell sx={{ fontSize: '1.1em', textAlign: 'center' }}>Submission Date</TableCell>
               </TableRow>
-            </TableHead>
+            </TableHead>}
             <TableBody>
               {Number(userRole) <= 2 ? (
 
@@ -575,6 +594,16 @@ export default function TimeSheetGrid() {
 
 
                             </Table>
+                            <Box display="flex" justifyContent="flex-end" mt={2}>
+                              <Button
+                                variant="contained"
+                                color="primary"
+                                disabled={dirty}
+                                onClick={() => handleSaveAll()}
+                              >
+                                Save
+                              </Button>
+                            </Box>
                           </Box>
                         </Collapse>
                       </TableCell>
@@ -672,6 +701,16 @@ export default function TimeSheetGrid() {
             </TableBody>
 
           </Table>
+          {Number(userRole) >= 2 && <Box display="flex" justifyContent="flex-end">
+            <Button
+              variant="contained"
+              color="primary"
+              disabled={dirty}
+              onClick={() => handleSaveAll()}
+            >
+              Save
+            </Button>
+          </Box>}
         </TableContainer>
       </Box>
     </Box>

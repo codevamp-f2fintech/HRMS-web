@@ -1,8 +1,9 @@
-'use client'
+'use client';
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react';
 import { debounce } from 'lodash';
 import { useSelector, useDispatch } from 'react-redux';
+import { useRouter } from 'next/navigation';
 import {
   Box,
   Grid,
@@ -11,28 +12,25 @@ import {
   Button,
   Select,
   MenuItem,
-  IconButton,
   Dialog,
   DialogContent,
-} from '@mui/material'
-
-import InputLabel from '@mui/material/InputLabel'
-import FormControl from '@mui/material/FormControl'
-import AddIcon from '@mui/icons-material/Add'
-import ViewModuleIcon from '@mui/icons-material/ViewModule'
-import ViewListIcon from '@mui/icons-material/ViewList'
-
-import 'react-toastify/dist/ReactToastify.css';
-import type { RootState, AppDispatch } from '../redux/store';
+} from '@mui/material';
+import InputLabel from '@mui/material/InputLabel';
+import FormControl from '@mui/material/FormControl';
+import AddIcon from '@mui/icons-material/Add';
 import { fetchEmployees, resetEmployees } from '../redux/features/employees/employeesSlice';
-
-import Loader from "../components/loader/loader"
+import Loader from "../components/loader/loader";
 import EmployeeForm from '@/components/employee/EmployeeForm';
 import EmployeeCard from '@/components/employee/EmployeeCard';
+import { utility } from '@/utility';
+
+import 'react-toastify/dist/ReactToastify.css';
+
+const { isTokenExpired } = utility();
 
 export default function EmployeeGrid() {
-  const dispatch: AppDispatch = useDispatch();
-  const { employees, hasMore, loading, error } = useSelector((state: RootState) => state.employees);
+  const dispatch = useDispatch();
+  const { employees, hasMore, loading, error } = useSelector((state) => state.employees);
 
   const [showForm, setShowForm] = useState(false);
   const [userRole, setUserRole] = useState("");
@@ -41,6 +39,9 @@ export default function EmployeeGrid() {
   const [selectedDesignation, setSelectedDesignation] = useState('');
   const [page, setPage] = useState(1);
 
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const router = useRouter();
+
   const capitalizeWords = (name: String) => {
     return name.split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
@@ -48,71 +49,70 @@ export default function EmployeeGrid() {
   };
 
   useEffect(() => {
-    if (userRole === "") {
-      const user = JSON.parse(localStorage.getItem("user") || '{}');
-      setUserRole(user.role);
+    if (isTokenExpired(token)) {
+      localStorage.removeItem('token');
+      router.push('/login');
+    } else {
+      if (userRole === "") {
+        const user = JSON.parse(localStorage.getItem("user") || '{}');
+        setUserRole(user.role);
+      }
     }
-  }, [userRole]);
+  }, [token, userRole, router]);
 
   useEffect(() => {
-    if (searchName === '' || selectedDesignation === '') {
-      dispatch(fetchEmployees({ page, limit: 12, search: searchName, designation: selectedDesignation }));
+    if (searchName === '' && selectedDesignation === '') {
+      dispatch(fetchEmployees({ page, limit: 12 }));
     }
-  }, [dispatch, page, searchName, selectedDesignation]);
+  }, [dispatch, page]);
 
-  const handleScroll = useCallback(
-    debounce(() => {
-      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 && !loading && hasMore) {
-        setPage((prevPage) => {
-          const nextPage = prevPage + 1;
-          dispatch(fetchEmployees({ page: nextPage, limit: 12, search: searchName, designation: selectedDesignation }));
-          return nextPage;
-        });
-      }
-    }, 100),
-    [loading, hasMore, searchName, selectedDesignation]
-  );
+  const handleScroll = useCallback(() => {
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 && !loading && hasMore) {
+      setPage((prevPage) => {
+        const nextPage = prevPage + 1;
+        dispatch(fetchEmployees({ page: nextPage, limit: 12, search: searchName, designation: selectedDesignation }));
+        return nextPage;
+      });
+    }
+  }, [loading, hasMore, searchName, selectedDesignation, dispatch]);
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll);
-
     return () => window.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
   const handleAddEmployeeClick = () => {
-    setSelectedEmployee(null)
-    setShowForm(true)
-  }
+    setSelectedEmployee(null);
+    setShowForm(true);
+  };
 
   const handleEditEmployeeClick = (id) => {
-    setSelectedEmployee(id)
-    setShowForm(true)
-  }
+    setSelectedEmployee(id);
+    setShowForm(true);
+  };
 
   const handleClose = () => {
-    setShowForm(false)
-  }
+    setShowForm(false);
+  };
 
   const debouncedSearch = useCallback(
     debounce(() => {
-
       dispatch(resetEmployees());
       dispatch(fetchEmployees({ page: 1, limit: searchName !== '' ? 0 : 12, search: searchName, designation: selectedDesignation }));
-    }, 300),
-    [searchName, selectedDesignation]
+    }, 500),
+    [searchName, selectedDesignation, dispatch]
   );
 
   useEffect(() => {
     if (searchName !== '' || selectedDesignation !== '') {
       debouncedSearch();
     }
-    return debouncedSearch.cancel;
   }, [searchName, selectedDesignation, debouncedSearch]);
 
   const handleInputChange = (e) => {
     const searchValue = e.target.value;
 
-    setSelectedDesignation('')
+    setSelectedDesignation('');
     setSearchName(searchValue);
     if (searchValue === '') {
       setPage(1);
@@ -123,7 +123,7 @@ export default function EmployeeGrid() {
   const handleDesignationChange = (e) => {
     const designationValue = e.target.value;
 
-    setSearchName('')
+    setSearchName('');
     setSelectedDesignation(designationValue);
     if (designationValue === '') {
       setPage(1);
@@ -152,18 +152,6 @@ export default function EmployeeGrid() {
           </Typography>
         </Box>
         <Box display='flex' alignItems='center'>
-          <IconButton
-            style={{ backgroundColor: '#ff902f', borderRadius: 10, color: 'white', marginRight: 10 }}
-            aria-label='grid view'
-          >
-            <ViewModuleIcon />
-          </IconButton>
-          <IconButton
-            style={{ backgroundColor: '#fff', color: '#4d5154', borderRadius: 10, marginRight: 10 }}
-            aria-label='list view'
-          >
-            <ViewListIcon />
-          </IconButton>
           {userRole === '1' && <Button
             style={{ borderRadius: 50, backgroundColor: '#ff902f' }}
             variant='contained'
@@ -219,5 +207,5 @@ export default function EmployeeGrid() {
       </Grid>
       {loading ? <Loader /> : <div></div>}
     </Box>
-  )
+  );
 }

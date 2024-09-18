@@ -98,7 +98,7 @@ const TotalHolidays = () => {
           />
         </DialogContent>
       </Dialog>
-      <TableContainer sx={{ height: '55vh' }}>
+      <TableContainer sx={{ height: '400px' }}>
         <Table >
           <TableHead>
             <TableRow>

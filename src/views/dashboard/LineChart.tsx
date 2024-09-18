@@ -75,7 +75,7 @@ const LineChart = () => {
   }
 
   return (
-    <Card>
+    <Card sx={{ height: "100%" }}>
       <CardContent>
         <Typography variant='h4'>$86.4k</Typography>
         <AppReactApexCharts type='line' height={88} width='100%' options={options} series={series} />

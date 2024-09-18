@@ -16,10 +16,12 @@ const FooterContent = () => {
 
   return (
     <Container
+
       maxWidth={false}
       sx={{
         background: "linear-gradient(270deg, var(--mui-palette-primary-main), rgb(197, 171, 255) 100%)",
-        padding: '2rem 1rem', // Adjust padding for responsiveness
+        // padding: '2rem 1rem', // Adjust padding for responsiveness
+        // margin: "0px"
       }}
     >
       <Box
@@ -28,6 +30,7 @@ const FooterContent = () => {
           flexDirection: { xs: "column", md: "row" }, // Stack vertically on small screens
           justifyContent: "space-between",
           alignItems: { xs: "center", md: "flex-start" }, // Center items on small screens
+          padding: '2rem 1rem'
         }}
       >
         <Box width={{ xs: "100%", md: 350 }} textAlign={{ xs: "center", md: "left" }} mb={{ xs: 4, md: 0 }}>

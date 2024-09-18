@@ -33,9 +33,9 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import SearchIcon from '@mui/icons-material/Search';
 import InputAdornment from '@mui/material/InputAdornment';
 import PauseCircleOutlineIcon from '@mui/icons-material/PauseCircleOutline';
-import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
+import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
 import ContrastIcon from '@mui/icons-material/Contrast';
-import DriveFileRenameOutlineOutlined from '@mui/icons-material/DriveFileRenameOutlineOutlined';
+
 import { useDispatch, useSelector } from 'react-redux';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -80,7 +80,7 @@ function ServerDay(props: PickersDayProps<Dayjs> & { highlightedDays?: number[],
   const { highlightedDays = [], day, outsideCurrentMonth, attendanceData, ...other } = props;
 
 
-  // Define or import the getLastSundayOfMonth function
+
   function getLastSundayOfMonth(month: number, year: number): number {
     const lastDayOfMonth = new Date(year, month, 0);
     const dayOfWeek = lastDayOfMonth.getDay();
@@ -524,6 +524,7 @@ export default function AttendanceGrid() {
                 <MenuItem value='Absent'>ABSENT</MenuItem>
                 <MenuItem value='On Half'>ON_HALF</MenuItem>
                 <MenuItem value='On Leave'>ON_LEAVE</MenuItem>
+                <MenuItem value='On Field'>ON_FIELD</MenuItem>
               </Select>
               <Typography variant="caption" color="error">{errors.status}</Typography>
             </FormControl>
@@ -532,7 +533,7 @@ export default function AttendanceGrid() {
           <Grid item xs={12} md={6}>
             <FormControl
               fullWidth
-              error={!!errors.timeComplete} // Remove the required prop
+              error={!!errors.timeComplete}
               sx={{
                 position: 'relative',
               }}
@@ -566,7 +567,7 @@ export default function AttendanceGrid() {
                   )
                 }
                 sx={{
-                  pr: 6, // Add padding to the right to ensure space for the ClearIcon
+                  pr: 6,
                 }}
               >
                 <MenuItem value="Not Completed">Not Completed</MenuItem>
@@ -626,7 +627,7 @@ export default function AttendanceGrid() {
       })
 
       .reduce((acc, { date, status }) => {
-        acc[date] = status; // Aggregate by date
+        acc[date] = status;
 
         return acc;
       }, {} as Record<string, string>);
@@ -670,7 +671,7 @@ export default function AttendanceGrid() {
   };
 
   const generateColumns = () => {
-    const today = new Date(); // Get the current date
+    const today = new Date();
     const daysInMonth = getDaysInMonth(month, today.getFullYear());
     const visibleDays: number[] = Array.from({ length: daysInMonth }, (_, i) => i + 1).slice(startDayIndex, startDayIndex + daysToShow);
     const lastSunday = getLastSundayOfMonth(month, today.getFullYear());
@@ -691,7 +692,7 @@ export default function AttendanceGrid() {
       },
       ...visibleDays.map(day => {
         const cellDate = new Date(today.getFullYear(), month - 1, day);
-        const isFutureDate = cellDate > today; // Determine if the date is in the future
+        const isFutureDate = cellDate > today;
 
         return {
           field: `day_${day}`,
@@ -706,7 +707,7 @@ export default function AttendanceGrid() {
             const employeeName = params.row.name;
             const isSunday = cellDate.getDay() === 0;
 
-            // Show the "Mark" button only for current or past dates and non-Sundays
+
             if (!status && !isSunday && !isFutureDate) {
               return (
                 <Button
@@ -719,7 +720,7 @@ export default function AttendanceGrid() {
             }
 
             if (isSunday && !status) {
-              // If it's a Sunday and no status is marked, show the WeekendIcon
+
               return (
                 <WeekendIcon
                   style={{ color: 'blue', marginTop: '35%', cursor: 'pointer' }}
@@ -727,7 +728,7 @@ export default function AttendanceGrid() {
                 />
               );
             } else if (day === lastSunday) {
-              // Allow editing only on the last Sunday
+
               if (status === 'Present') {
                 return <CheckCircleIcon style={{ color: 'green', marginTop: '30%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
               } else if (status === 'Absent') {
@@ -736,7 +737,10 @@ export default function AttendanceGrid() {
                 return <PauseCircleOutlineIcon style={{ color: 'orange', marginTop: '30%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
               } else if (status === 'On Half') {
                 return <ContrastIcon style={{ color: 'green', fontSize: '1.5em', marginTop: '30%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
-              } else if (!status && !isFutureDate) {
+              } else if (status === 'On Field') {
+                return <DirectionsRunIcon style={{ color: '##673ab7', fontSize: '1.5em', marginTop: '30%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
+              }
+              else if (!status && !isFutureDate) {
                 return (
                   <Button
                     style={{ color: 'blue', marginTop: '35%' }}
@@ -747,14 +751,17 @@ export default function AttendanceGrid() {
                 );
               }
             } else {
-              // For all other days
+
               if (status === 'Present') {
                 return <CheckCircleIcon style={{ color: 'green', marginTop: '35%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
               } else if (status === 'Absent') {
                 return <CancelIcon style={{ color: 'red', marginTop: '35%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
               } else if (status === 'On Leave') {
                 return <PauseCircleOutlineIcon style={{ color: 'orange', marginTop: '35%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
-              } else if (status === 'On Half') {
+              } else if (status === 'On Field') {
+                return <DirectionsRunIcon style={{ color: '##673ab7', fontSize: '1.5em', marginTop: '30%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
+              }
+              else if (status === 'On Half') {
                 return <ContrastIcon style={{ color: 'green', fontSize: '1.5em', marginTop: '35%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
               } else {
                 return null;
@@ -764,7 +771,7 @@ export default function AttendanceGrid() {
         };
       }),
 
-      // Additional columns or configurations
+
       ...AttendanceSummaryColumns,
     ];
 
@@ -805,16 +812,18 @@ export default function AttendanceGrid() {
           onHalf: 0,
           onHalfNotCompleted: 0,
           onLeave: 0,
+          onField: 0,
           _id,
         };
       }
 
       if (!acc[employee._id][uniqueKey]) {
-        acc[employee._id][uniqueKey] = true; // Mark this day as counted
+        acc[employee._id][uniqueKey] = true;
 
         acc[employee._id][`day_${day}`] = status;
         acc[employee._id][`day_${day}_id`] = _id;
         acc[employee._id][`day_${day}_timeComplete`] = timeComplete;
+
 
 
         if (status === 'Present') {
@@ -833,13 +842,17 @@ export default function AttendanceGrid() {
           }
         } else if (status === 'On Leave') {
           acc[employee._id].onLeave += 1;
+        } else if (status === 'On Field') {
+          acc[employee._id].onField += 1;
         }
       }
 
       return acc;
     }, {});
 
-    return Object.values(groupedData);
+    const sortedData = Object.values(groupedData).sort((a, b) => a.name.localeCompare(b.name));
+
+    return sortedData;
   };
 
   const columns = generateColumns();
@@ -875,7 +888,7 @@ export default function AttendanceGrid() {
               <AttendanceSummary
                 attendanceData={viewAttendanceData}
                 selectedMonth={month}
-                onClose={handleClose} // Pass the onClose prop
+                onClose={handleClose}
               />
             )}
           </DialogContent>
@@ -1015,6 +1028,7 @@ export default function AttendanceGrid() {
             <DataGrid
               getRowHeight={() => 'auto'}
               sx={{
+
                 '& .MuiDataGrid-columnHeader .MuiDataGrid-sortIcon': {
                   color: 'white',
                 },
@@ -1033,9 +1047,18 @@ export default function AttendanceGrid() {
                   align: 'center',
                 }
               }}
-              components={{
-                Toolbar: GridToolbar,
-              }}
+
+              // components={{
+              //   Toolbar: () => {
+              //     return (
+              //       <GridToolbar />
+              //     )
+              //   }
+
+
+              // ... other components
+              // }}
+              slots={{ toolbar: GridToolbar }}
               rows={rows}
               columns={columns}
               getRowId={(row) => row._id}
