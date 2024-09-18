@@ -14,15 +14,20 @@ import CardStatVertical from '@components/card-statistics/Vertical'
 import Table from '@views/dashboard/Table'
 import TotalHolidays from '@/views/dashboard/TotolHolidays'
 import TotalLeaves from '@/views/dashboard/TotalLeaves'
+import LocationWisePerformer from '@/views/dashboard/LocationWisePerformer'
+import TradingViewWidget from '@views/dashboard/TotalEarning'
+
 const DashboardAnalytics = () => {
   const [userRole, setUserRole] = useState<string>("");
 
   useEffect(() => {
     if (userRole === "") {
       const user = JSON.parse(localStorage.getItem("user") || '{}');
+
       setUserRole(user.role);
     }
   }, [userRole]);
+
   return (
     <Grid container spacing={6}>
       <Grid item xs={12} md={4}>
@@ -35,10 +40,13 @@ const DashboardAnalytics = () => {
         <UpcomingBirthdays />
       </Grid>
       <Grid item xs={12} md={7} lg={7}>
-        <TotalEarning />
+        <TradingViewWidget />
       </Grid>
-      <Grid item xs={12} md={6} >
+      {/* <Grid item xs={12} md={6} >
         {userRole !== '' && < TotalLeaves />}
+      </Grid> */}
+      <Grid item xs={12} md={6} >
+        {userRole !== '' && < LocationWisePerformer />}
       </Grid>
       <Grid item xs={12} md={6} >
         {userRole !== '' && < TotalHolidays />}
@@ -46,6 +54,7 @@ const DashboardAnalytics = () => {
       <Grid item xs={12} lg={8}>
         {/* <DepositWithdraw /> */}
       </Grid>
+
       <Grid item xs={12}>
         {/* <Table /> */}
       </Grid>
