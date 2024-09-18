@@ -1,3 +1,4 @@
+import { Card } from '@mui/material';
 import React, { useEffect, useRef, memo } from 'react';
 
 // Global flag to check if the script has been loaded
@@ -77,17 +78,15 @@ function TradingViewWidget() {
   }, []);
 
   return (
-    <div
-      className="tradingview-widget-container"
-      ref={container}
-      style={{
-        width: '100%',
-        height: '400px',
-        overflow: 'auto'
-      }}
-    >
-      <div className="tradingview-widget-container__widget"></div>
-    </div>
+    <Card sx={{ height: "100%" }}>
+      <div
+        className="tradingview-widget-container"
+        ref={container}
+      >
+        <div className="tradingview-widget-container__widget"></div>
+      </div>
+    </Card>
+
   );
 }
 

@@ -4,7 +4,12 @@ import { Typography, Button, Box, Chip, Tabs, Tab, TextField, Divider, DialogCon
 import { styled } from '@mui/system';
 import { Autocomplete } from '@mui/material';
 import { Close } from '@mui/icons-material';
+import imageCompression from 'browser-image-compression';
+import { toast, ToastContainer } from 'react-toastify';
 
+import Loader from '../loader/loader';
+
+import 'react-toastify/dist/ReactToastify.css';
 
 const StyledTabs = styled(Tabs)(({ theme }) => ({
     marginBottom: theme.spacing(2),
@@ -23,12 +28,14 @@ const StyledTab = styled(Tab)(({ theme }) => ({
     },
 }));
 
-const ProfileForm = ({ profileId, logedUser, calculateFilledTabsCount, setCalculateFilledTabsCount }) => {
+const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setCheckVerify }) => {
     const [tabValue, setTabValue] = useState(0);
     const [updating, setUpdating] = useState(false);
     const [verifyTrigger, setVerifyTrigger] = useState(0);
     const [open, setOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState({ src: null, alt: null });
+    const [loading, setLoading] = useState(false);
+    const [isCompressing, setIsCompressing] = useState(false);
     const [formData, setFormData] = useState({
         employeeId: '',
         skills: [],
@@ -55,15 +62,57 @@ const ProfileForm = ({ profileId, logedUser, calculateFilledTabsCount, setCalcul
         }));
     };
 
-    const handleFileChange = (section, field, file) => {
-        setFormData(prevData => ({
-            ...prevData,
-            [section]: {
-                ...prevData[section],
-                [field]: file,
-            },
-        }));
+    const handleFileChange = async (section, field, file) => {
+        if (file) {
+            const fileSizeInKB = file.size / 1024; // Convert file size from bytes to KB
+
+            // Only compress if file size is greater than 500KB
+            if (fileSizeInKB > 500) {
+                setIsCompressing(true);
+                try {
+                    const options = {
+                        maxSizeMB: 0.5, // Target size is 500KB
+                        maxWidthOrHeight: 1920, // Optional, set max width/height if needed
+                        useWebWorker: true, // Enable web workers for faster compression
+                    };
+
+                    // Compress the file (returns a Blob)
+                    const compressedBlob = await imageCompression(file, options);
+
+                    // Convert compressed Blob back to a File
+                    const compressedFile = new File([compressedBlob], file.name, {
+                        type: file.type,
+                        lastModified: Date.now(), // You can adjust this to the original lastModified if needed
+                    });
+
+                    // Update formData with the compressed file
+                    setFormData((prevFormData) => ({
+                        ...prevFormData,
+                        [section]: {
+                            ...prevFormData[section],
+                            [field]: compressedFile, // Use the File object, not Blob
+                        },
+                    }));
+                } catch (error) {
+                    console.error('Error compressing the image:', error);
+                } finally {
+                    setIsCompressing(false);
+                }
+
+            } else {
+                // If the file is already less than or equal to 500KB, use it directly
+                setFormData((prevFormData) => ({
+                    ...prevFormData,
+                    [section]: {
+                        ...prevFormData[section],
+                        [field]: file,
+                    },
+                }));
+                setIsCompressing(false);
+            }
+        }
     };
+
 
     useEffect(() => {
         const checkIfExist = async () => {
@@ -76,6 +125,7 @@ const ProfileForm = ({ profileId, logedUser, calculateFilledTabsCount, setCalcul
                     const data = await checkResponse.json();
                     setUpdating(true); // Profile exists
                     populateFormData(data);
+                    setCheckVerify(data.verify)
                 } else if (checkResponse.status === 404) {
                     setUpdating(false); // Profile does not exist
                 }
@@ -124,17 +174,18 @@ const ProfileForm = ({ profileId, logedUser, calculateFilledTabsCount, setCalcul
             },
             pastExperience: data.pastExperience.length > 0 ? data.pastExperience : [{ companyName: '', fromYear: '', toYear: '' }],
             verify: data.verify
-        });
+        })
     };
 
     const handleSubmit = async (e) => {
+        setLoading(true)
         e.preventDefault();
 
         const formDataToSend = new FormData();
 
         // Append simple data (strings, numbers)
         const appendData = (key, value) => {
-            if (value !== null && value !== undefined) {
+            if (value !== null && value !== undefined && value !== '') {
                 formDataToSend.append(key, value);
             }
         };
@@ -162,10 +213,16 @@ const ProfileForm = ({ profileId, logedUser, calculateFilledTabsCount, setCalcul
             });
         });
 
-        // Append files separately
-        appendData('panCardImage', formData.panCardImage); // Assuming these are file inputs
-        appendData('aadhaarFrontImage', formData.aadhaarFrontImage);
-        appendData('aadhaarBackImage', formData.aadhaarBackImage);
+        // Only append files if they are selected
+        if (formData.panCardImage) {
+            appendData('panCardImage', formData.panCardImage);
+        }
+        if (formData.aadhaarFrontImage) {
+            appendData('aadhaarFrontImage', formData.aadhaarFrontImage);
+        }
+        if (formData.aadhaarBackImage) {
+            appendData('aadhaarBackImage', formData.aadhaarBackImage);
+        }
 
         appendData('verify', formData.verify);
 
@@ -182,12 +239,16 @@ const ProfileForm = ({ profileId, logedUser, calculateFilledTabsCount, setCalcul
 
             if (response.ok) {
                 console.log('Profile submitted/updated successfully');
+                toast.success(updating ? "Profile Updated Successfully!" : "Profile Created Successfully")
                 setVerifyTrigger(prev => prev + 1);
+                setLoading(false);
             } else {
                 console.error('Failed to submit/update profile');
+                setLoading(false);
             }
         } catch (error) {
             console.error('Error submitting/updating profile:', error);
+            setLoading(false);
         }
     };
 
@@ -552,12 +613,13 @@ const ProfileForm = ({ profileId, logedUser, calculateFilledTabsCount, setCalcul
                         </section>
                     </div>
 
-                    <button
+                    <Button
                         onClick={handleSubmit}
+                        disabled={isCompressing || loading}
                         className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300"
                     >
-                        {updating ? "Update" : "Submit"}
-                    </button>
+                        {isCompressing ? 'Wait Compressing Images...' : updating ? 'Update' : 'Submit'}
+                    </Button>
                 </div>
             ),
         }
@@ -603,6 +665,25 @@ const ProfileForm = ({ profileId, logedUser, calculateFilledTabsCount, setCalcul
         return (
             <>
                 <form onSubmit={handleSubmit}>
+                    {loading && (
+                        <Box
+                            sx={{
+                                position: 'fixed',
+                                top: 0,
+                                left: 0,
+                                width: '100vw',
+                                height: '100vh',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                backgroundColor: 'rgba(255, 255, 255, 0.7)', // Optional background to dim the screen
+                                zIndex: 9999, // To make sure it's on top of other components
+                            }}
+                        >
+                            <Loader />
+                        </Box>
+                    )}
+                    <ToastContainer />
                     <Dialog
                         open={open}
                         onClose={handleClose}

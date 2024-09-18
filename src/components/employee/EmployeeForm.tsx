@@ -223,14 +223,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
             label='First Name'
             name='first_name'
             value={formData.first_name}
-            onChange={(e) => {
-              const { name, value } = e.target;
-              const capitalizedValue = value
-                .split(' ')
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(' ');
-              handleChange({ target: { name, value: capitalizedValue } });
-            }}
+            onChange={(e) => capitalizeInput(e, handleChange)}
             required
             error={!!errors.first_name}
             helperText={errors.first_name}

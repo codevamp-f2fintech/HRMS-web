@@ -9,12 +9,12 @@ import {
   Typography,
   Box,
   Grid,
-  IconButton,
+  InputAdornment,
   TextField,
   Dialog,
   DialogContent,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
+import SearchIcon from "@mui/icons-material/Search";
 import AddIcon from '@mui/icons-material/Add';
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
@@ -87,15 +87,21 @@ export default function HolidayGrid() {
   };
 
   const columns: GridColDef[] = [
-    { field: 'day', headerName: 'Day', headerClassName: 'super-app-theme--header', headerAlign: 'center', align: 'center', flex: 1 },
+    { field: 'day', headerName: 'Day', headerClassName: 'super-app-theme--header', headerAlign: 'center', align: 'center', flex: 0.5 },
     { field: 'title', headerName: 'Title', headerClassName: 'super-app-theme--header', headerAlign: 'center', align: 'center', flex: 1 },
     {
       field: 'start_date',
       headerName: 'Closing Date',
       headerClassName: 'super-app-theme--header',
-      headerAlign: 'center', align: 'center',
+      headerAlign: 'center',
+      align: 'center',
       flex: 1,
-      renderCell: (params) => format(new Date(params.value), 'dd-MMM-yyyy').toUpperCase(),
+      renderCell: (params) => {
+        const dateValue = params.value ? new Date(params.value) : null;
+        return dateValue && !isNaN(dateValue.getTime())
+          ? format(dateValue, 'dd-MMM-yyyy').toUpperCase()
+          : 'Invalid Date';
+      },
     },
     {
       field: 'end_date',
@@ -104,9 +110,15 @@ export default function HolidayGrid() {
       headerAlign: 'center',
       align: 'center',
       flex: 1,
-      renderCell: (params) => format(new Date(params.value), 'dd-MMM-yyyy').toUpperCase(),
+      renderCell: (params) => {
+        const dateValue = params.value ? new Date(params.value) : null;
+        return dateValue && !isNaN(dateValue.getTime())
+          ? format(dateValue, 'dd-MMM-yyyy').toUpperCase()
+          : 'Invalid Date';
+      },
     },
-    { field: 'note', headerName: 'Note', headerClassName: 'super-app-theme--header', headerAlign: 'center', align: 'center', flex: 1 },
+
+    { field: 'note', headerName: 'Note', headerClassName: 'super-app-theme--header', headerAlign: 'center', align: 'center', flex: 1.5 },
     ...(userRole === '1'
       ? [
         {
@@ -114,7 +126,7 @@ export default function HolidayGrid() {
           headerName: 'Edit',
           sortable: false,
           headerAlign: 'center',
-          width: 160,
+          flex: 0.5,
           headerClassName: 'super-app-theme--header',
           renderCell: ({ row: { _id } }) => (
             <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
@@ -135,7 +147,7 @@ export default function HolidayGrid() {
         <Dialog open={showForm} onClose={handleClose} fullWidth maxWidth="md">
           <DialogContent>
             {/* <AddHolidayForm holiday={selectedHoliday} handleClose={handleClose} /> */}
-            <AddHolidayForm holiday={selectedHoliday} handleClose={handleClose} holidays={holidays} debouncedFetch={debouncedFetch} />
+            <AddHolidayForm holiday={selectedHoliday} handleClose={handleClose} holidays={holidays} debouncedFetch={debouncedFetch} isHalfDay={undefined} />
           </DialogContent>
         </Dialog>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
@@ -162,9 +174,26 @@ export default function HolidayGrid() {
           )}
         </Box>
         <Grid container spacing={6} alignItems="center" mb={2}>
-          <Grid item xs={12} md={3}>
-            <TextField fullWidth label="search" variant="outlined" value={selectedKeyword} onChange={handleInputChange} />
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Search"
+              variant="outlined"
+              value={selectedKeyword}
+              onChange={handleInputChange}
+              InputProps={{
+                sx: {
+                  borderRadius: "50px", // To make the TextField rounded
+                },
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
           </Grid>
+
           {/* <Grid item xs={12} md={3}>
             <Button style={{ padding: 15, backgroundColor: '#198754' }} variant="contained" fullWidth>
               SEARCH
@@ -179,6 +208,9 @@ export default function HolidayGrid() {
               fontSize: 17,
               fontWeight: 600,
               alignItems: 'center',
+            },
+            '& .mui-yrdy0g-MuiDataGrid-columnHeaderRow ': {
+              background: 'linear-gradient(270deg, var(--mui-palette-primary-main), rgb(197, 171, 255) 100%) !important',
             },
             '& .MuiDataGrid-cell': {
               fontSize: '10',
@@ -207,7 +239,6 @@ export default function HolidayGrid() {
           onPaginationModelChange={handlePaginationModelChange}
           pageSizeOptions={[10, 20, 30]}
           paginationModel={{ page: page - 1, pageSize: limit }}
-          checkboxSelection
           disableRowSelectionOnClick
         />
       </Box>

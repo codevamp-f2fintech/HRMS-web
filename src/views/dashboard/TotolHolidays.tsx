@@ -78,7 +78,7 @@ const HolidaysTable = () => {
                 <StyledTableCell>Title</StyledTableCell>
               </TableRow>
             </TableHead>
-            <TableBody>
+            <TableBody sx={{ height: '340px' }}>
               {holidays.map((row, index) => (
                 <TableRow key={index} hover>
                   <TableCell>{row.day}</TableCell>
