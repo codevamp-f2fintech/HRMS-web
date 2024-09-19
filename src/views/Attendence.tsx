@@ -34,6 +34,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import InputAdornment from '@mui/material/InputAdornment';
 import PauseCircleOutlineIcon from '@mui/icons-material/PauseCircleOutline';
 import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
+import HomeIcon from '@mui/icons-material/Home';
+
 import ContrastIcon from '@mui/icons-material/Contrast';
 
 import { useDispatch, useSelector } from 'react-redux';
@@ -109,7 +111,14 @@ function ServerDay(props: PickersDayProps<Dayjs> & { highlightedDays?: number[],
   } else if (attendanceStatus === 'On Half') {
     backgroundColor = '#b7a53a';
     color = 'white';
-  } else if (isSunday && !isLastSunday) {
+  } else if (attendanceStatus === 'On Field') {
+    backgroundColor = '#110720';
+    color = 'white';
+  } else if (attendanceStatus === 'On Wfh') {
+    backgroundColor = 'rgb(247, 51, 120)';
+    color = 'white';
+  }
+  else if (isSunday && !isLastSunday) {
     backgroundColor = 'purple';
     color = 'white';
   }
@@ -215,30 +224,42 @@ function DateCalendarServerRequest({ attendanceData, selectedMonth, onMonthChang
 
 function Legend() {
   return (
-    <Box display='flex' gap={2}>
-      <Box display="flex" alignItems="center" mb={1}>
-        <Box width={15} height={15} bgcolor="green" mr={1} />
-        <Typography>Present</Typography>
+    <Box>
+      <Box display='flex' gap={2} mb={2}>
+        <Box display="flex" alignItems="center" mb={1}>
+          <Box width={15} height={15} bgcolor="green" mr={1} />
+          <Typography>Present</Typography>
+        </Box>
+        <Box display="flex" alignItems="center" mb={1}>
+          <Box width={15} height={15} bgcolor="red" mr={1} />
+          <Typography>Absent</Typography>
+        </Box>
+        <Box display="flex" alignItems="center" mb={1}>
+          <Box width={15} height={15} bgcolor="#b7a53a" mr={1} />
+          <Typography>Half</Typography>
+        </Box>
+        <Box display="flex" alignItems="center" mb={1}>
+          <Box width={15} height={15} bgcolor="yellow" mr={1} />
+          <Typography>Leave</Typography>
+        </Box>
       </Box>
-      <Box display="flex" alignItems="center" mb={1}>
-        <Box width={15} height={15} bgcolor="red" mr={1} />
-        <Typography>Absent</Typography>
-      </Box>
-      <Box display="flex" alignItems="center" mb={1}>
-        <Box width={15} height={15} bgcolor="#b7a53a" mr={1} />
-        <Typography>Half</Typography>
-      </Box>
-      <Box display="flex" alignItems="center" mb={1}>
-        <Box width={15} height={15} bgcolor="yellow" mr={1} />
-        <Typography>Leave</Typography>
-      </Box>
-      <Box display="flex" alignItems="center" mb={1}>
-        <Box width={15} height={15} bgcolor="purple" mr={1} />
-        <Typography>Sunday</Typography>
-      </Box>
-      <Box display="flex" alignItems="center" mb={1}>
-        <Box width={15} height={15} bgcolor="#8c57ff" mr={1} />
-        <Typography>Today</Typography>
+      <Box display='flex' gap={2}>
+        <Box display="flex" alignItems="center" mb={1}>
+          <Box width={15} height={15} bgcolor="#110720" mr={1} />
+          <Typography>On Field</Typography>
+        </Box>
+        <Box display="flex" alignItems="center" mb={1}>
+          <Box width={15} height={15} bgcolor="rgb(247, 51, 120)" mr={1} />
+          <Typography>WFH</Typography>
+        </Box>
+        <Box display="flex" alignItems="center" mb={1}>
+          <Box width={15} height={15} bgcolor="purple" mr={1} />
+          <Typography>Sunday</Typography>
+        </Box>
+        <Box display="flex" alignItems="center" mb={1}>
+          <Box width={15} height={15} bgcolor="#8c57ff" mr={1} />
+          <Typography>Today</Typography>
+        </Box>
       </Box>
     </Box>
   );
@@ -525,6 +546,7 @@ export default function AttendanceGrid() {
                 <MenuItem value='On Half'>ON_HALF</MenuItem>
                 <MenuItem value='On Leave'>ON_LEAVE</MenuItem>
                 <MenuItem value='On Field'>ON_FIELD</MenuItem>
+                <MenuItem value='On Wfh'>ON_WFH</MenuItem>
               </Select>
               <Typography variant="caption" color="error">{errors.status}</Typography>
             </FormControl>
@@ -739,6 +761,8 @@ export default function AttendanceGrid() {
                 return <ContrastIcon style={{ color: 'green', fontSize: '1.5em', marginTop: '30%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
               } else if (status === 'On Field') {
                 return <DirectionsRunIcon style={{ color: '##673ab7', fontSize: '1.5em', marginTop: '30%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
+              } else if (status === 'On Wfh') {
+                return <HomeIcon style={{ color: 'rgb(247, 51, 120)', marginTop: '30%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
               }
               else if (!status && !isFutureDate) {
                 return (
@@ -760,6 +784,8 @@ export default function AttendanceGrid() {
                 return <PauseCircleOutlineIcon style={{ color: 'orange', marginTop: '35%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
               } else if (status === 'On Field') {
                 return <DirectionsRunIcon style={{ color: '##673ab7', fontSize: '1.5em', marginTop: '30%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
+              } else if (status === 'On Wfh') {
+                return <HomeIcon style={{ color: 'rgb(247, 51, 120)', marginTop: '30%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
               }
               else if (status === 'On Half') {
                 return <ContrastIcon style={{ color: 'green', fontSize: '1.5em', marginTop: '35%' }} onClick={() => handleAttendanceEditClick(attendanceId)} />;
@@ -813,6 +839,7 @@ export default function AttendanceGrid() {
           onHalfNotCompleted: 0,
           onLeave: 0,
           onField: 0,
+          onWfh: 0,
           _id,
         };
       }
@@ -844,6 +871,8 @@ export default function AttendanceGrid() {
           acc[employee._id].onLeave += 1;
         } else if (status === 'On Field') {
           acc[employee._id].onField += 1;
+        } else if (status === 'On Wfh') {
+          acc[employee._id].onWfh += 1;
         }
       }
 

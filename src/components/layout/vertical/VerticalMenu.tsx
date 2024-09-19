@@ -174,21 +174,21 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
             Designations
           </MenuItem>
 
-          <MenuItem href='/account-settings' icon={<i className='ri-user-settings-line' />}>
+          {/* <MenuItem href='/account-settings' icon={<i className='ri-user-settings-line' />}>
             Account Settings
-          </MenuItem>
-          <SubMenu label='Auth Pages' icon={<i className='ri-shield-keyhole-line' />}>
+          </MenuItem> */}
+          {/* <SubMenu label='Auth Pages' icon={<i className='ri-shield-keyhole-line' />}>
             <MenuItem href='/login'>Login</MenuItem>
             <MenuItem href='/register'>Register</MenuItem>
             <MenuItem href='/forgot-password'>Forgot Password</MenuItem>
-          </SubMenu>
-          <SubMenu label='Miscellaneous' icon={<i className='ri-question-line' />}>
+          </SubMenu> */}
+          {/* <SubMenu label='Miscellaneous' icon={<i className='ri-question-line' />}>
             <MenuItem href='/error'>Error</MenuItem>
             <MenuItem href='/under-maintenance'>Under Maintenance</MenuItem>
-          </SubMenu>
-          <MenuItem href='/card-basic' icon={<i className='ri-bar-chart-box-line' />}>
+          </SubMenu> */}
+          {/* <MenuItem href='/card-basic' icon={<i className='ri-bar-chart-box-line' />}>
             Cards
-          </MenuItem>
+          </MenuItem> */}
         </MenuSection>
         <MenuSection label='Forms & Tables'>
           <MenuItem href='/form-layouts' icon={<i className='ri-layout-4-line' />}>

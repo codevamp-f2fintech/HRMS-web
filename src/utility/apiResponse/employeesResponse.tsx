@@ -25,6 +25,8 @@ export const apiResponse = async (): Promise<any> => {
     }
 
     const employees = await response.json();
+
+
     return employees;
   } catch (error) {
     console.error('Error fetching employees:', error);

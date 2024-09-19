@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from "@/redux/store";
-import { fetchLeaves } from '@/redux/features/leaves/leavesSlice';
-import AddLeavesForm from '@/components/leave/LeaveForm';
+
+
 
 import {
   Button,
@@ -22,6 +20,17 @@ import {
   IconButton
 } from "@mui/material";
 import { Add as AddIcon, MoreVert as MoreVertIcon } from '@mui/icons-material';
+
+import { useDispatch, useSelector } from 'react-redux';
+
+import type { AppDispatch, RootState } from "@/redux/store";
+
+
+
+
+
+import { fetchLeaves } from '@/redux/features/leaves/leavesSlice';
+import AddLeavesForm from '@/components/leave/LeaveForm';
 
 const TotalHolidays = () => {
   const dispatch = useDispatch<AppDispatch>();

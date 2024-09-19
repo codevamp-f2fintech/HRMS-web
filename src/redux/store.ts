@@ -14,6 +14,7 @@ import timesheetsReducer from './features/timesheet/timesheetSlice';
 import designationReducer from '@/redux/features/designation/designationSlice';
 import UpcomingBirthdaysReducer from '@/redux/features/employees/employeesSlice';
 
+import AwardSlice from '@/redux/features/performer/performereSlice';
 
 const store = configureStore({
   reducer: {
@@ -28,7 +29,8 @@ const store = configureStore({
     employees: employeesReducer,
     timesheets: timesheetsReducer,
     designations: designationReducer,
-    upcomingBirthdays: UpcomingBirthdaysReducer
+    upcomingBirthdays: UpcomingBirthdaysReducer,
+    awards: AwardSlice
   }
 })
 
