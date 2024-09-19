@@ -21,17 +21,11 @@ const LayoutWrapper = ({ verticalLayout }: { verticalLayout: ReactElement }) => 
     if (storedToken) {
       const decodedToken = jwtDecode<JwtPayload>(storedToken);
 
-      // Log token expiration time and current time
-      console.log('Token Expiration Time (ms):', decodedToken.exp * 1000);
-      console.log('Current Time (ms):', Date.now());
-
       // Check if the token is expired
       if (decodedToken.exp * 1000 < Date.now()) {
-        console.log('Token is expired, redirecting to login');
         localStorage.removeItem('token');
         router.push('/login');
       } else {
-        console.log('Token is valid, setting token');
         setToken(storedToken);
       }
     } else {
