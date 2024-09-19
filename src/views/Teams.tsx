@@ -26,7 +26,8 @@ import {
   DialogContent,
   InputLabel,
   FormControl,
-  CardHeader
+  CardHeader,
+  FormHelperText
 } from '@mui/material'
 import type { GridColDef } from '@mui/x-data-grid';
 import { DataGrid } from '@mui/x-data-grid';
@@ -40,6 +41,8 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import type { RootState, AppDispatch } from '../redux/store';
 import { fetchTeams } from '../redux/features/teams/teamsSlice';
 import { fetchEmployees } from '@/redux/features/employees/employeesSlice';
+
+import { utility } from '@/utility';
 
 const theme = createTheme({
   palette: {
@@ -62,6 +65,8 @@ const theme = createTheme({
 
 const getManagerNameById = (id, employees) => {
   const manager = employees.find(employee => employee._id === id);
+
+
   return manager ? `${manager.first_name} ${manager.last_name}` : '';
 };
 
@@ -72,10 +77,15 @@ const getEmployeeCountByIds = (ids) => {
 const getEmployeeNamesByIds = (ids, employees) => {
   if (!ids) return '';
   const idArray = ids.split(',');
+
   const names = idArray.map(id => {
     const employee = employees.find(emp => emp._id === id);
+
+
     return employee ? `${employee.first_name} ${employee.last_name}` : '';
   });
+
+
   return names.join(', ');
 };
 
@@ -90,6 +100,14 @@ export default function TeamGrid() {
   const [selectedKeyword, setSelectedKeyword] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [userRole, setUserRole] = useState<string>('');
+  const { capitalizeInput } = utility();
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user") || '{}')
+
+    setUserRole(user.role)
+  }, [])
 
   const debouncedFetch = useCallback(
     debounce(() => {
@@ -107,6 +125,7 @@ export default function TeamGrid() {
   const handleInputChange = (e) => {
     setSelectedKeyword(e.target.value);
   };
+
   const handlePageChange = (newPage: number, newPageSize: number) => {
     setPage(newPage + 1);
     setLimit(newPageSize);
@@ -127,6 +146,14 @@ export default function TeamGrid() {
       name: '',
       code: ''
     });
+
+    const [errors, setErrors] = useState({
+      name: '',
+      manager_id: '',
+      employee_ids: '',
+      code: ''
+    });
+
     const [selectedEmployees, setSelectedEmployees] = useState([]);
 
     useEffect(() => {
@@ -145,6 +172,41 @@ export default function TeamGrid() {
       }
     }, [team, teams, employees]);
 
+    const validateForm = () => {
+      let isValid = true;
+
+      const newErrors = {
+        name: '',
+        manager_id: '',
+        employee_ids: '',
+        code: ''
+      };
+
+      if (!formData.name.trim()) {
+        newErrors.name = 'Team name is required';
+        isValid = false;
+      }
+
+      if (!formData.manager_id) {
+        newErrors.manager_id = 'Manager selection is required';
+        isValid = false;
+      }
+
+      if (!formData.employee_ids) {
+        newErrors.employee_ids = 'At least one employee must be selected';
+        isValid = false;
+      }
+
+      if (!formData.code.trim()) {
+        newErrors.code = 'Team code is required';
+        isValid = false;
+      }
+
+      setErrors(newErrors);
+
+      return isValid;
+    };
+
     const handleChange = (e) => {
       const { name, value } = e.target;
 
@@ -156,6 +218,7 @@ export default function TeamGrid() {
 
     const handleEmployeeChange = (event, value) => {
       const employeeIds = value.map(emp => emp._id).join(',');
+
       setSelectedEmployees(value);
       setFormData(prevState => ({
         ...prevState,
@@ -164,40 +227,42 @@ export default function TeamGrid() {
     };
 
     const handleSubmit = () => {
-      const method = team ? 'PUT' : 'POST';
-      const url = team ? `${process.env.NEXT_PUBLIC_APP_URL}/teams/update/${team}` : `${process.env.NEXT_PUBLIC_APP_URL}/teams/create`;
+      if (validateForm()) {
+        const method = team ? 'PUT' : 'POST';
+        const url = team ? `${process.env.NEXT_PUBLIC_APP_URL}/teams/update/${team}` : `${process.env.NEXT_PUBLIC_APP_URL}/teams/create`;
 
-      fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.message) {
-            if (data.message.includes('success')) {
-              toast.success(data.message, {
-                position: 'top-center',
-              });
+        fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.message) {
+              if (data.message.includes('success')) {
+                toast.success(data.message, {
+                  position: 'top-center',
+                });
+              } else {
+                toast.error('Error: ' + data.message, {
+                  position: 'top-center',
+                });
+              }
             } else {
-              toast.error('Error: ' + data.message, {
+              toast.error('Unexpected error occurred', {
                 position: 'top-center',
               });
             }
-          } else {
-            toast.error('Unexpected error occurred', {
-              position: 'top-center',
-            });
-          }
 
-          handleClose();
-          debouncedFetch();
-        })
-        .catch(error => {
-          console.log('Error', error);
-        });
+            handleClose();
+            debouncedFetch();
+          })
+          .catch(error => {
+            console.log('Error', error);
+          });
+      }
     };
 
     return (
@@ -217,21 +282,24 @@ export default function TeamGrid() {
               label='Name'
               name='name'
               value={formData.name}
-              onChange={handleChange}
+              onChange={(e) => capitalizeInput(e, handleChange)}
               required
+              error={!!errors.name}
+              helperText={errors.name}
             />
           </Grid>
           <Grid item xs={12} md={6}>
-            <FormControl fullWidth required>
+            <FormControl fullWidth error={!!errors.manager_id}>
               <InputLabel required id='demo-simple-select-label'>Select Manager</InputLabel>
               <Select
-                label='Select Employee'
+                label='Select Manager'
                 labelId='demo-simple-select-label'
                 id='demo-simple-select'
                 name="manager_id"
                 value={formData.manager_id}
                 onChange={handleChange}
                 required
+                error={!!errors.manager_id}
               >
                 {employees
                   .filter((employee) => employee.role_priority === "2")
@@ -241,6 +309,7 @@ export default function TeamGrid() {
                     </MenuItem>
                   ))}
               </Select>
+              {errors.manager_id && <FormHelperText error>{errors.manager_id}</FormHelperText>}
             </FormControl>
           </Grid>
           <Grid item xs={12} md={6}>
@@ -258,7 +327,10 @@ export default function TeamGrid() {
                 </li>
               )}
               renderInput={(params) => (
-                <TextField {...params} label="Select Employees" placeholder="Favorites" />
+                <TextField {...params} label="Select Employees" placeholder="Favorites"
+                  error={!!errors.employee_ids}
+                  helperText={errors.employee_ids}
+                />
               )}
             />
           </Grid>
@@ -270,6 +342,8 @@ export default function TeamGrid() {
               value={formData.code}
               onChange={handleChange}
               required
+              error={!!errors.code}
+              helperText={errors.code}
             />
           </Grid>
           <Grid item xs={12}>
@@ -298,8 +372,9 @@ export default function TeamGrid() {
     if (teams.length === 0) {
       dispatch(fetchTeams({ page, limit, keyword: selectedKeyword }));
     }
+
     if (employees.length === 0) {
-      dispatch(fetchEmployees({ page: 1, limit: 0 }));
+      dispatch(fetchEmployees({ page: 1, limit: 0, search: '', designation: '' }));
     }
   }, [dispatch, teams.length, employees.length]);
 
@@ -307,8 +382,6 @@ export default function TeamGrid() {
     setSelectedTeam(null);
     setShowForm(true);
   };
-
-
 
   const handleEditTeamClick = (id) => {
     setSelectedTeam(id);
@@ -323,8 +396,6 @@ export default function TeamGrid() {
   const handleViewDetails = (team: TeamType) => {
     setViewDetails(team);
   };
-
-
 
   const columns: GridColDef[] = [
     {
@@ -345,33 +416,41 @@ export default function TeamGrid() {
       headerName: 'No. of Employees',
       editable: true,
       renderCell: (params) => getEmployeeCountByIds(params.value),
-      flex: 1
+
+      flex: 1,
+      headerAlign: 'center',
+      align: 'center',
     },
     {
       field: 'code',
       headerName: 'Code',
       editable: true,
-      flex: 1
     },
-    {
-      field: 'edit',
-      headerName: 'Edit',
-      sortable: false,
-      flex: 1,
-      headerAlign: 'center',
-      renderCell: ({ row: { _id } }) => (
-        <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
-          <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleEditTeamClick(_id)}>
-            <DriveFileRenameOutlineOutlined />
-          </Button>
-        </Box>
-      ),
-    },
+    ...(userRole === '1'
+      ? [{
+        field: 'edit',
+        headerName: 'Edit',
+        sortable: false,
+        flex: 1,
+        headerAlign: 'center',
+        renderCell: ({ row: { _id } }) => (
+          <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
+            <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleEditTeamClick(_id)}>
+              <DriveFileRenameOutlineOutlined />
+            </Button>
+          </Box>
+        ),
+      }]
+      : []),
+
     {
       field: 'view',
       headerName: 'View',
       sortable: false,
-      flex: 1,
+      align: 'center',
+
+      // flex: 1,
+
       headerAlign: 'center',
       renderCell: ({ row }) => (
         <Button
@@ -444,6 +523,7 @@ export default function TeamGrid() {
                     borderRadius: '15px',
                     overflow: 'hidden',
                     transition: 'all 0.3s ease',
+                    height: '100%',
                     '&:hover': { transform: 'translateY(-5px)', boxShadow: 6 }
                   }}>
                     <CardHeader
@@ -453,6 +533,8 @@ export default function TeamGrid() {
                     <CardContent sx={{ padding: '20px' }}>
                       {(() => {
                         const manager = employees.find(emp => emp._id === viewDetails.manager_id);
+
+
                         return manager ? (
                           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                             <Avatar
@@ -478,7 +560,7 @@ export default function TeamGrid() {
                     overflowY: 'auto',
                     transition: 'all 0.3s ease',
                     '&:hover': { transform: 'translateY(-5px)', boxShadow: 6 },
-                    height: "250px",
+                    height: "285px",
                     position: 'relative',
 
 
@@ -529,6 +611,8 @@ export default function TeamGrid() {
                       <Grid container spacing={2}>
                         {viewDetails.employee_ids.split(',').map(id => {
                           const employee = employees.find(emp => emp._id === id);
+
+
                           return employee ? (
                             <Grid item xs={6} sm={4} key={id}>
                               <Box sx={{
@@ -540,6 +624,7 @@ export default function TeamGrid() {
                                 borderRadius: '10px',
                                 backgroundColor: '#f3e5f5',
                                 transition: 'all 0.3s ease',
+                                height: '100%',
                                 '&:hover': { backgroundColor: '#e1bee7', transform: 'scale(1.05)' }
                               }}>
                                 <Avatar
@@ -602,7 +687,7 @@ export default function TeamGrid() {
             <IconButton style={{ backgroundColor: '#fff', color: '#4d5154', borderRadius: 10, marginRight: 10 }} aria-label='list view'>
               <ViewListIcon />
             </IconButton>
-            <Button
+            {userRole === "1" && <Button
               style={{ borderRadius: 50, backgroundColor: '#ff902f' }}
               variant='contained'
               color='warning'
@@ -610,7 +695,7 @@ export default function TeamGrid() {
               onClick={handleAddTeamClick}
             >
               Add Team
-            </Button>
+            </Button>}
           </Box>
         </Box>
         <Grid container spacing={6} alignItems='center' mb={2}>
@@ -618,16 +703,16 @@ export default function TeamGrid() {
           <Grid item xs={12} md={3}>
             <TextField
               fullWidth
-              label="Search by any rows value"
+              label="search"
               variant="outlined" value={selectedKeyword}
               onChange={handleInputChange} />
           </Grid>
 
-          <Grid item xs={12} md={3}>
+          {/* <Grid item xs={12} md={3}>
             <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>
               SEARCH
             </Button>
-          </Grid>
+          </Grid> */}
         </Grid>
         <Grid container spacing={6}>
           <Grid item xs={12} sm={6} md={12}>

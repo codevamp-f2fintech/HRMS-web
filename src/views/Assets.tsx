@@ -6,12 +6,14 @@ import { debounce } from 'lodash';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import type { SelectChangeEvent } from '@mui/material';
-import { Avatar, Button, Dialog, DialogContent, FormControl, Grid, IconButton, InputLabel, MenuItem, Select, TextField, Typography } from '@mui/material';
+import { Avatar, Button, Dialog, DialogContent, FormControl, Grid, IconButton, InputLabel, MenuItem, Select, TextField, Typography, FormHelperText } from '@mui/material';
 import Box from '@mui/material/Box';
 import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { DataGrid } from '@mui/x-data-grid';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
+import SearchIcon from '@mui/icons-material/Search';
+import InputAdornment from '@mui/material/InputAdornment';
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -34,6 +36,7 @@ export default function AssestsGrid() {
   const [selectedKeyword, setSelectedKeyword] = useState('');
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
+  const [userId, setUserId] = useState<string>("");
 
   console.log('assests', assests);
 
@@ -105,6 +108,7 @@ export default function AssestsGrid() {
     const user = JSON.parse(localStorage.getItem("user") || '{}')
 
     setUserRole(user.role)
+    setUserId(user.id);
   })
 
   const AddAssetForm: React.FC<AddAssetFormProps> = ({ handleClose, asset }) => {
@@ -118,6 +122,17 @@ export default function AssestsGrid() {
       assignment_date: '',
       return_date: '',
     })
+
+    const [errors, setErrors] = useState({
+      employee: '',
+      description: '',
+      model: '',
+      name: '',
+      sno: '',
+      type: '',
+      assignment_date: '',
+      return_date: ''
+    });
 
     useEffect(() => {
       if (asset) {
@@ -138,6 +153,65 @@ export default function AssestsGrid() {
       }
     }, [asset, assests])
 
+    const validateForm = () => {
+      let isValid = true;
+
+      const newErrors = {
+        employee: '',
+        description: '',
+        model: '',
+        name: '',
+        sno: '',
+        type: '',
+        assignment_date: '',
+        return_date: ''
+      };
+
+      if (!formData.employee.trim()) {
+        newErrors.employee = 'Employee is not selected';
+        isValid = false;
+      }
+
+      if (!formData.description.trim()) {
+        newErrors.description = 'Required';
+        isValid = false;
+      }
+
+      if (!formData.model.trim()) {
+        newErrors.model = 'Required';
+        isValid = false;
+      }
+
+      if (!formData.name.trim()) {
+        newErrors.name = 'Required';
+        isValid = false;
+      }
+
+      if (!formData.sno.trim()) {
+        newErrors.sno = 'Required';
+        isValid = false;
+      }
+
+      if (!formData.type.trim()) {
+        newErrors.type = 'Type is not defined';
+        isValid = false;
+      }
+
+      if (!formData.assignment_date.trim()) {
+        newErrors.assignment_date = 'Date is required';
+        isValid = false;
+      }
+
+      if (!formData.return_date.trim()) {
+        newErrors.return_date = 'Date is required';
+        isValid = false;
+      }
+
+      setErrors(newErrors);
+
+      return isValid;
+    };
+
     const handleTextFieldChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const { name, value } = e.target;
 
@@ -157,39 +231,41 @@ export default function AssestsGrid() {
     };
 
     const handleSubmit = () => {
-      const method = asset ? 'PUT' : 'POST'
-      const url = asset ? `${process.env.NEXT_PUBLIC_APP_URL}/assests/update/${asset}` : `${process.env.NEXT_PUBLIC_APP_URL}/assests/create`
+      if (validateForm()) {
+        const method = asset ? 'PUT' : 'POST'
+        const url = asset ? `${process.env.NEXT_PUBLIC_APP_URL}/assests/update/${asset}` : `${process.env.NEXT_PUBLIC_APP_URL}/assests/create`
 
-      console.log('Submitting form data:', formData);
-      fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.message) {
-            if (data.message.includes('success')) {
-              toast.success(data.message, {
-                position: 'top-center',
-              });
+        console.log('Submitting form data:', formData);
+        fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.message) {
+              if (data.message.includes('success')) {
+                toast.success(data.message, {
+                  position: 'top-center',
+                });
+              } else {
+                toast.error('Error: ' + data.message, {
+                  position: 'top-center',
+                });
+              }
             } else {
-              toast.error('Error: ' + data.message, {
+              toast.error('Unexpected error occurred', {
                 position: 'top-center',
               });
             }
-          } else {
-            toast.error('Unexpected error occurred', {
-              position: 'top-center',
-            });
-          }
 
-          handleClose();
-          dispatch(fetchAssests({ page, limit, keyword: selectedKeyword }));
-        })
-        .catch(error => {
-          console.log('Error', error);
-        });
+            handleClose();
+            dispatch(fetchAssests({ page, limit, keyword: selectedKeyword }));
+          })
+          .catch(error => {
+            console.log('Error', error);
+          });
+      }
     };
 
     return (
@@ -214,6 +290,7 @@ export default function AssestsGrid() {
                 value={formData.employee}
                 onChange={handleSelectChange}
                 required
+                error={!!errors.employee}
               >
                 {employees.map((employee) => (
                   <MenuItem key={employee._id} value={employee._id}>
@@ -221,6 +298,7 @@ export default function AssestsGrid() {
                   </MenuItem>
                 ))}
               </Select>
+              {errors.employee && <FormHelperText error>{errors.employee}</FormHelperText>}
             </FormControl>
           </Grid>
           <Grid item xs={12} md={6}>
@@ -231,6 +309,8 @@ export default function AssestsGrid() {
               value={formData.model}
               onChange={handleTextFieldChange}
               required
+              error={!!errors.name}
+              helperText={errors.name}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -241,6 +321,8 @@ export default function AssestsGrid() {
               value={formData.name}
               onChange={handleTextFieldChange}
               required
+              error={!!errors.name}
+              helperText={errors.name}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -251,6 +333,8 @@ export default function AssestsGrid() {
               value={formData.sno}
               onChange={handleTextFieldChange}
               required
+              error={!!errors.name}
+              helperText={errors.name}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -261,6 +345,8 @@ export default function AssestsGrid() {
               value={formData.type}
               onChange={handleTextFieldChange}
               required
+              error={!!errors.name}
+              helperText={errors.name}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -271,6 +357,8 @@ export default function AssestsGrid() {
               value={formData.description}
               onChange={handleTextFieldChange}
               required
+              error={!!errors.name}
+              helperText={errors.name}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -283,6 +371,8 @@ export default function AssestsGrid() {
               onChange={handleTextFieldChange}
               InputLabelProps={{ shrink: true }}
               required
+              error={!!errors.name}
+              helperText={errors.name}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -295,6 +385,8 @@ export default function AssestsGrid() {
               onChange={handleTextFieldChange}
               InputLabelProps={{ shrink: true }}
               required
+              error={!!errors.name}
+              helperText={errors.name}
             />
           </Grid>
           <Grid item xs={12}>
@@ -335,7 +427,7 @@ export default function AssestsGrid() {
 
   const generateColumns = () => {
     const columns: GridColDef[] = [
-      {
+      ...(userRole === '1' ? [{
         field: 'employee_name',
         headerName: 'Employee',
         width: 220,
@@ -343,11 +435,10 @@ export default function AssestsGrid() {
         sortable: true,
         align: 'center',
         renderCell: (params) => {
-          // Define basic styles
-          const textStyle = {
-            fontSize: '1em', // Example styling
-            fontWeight: 'bold', // Example styling
 
+          const textStyle = {
+            fontSize: '1em',
+            fontWeight: 'bold',
           };
 
           return (
@@ -357,7 +448,8 @@ export default function AssestsGrid() {
             </Box>
           );
         },
-      },
+      }] : []),
+
       {
         field: 'name',
         headerName: 'Asset Name',
@@ -370,7 +462,6 @@ export default function AssestsGrid() {
         width: 180,
         editable: true,
         headerClassName: 'super-app-theme--header',
-
       },
       {
         field: 'sno',
@@ -378,9 +469,6 @@ export default function AssestsGrid() {
         width: 180,
         editable: true,
         headerClassName: 'super-app-theme--header',
-
-        // headerAlign: 'center',
-        // align: 'center',
       },
       {
         field: 'description',
@@ -388,10 +476,6 @@ export default function AssestsGrid() {
         width: 250,
         editable: true,
         headerClassName: 'super-app-theme--header',
-
-        // headerAlign: 'center',
-
-        // align: 'center',
       },
       {
         field: 'type',
@@ -399,9 +483,6 @@ export default function AssestsGrid() {
         width: 150,
         editable: true,
         headerClassName: 'super-app-theme--header',
-
-        // headerAlign: 'center',
-        // align: 'center',
       },
       {
         field: 'assignment_date',
@@ -423,37 +504,58 @@ export default function AssestsGrid() {
         headerAlign: 'center',
         align: 'center',
       },
-      {
-        field: 'edit',
-        headerName: 'Action',
-        sortable: false,
-        headerAlign: 'center',
-        width: 160,
-        headerClassName: 'super-app-theme--header',
-        renderCell: (params: GridRenderCellParams) => (
-          <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
-            {userRole === "1" &&
+      ...(userRole === '1'
+        ? [{
+          field: 'edit',
+          headerName: 'Action',
+          sortable: false,
+          headerAlign: 'center',
+          width: 160,
+          headerClassName: 'super-app-theme--header',
+          renderCell: (params: GridRenderCellParams) => (
+            <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
               <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleEditAssetClick(params.row._id)}>
                 <DriveFileRenameOutlineOutlined />
               </Button>
-            }
-          </Box>
-        ),
-      }
+            </Box>
+          ),
+        }]
+        : [])
     ];
-
 
     return columns;
   }
 
-  const transformData = () => {
-    const assestSource = filteredAssest.length > 0 ? filteredAssest : assests;
+  interface GroupedData {
+    _id: string;
+    employee_id: string;
+    employee_name: string;
+    employee_image: string;
+    description: string;
+    model: string;
+    name: string;
+    sno: string;
+    type: string;
+    assignment_date: string;
+    return_date: string;
+  }
 
-    const groupedData = assestSource.reduce((acc, curr) => {
+  const transformData = (): GroupedData[] => {
+    let assestSource = Array.isArray(filteredAssest) && filteredAssest.length > 0 ? filteredAssest : Array.isArray(assests) ? assests : [];
+
+    if (Number(userRole) >= 2) {
+
+      assestSource = assestSource.filter(asset => asset.employee && asset.employee._id === userId);
+    }
+
+    if (!Array.isArray(assestSource) || assestSource.length === 0) {
+      return [];
+    }
+
+    const groupedData = assestSource.reduce<GroupedData[]>((acc, curr) => {
       const { employee, description, model, name, sno, type, assignment_date, return_date, _id } = curr;
 
       if (!employee) {
-        // If employee is null or undefined, skip this attendance record
         return acc;
       }
 
@@ -521,18 +623,25 @@ export default function AssestsGrid() {
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
-              label='Employee Name'
-              variant='outlined'
+              label="search"
+              variant="outlined"
               value={selectedKeyword}
               onChange={handleInputChange}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
             />
           </Grid>
 
-          <Grid item xs={12} md={3}>
+          {/* <Grid item xs={12} md={3}>
             <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>
               SEARCH
             </Button>
-          </Grid>
+          </Grid> */}
         </Grid>}
       </Box>
       <Box sx={{ height: 500, width: '100%' }}>

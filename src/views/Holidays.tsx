@@ -9,20 +9,22 @@ import {
   Typography,
   Box,
   Grid,
-  IconButton,
+  InputAdornment,
   TextField,
   Dialog,
   DialogContent,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
+import SearchIcon from "@mui/icons-material/Search";
 import AddIcon from '@mui/icons-material/Add';
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 import { ToastContainer, toast } from 'react-toastify';
+import { format } from 'date-fns'
 
 import type { AppDispatch, RootState } from '@/redux/store';
 import { fetchHolidays } from '@/redux/features/holidays/holidaysSlice';
 import 'react-toastify/dist/ReactToastify.css';
+import AddHolidayForm from '@/components/holiday/HolidayForm';
 
 export default function HolidayGrid() {
   const dispatch: AppDispatch = useDispatch();
@@ -34,6 +36,7 @@ export default function HolidayGrid() {
   const [selectedKeyword, setSelectedKeyword] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [isHalfDay, setIsHalfDay] = useState(false);
 
   const debouncedFetch = useCallback(
     debounce(() => {
@@ -69,164 +72,6 @@ export default function HolidayGrid() {
     setUserId(user.id);
   }, []);
 
-  function AddHolidayForm({ handleClose, holiday }) {
-    const [formData, setFormData] = useState({
-      title: '',
-      note: '',
-      year: '',
-      start_date: '',
-      end_date: '',
-    });
-
-    useEffect(() => {
-      if (holiday) {
-        const selected = holidays.find(h => h._id === holiday);
-
-        if (selected) {
-          setFormData({
-            title: selected.title,
-            note: selected.note,
-            year: selected.year,
-            start_date: selected.start_date,
-            end_date: selected.end_date,
-          });
-        }
-      }
-    }, [holiday, holidays]);
-
-    const handleChange = (e) => {
-      const { name, value } = e.target;
-
-      setFormData(prevState => ({
-        ...prevState,
-        [name]: value,
-      }));
-    };
-
-    const handleSubmit = () => {
-      const method = holiday ? 'PUT' : 'POST';
-      const url = holiday ? `${process.env.NEXT_PUBLIC_APP_URL}/holidays/update/${holiday}` : `${process.env.NEXT_PUBLIC_APP_URL}/holidays/create`;
-
-      fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.message) {
-            if (data.message.includes('success')) {
-              toast.success(data.message, {
-                position: 'top-center',
-              });
-            } else {
-              toast.error('Error: ' + data.message, {
-                position: 'top-center',
-              });
-            }
-          } else {
-            toast.error('Unexpected error occurred', {
-              position: 'top-center',
-            });
-          }
-
-          handleClose();
-          debouncedFetch();
-        })
-        .catch(error => {
-          toast.error('Error: ' + error.message, {
-            position: 'top-center',
-          });
-        });
-    };
-
-    return (
-      <Box sx={{ flexGrow: 1, padding: 2 }}>
-        <Box display='flex' justifyContent='space-between' alignItems='center'>
-          <Typography style={{ fontSize: '2em' }} variant='h5' gutterBottom>
-            {holiday ? 'Edit Holiday' : 'Add Holiday'}
-          </Typography>
-          <IconButton onClick={handleClose}>
-            <CloseIcon />
-          </IconButton>
-        </Box>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Title'
-              name='title'
-              value={formData.title}
-              onChange={handleChange}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Start Date'
-              name='start_date'
-              value={formData.start_date}
-              type='date'
-              onChange={handleChange}
-              InputLabelProps={{ shrink: true }}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='End Date'
-              name='end_date'
-              type='date'
-              value={formData.end_date}
-              onChange={handleChange}
-              InputLabelProps={{ shrink: true }}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Note'
-              name='note'
-              value={formData.note}
-              onChange={handleChange}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Year'
-              name='year'
-              value={formData.year}
-              onChange={handleChange}
-              required
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <Button
-              style={{
-                fontSize: '18px',
-                fontWeight: 600,
-                color: 'white',
-                padding: 15,
-                backgroundColor: '#ff902f',
-                width: 200,
-              }}
-              variant='contained'
-              fullWidth
-              onClick={handleSubmit}
-            >
-              {holiday ? 'UPDATE HOLIDAY' : 'ADD HOLIDAY'}
-            </Button>
-          </Grid>
-        </Grid>
-      </Box>
-    );
-  }
-
   const handleHolidayAddClick = () => {
     setSelectedHoliday(null);
     setShowForm(true);
@@ -242,20 +87,38 @@ export default function HolidayGrid() {
   };
 
   const columns: GridColDef[] = [
+    { field: 'day', headerName: 'Day', headerClassName: 'super-app-theme--header', headerAlign: 'center', align: 'center', flex: 0.5 },
+    { field: 'title', headerName: 'Title', headerClassName: 'super-app-theme--header', headerAlign: 'center', align: 'center', flex: 1 },
     {
-      sortable: true,
-      field: 'lineNo',
-      headerName: '#',
+      field: 'start_date',
+      headerName: 'Closing Date',
       headerClassName: 'super-app-theme--header',
-      flex: 0,
-      editable: false,
-      renderCell: (params) => params.api.getAllRowIds().indexOf(params.id) + 1,
+      headerAlign: 'center',
+      align: 'center',
+      flex: 1,
+      renderCell: (params) => {
+        const dateValue = params.value ? new Date(params.value) : null;
+        return dateValue && !isNaN(dateValue.getTime())
+          ? format(dateValue, 'dd-MMM-yyyy').toUpperCase()
+          : 'Invalid Date';
+      },
     },
-    { field: 'title', headerName: 'Title', headerClassName: 'super-app-theme--header', width: 200, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'start_date', headerName: 'Holiday Start Date', headerClassName: 'super-app-theme--header', width: 200, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'end_date', headerName: 'Holiday End Date', headerClassName: 'super-app-theme--header', width: 200, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'note', headerName: 'Note', headerClassName: 'super-app-theme--header', width: 200, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'year', headerName: 'Year', headerClassName: 'super-app-theme--header', width: 200, headerAlign: 'center', align: 'center', sortable: false },
+    {
+      field: 'end_date',
+      headerName: 'Opening Date',
+      headerClassName: 'super-app-theme--header',
+      headerAlign: 'center',
+      align: 'center',
+      flex: 1,
+      renderCell: (params) => {
+        const dateValue = params.value ? new Date(params.value) : null;
+        return dateValue && !isNaN(dateValue.getTime())
+          ? format(dateValue, 'dd-MMM-yyyy').toUpperCase()
+          : 'Invalid Date';
+      },
+    },
+
+    { field: 'note', headerName: 'Note', headerClassName: 'super-app-theme--header', headerAlign: 'center', align: 'center', flex: 1.5 },
     ...(userRole === '1'
       ? [
         {
@@ -263,7 +126,7 @@ export default function HolidayGrid() {
           headerName: 'Edit',
           sortable: false,
           headerAlign: 'center',
-          width: 160,
+          flex: 0.5,
           headerClassName: 'super-app-theme--header',
           renderCell: ({ row: { _id } }) => (
             <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
@@ -283,7 +146,8 @@ export default function HolidayGrid() {
       <Box sx={{ flexGrow: 1, padding: 2 }}>
         <Dialog open={showForm} onClose={handleClose} fullWidth maxWidth="md">
           <DialogContent>
-            <AddHolidayForm holiday={selectedHoliday} handleClose={handleClose} />
+            {/* <AddHolidayForm holiday={selectedHoliday} handleClose={handleClose} /> */}
+            <AddHolidayForm holiday={selectedHoliday} handleClose={handleClose} holidays={holidays} debouncedFetch={debouncedFetch} isHalfDay={undefined} />
           </DialogContent>
         </Dialog>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
@@ -310,14 +174,31 @@ export default function HolidayGrid() {
           )}
         </Box>
         <Grid container spacing={6} alignItems="center" mb={2}>
-          <Grid item xs={12} md={3}>
-            <TextField fullWidth label="Search by any rows value" variant="outlined" value={selectedKeyword} onChange={handleInputChange} />
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Search"
+              variant="outlined"
+              value={selectedKeyword}
+              onChange={handleInputChange}
+              InputProps={{
+                sx: {
+                  borderRadius: "50px", // To make the TextField rounded
+                },
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
           </Grid>
-          <Grid item xs={12} md={3}>
+
+          {/* <Grid item xs={12} md={3}>
             <Button style={{ padding: 15, backgroundColor: '#198754' }} variant="contained" fullWidth>
               SEARCH
             </Button>
-          </Grid>
+          </Grid> */}
         </Grid>
       </Box>
       <Box sx={{ height: 600, width: '100%' }}>
@@ -327,6 +208,9 @@ export default function HolidayGrid() {
               fontSize: 17,
               fontWeight: 600,
               alignItems: 'center',
+            },
+            '& .mui-yrdy0g-MuiDataGrid-columnHeaderRow ': {
+              background: 'linear-gradient(270deg, var(--mui-palette-primary-main), rgb(197, 171, 255) 100%) !important',
             },
             '& .MuiDataGrid-cell': {
               fontSize: '10',
@@ -355,7 +239,6 @@ export default function HolidayGrid() {
           onPaginationModelChange={handlePaginationModelChange}
           pageSizeOptions={[10, 20, 30]}
           paginationModel={{ page: page - 1, pageSize: limit }}
-          checkboxSelection
           disableRowSelectionOnClick
         />
       </Box>

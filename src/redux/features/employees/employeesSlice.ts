@@ -1,6 +1,4 @@
-import type { PayloadAction } from '@reduxjs/toolkit';
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '../../store';
 
 interface Employee {
@@ -22,37 +20,61 @@ interface Employee {
 interface EmployeesState {
   employees: Employee[];
   filteredEmployees: Employee[];
+  upcomingBirthdays: Employee[];  // New state for upcoming birthdays
   hasMore: boolean;
   loading: boolean;
+  loadingBirthdays: boolean;  // Separate loading state for upcoming birthdays
   error: string | null;
+  errorBirthdays: string | null;  // Separate error state for upcoming birthdays
 }
 
 const initialState: EmployeesState = {
   employees: [],
   filteredEmployees: [],
+  upcomingBirthdays: [],  // Initialize the upcomingBirthdays array
   hasMore: true,
   loading: false,
+  loadingBirthdays: false,  // Loading state for upcoming birthdays
   error: null,
+  errorBirthdays: null,  // Error state for upcoming birthdays
 };
 
-let token: string | null = null;
+// Thunk to fetch upcoming birthdays
+export const fetchUpcomingBirthdays = createAsyncThunk(
+  'employees/fetchUpcomingBirthdays',
+  async (days: number = 30) => {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_APP_URL}/employees/upcoming-birthdays?days=${days}`
+    );
+    if (!response.ok) {
+      throw new Error('Failed to fetch upcoming birthdays');
+    }
+    return response.json();
+  }
+);
 
-if (typeof window !== "undefined") {
-  token = localStorage?.getItem("token");
-}
-
+// Thunk to fetch regular employees
 export const fetchEmployees = createAsyncThunk(
   'employees/fetchEmployees',
-  async ({ page = 1, limit = 12 }: { page?: number; limit?: number }, { getState }) => {
+  async (
+    { page = 1, limit = 12, search = '', designation = '' }: { page?: number; limit?: number; search?: string; designation?: string },
+    { getState }
+  ) => {
     const state = getState() as RootState;
+    const isSearch = search.trim().length > 0;
+
+    let token: string | null = null;
+    if (typeof window !== "undefined") {
+      token = localStorage?.getItem("token");
+    }
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL}/employees/get?page=${page}&limit=${limit}`,
+      `${process.env.NEXT_PUBLIC_APP_URL}/employees/get?page=${page}&limit=${limit}&search=${search}&designation=${designation}`,
       {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
       }
     );
@@ -63,13 +85,14 @@ export const fetchEmployees = createAsyncThunk(
 
     const data = await response.json();
 
-    // Filter out employees that are already in the state
-    const newEmployees = data.filter((employee: Employee) =>
-      !state.employees.employees.some((existingEmployee: Employee) => existingEmployee._id === employee._id)
+    let employees = isSearch ? [] : state.employees.employees;
+
+    const newEmployees = data.filter(
+      (employee: Employee) => !employees.some((existingEmployee) => existingEmployee._id === employee._id)
     );
 
     return {
-      employees: [...state.employees.employees, ...newEmployees],
+      employees: [...employees, ...newEmployees],
       hasMore: data.length === limit,
     };
   }
@@ -79,21 +102,35 @@ const employeesSlice = createSlice({
   name: 'employees',
   initialState,
   reducers: {
-    filterEmployees(state, action: PayloadAction<{ name: string; designation: string }>) {
-      const { name, designation } = action.payload;
-
-      state.filteredEmployees = state.employees.filter(employee => {
-        return (
-          (name ? employee.first_name.toLowerCase().includes(name.toLowerCase()) || employee.last_name.toLowerCase().includes(name.toLowerCase()) : true) &&
-          (designation ? employee.designation === designation : true)
-        );
-      });
+    resetEmployees(state) {
+      state.employees = [];
+      state.filteredEmployees = [];
+      state.upcomingBirthdays = [];
+      state.hasMore = true;
+      state.error = null;
+      state.errorBirthdays = null;
     },
-    resetFilter(state) {
-      state.filteredEmployees = state.employees;
+    updateEmployee(state, action: PayloadAction<Employee>) {
+      const updatedEmployee = action.payload;
+      const index = state.employees.findIndex(emp => emp._id === updatedEmployee._id);
+
+      if (index !== -1) {
+        state.employees[index] = updatedEmployee;
+      }
+    },
+    addOrUpdateEmployee(state, action: PayloadAction<Employee>) {
+      const updatedEmployee = action.payload;
+      const index = state.employees.findIndex(emp => emp._id === updatedEmployee._id);
+
+      if (index !== -1) {
+        state.employees[index] = updatedEmployee;
+      } else {
+        state.employees.push(updatedEmployee);
+      }
     },
   },
   extraReducers: (builder) => {
+    // Handle fetching regular employees
     builder
       .addCase(fetchEmployees.pending, (state) => {
         state.loading = true;
@@ -109,8 +146,24 @@ const employeesSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Something went wrong';
       });
+
+    // Handle fetching upcoming birthdays
+    builder
+      .addCase(fetchUpcomingBirthdays.pending, (state) => {
+        state.loadingBirthdays = true;
+        state.errorBirthdays = null;
+      })
+      .addCase(fetchUpcomingBirthdays.fulfilled, (state, action) => {
+        state.loadingBirthdays = false;
+        state.upcomingBirthdays = action.payload;  // Store upcoming birthdays
+      })
+      .addCase(fetchUpcomingBirthdays.rejected, (state, action) => {
+        state.loadingBirthdays = false;
+        state.errorBirthdays = action.error.message || 'Failed to fetch upcoming birthdays';
+      });
   },
 });
 
-export const { filterEmployees, resetFilter } = employeesSlice.actions;
+// Exporting actions and the reducer
+export const { resetEmployees, updateEmployee, addOrUpdateEmployee } = employeesSlice.actions;
 export default employeesSlice.reducer;

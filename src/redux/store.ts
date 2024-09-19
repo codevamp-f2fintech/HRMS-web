@@ -8,8 +8,12 @@ import assestsReducer from './features/assests/assestsSlice';
 import leavesReducer from './features/leaves/leavesSlice';
 import attendancesReducer from './features/attendances/attendancesSlice';
 import policiesReducer from './features/policies/policiesSlice';
+import addAssetsReducer from './features/addAssets/addAssetsSlice';
 import employeesReducer from './features/employees/employeesSlice';
 import timesheetsReducer from './features/timesheet/timesheetSlice';
+import designationReducer from '@/redux/features/designation/designationSlice';
+import UpcomingBirthdaysReducer from '@/redux/features/employees/employeesSlice';
+
 
 const store = configureStore({
   reducer: {
@@ -20,8 +24,11 @@ const store = configureStore({
     leaves: leavesReducer,
     attendances: attendancesReducer,
     policies: policiesReducer,
+    addAssets: addAssetsReducer,
     employees: employeesReducer,
     timesheets: timesheetsReducer,
+    designations: designationReducer,
+    upcomingBirthdays: UpcomingBirthdaysReducer
   }
 })
 

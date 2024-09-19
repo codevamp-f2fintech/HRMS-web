@@ -84,7 +84,7 @@ const withdrawData = [
 
 const DepositWithdraw = () => {
   return (
-    <Card>
+    <Card sx={{ height: '100%' }}>
       <Grid container>
         <Grid item xs={12} md={6} className='border-be md:border-be-0 md:border-ie'>
           <CardHeader

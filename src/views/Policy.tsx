@@ -2,8 +2,9 @@
 /* eslint-disable padding-line-between-statements */
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
+import { debounce } from 'lodash';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -18,47 +19,83 @@ import {
   TextField,
   Dialog,
   DialogContent,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
+  FormHelperText
 } from '@mui/material'
 
 import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
+import SearchIcon from '@mui/icons-material/Search';
+import InputAdornment from '@mui/material/InputAdornment';
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material'
 
 import { useDispatch, useSelector } from 'react-redux';
 
 import type { AppDispatch, RootState } from '@/redux/store';
 import { fetchPolicies } from '@/redux/features/policies/policiesSlice';
+import { utility } from '@/utility';
+
 
 export default function PolicyGrid() {
   const dispatch: AppDispatch = useDispatch()
-  const { policies, loading, error } = useSelector((state: RootState) => state.policies)
+  const { policies, loading, error, filteredPolicies, total } = useSelector((state: RootState) => state.policies)
 
   const [showForm, setShowForm] = useState(false)
   const [selectedPolicy, setSelectedPolicy] = useState(null)
   const [userRole, setUserRole] = useState<string>("");
+  const [userId, setUserId] = useState<string>("");
+  const [selectedKeyword, setSelectedKeyword] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+
+  console.log('fetchpolicy', policies)
+
+  const debouncedFetch = useCallback(
+    debounce(() => {
+      dispatch(fetchPolicies({ page, limit, keyword: selectedKeyword }));
+    }, 300),
+    [page, limit, selectedKeyword]
+  );
 
   useEffect(() => {
-    if (policies.length === 0) {
-      dispatch(fetchPolicies())
-    }
-  }, [dispatch, policies.length])
+    debouncedFetch();
+
+    return debouncedFetch.cancel;
+  }, [page, limit, selectedKeyword, debouncedFetch]);
+
+  const handleInputChange = (e) => {
+    setSelectedKeyword(e.target.value);
+  };
+
+  const handlePageChange = (newPage: number, newPageSize: number) => {
+    setPage(newPage + 1);
+    setLimit(newPageSize);
+  };
+
+  const handlePaginationModelChange = (params: { page: number; pageSize: number }) => {
+    handlePageChange(params.page, params.pageSize);
+    debouncedFetch();
+  };
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user") || '{}')
+    const user = JSON.parse(localStorage.getItem("user") || '{}');
+
     setUserRole(user.role);
-  })
+    setUserId(user.id);
+  }, []);
 
   function AddPolicyForm({ handleClose, policy }) {
     const [formData, setFormData] = useState({
       name: '',
-      document_url: '',
-      description: ''
+      description: '',
+      file: null
+    });
+    const { capitalizeInput } = utility();
 
-    })
+    const [errors, setErrors] = useState({
+      name: '',
+      description: '',
+      file: ''
+    });
 
     useEffect(() => {
       if (policy) {
@@ -66,52 +103,88 @@ export default function PolicyGrid() {
         if (selected) {
           setFormData({
             name: selected.name,
-            document_url: selected.document_url,
             description: selected.description,
-          })
+            file: null
+          });
         }
       }
-    }, [policy, policies])
+    }, [policy, policies]);
+
+    const validateForm = () => {
+      let isValid = true;
+      const newErrors = {
+        name: '',
+        description: '',
+        file: ''
+      };
+
+      if (!formData.name.trim()) {
+        newErrors.name = 'Policy name is required';
+        isValid = false;
+      }
+
+      if (!formData.description.trim()) {
+        newErrors.description = 'Description is required';
+        isValid = false;
+      }
+
+      if (!formData.file && !policy) {
+        newErrors.file = 'File is required';
+        isValid = false;
+      }
+
+      setErrors(newErrors);
+      return isValid;
+    };
 
     const handleChange = (e) => {
-      const { name, value } = e.target
+      const { name, value, files } = e.target;
       setFormData(prevState => ({
         ...prevState,
-        [name]: value
-      }))
-    }
+        [name]: files ? files[0] : value
+      }));
+    };
 
     const handleSubmit = () => {
-      const method = policy ? 'PUT' : 'POST'
-      const url = policy ? `${process.env.NEXT_PUBLIC_APP_URL}/policies/update/${policy}` : `${process.env.NEXT_PUBLIC_APP_URL}/policies/create`
-      fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.message) {
-            if (data.message.includes('success')) {
-              toast.success(data.message, {
-                position: 'top-center',
-              });
+      if (validateForm()) {
+        const method = policy ? 'PUT' : 'POST';
+        const url = policy ? `${process.env.NEXT_PUBLIC_APP_URL}/policies/update/${policy}` : `${process.env.NEXT_PUBLIC_APP_URL}/policies/create`;
+
+        const formPayload = new FormData();
+        formPayload.append('name', formData.name);
+        formPayload.append('description', formData.description);
+        if (formData.file) {
+          formPayload.append('file', formData.file);
+        }
+
+        fetch(url, {
+          method,
+          body: formPayload,
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.message) {
+              if (data.message.includes('success')) {
+                toast.success(data.message, {
+                  position: 'top-center',
+                });
+              } else {
+                toast.error('Error: ' + data.message, {
+                  position: 'top-center',
+                });
+              }
             } else {
-              toast.error('Error: ' + data.message, {
+              toast.error('Unexpected error occurred', {
                 position: 'top-center',
               });
             }
-          } else {
-            toast.error('Unexpected error occurred', {
-              position: 'top-center',
-            });
-          }
-          handleClose();
-          dispatch(fetchPolicies());
-        })
-        .catch(error => {
-          console.log('Error', error);
-        });
+            handleClose();
+            debouncedFetch();
+          })
+          .catch(error => {
+            console.log('Error', error);
+          });
+      }
     };
 
     return (
@@ -131,53 +204,59 @@ export default function PolicyGrid() {
               label='Name'
               name='name'
               value={formData.name}
-              onChange={handleChange}
+              onChange={(e) => capitalizeInput(e, handleChange)}
               required
+              error={!!errors.name}
+              helperText={errors.name}
             />
           </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Document_url'
-              name='document_url'
-              value={formData.document_url}
-              onChange={handleChange}
-              required
-            />
-          </Grid>
+
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
               label='Description'
               name='description'
               value={formData.description}
-              onChange={handleChange}
+              onChange={(e) => {
+                const { name, value } = e.target;
+                const [firstWord, ...rest] = value.split(' ');
+                const capitalizedFirstWord = firstWord.charAt(0).toUpperCase() + firstWord.slice(1);
+                const capitalizedValue = [capitalizedFirstWord, ...rest].join(' ');
+                handleChange({ target: { name, value: capitalizedValue } });
+              }}
+
               required
+              error={!!errors.description}
+              helperText={errors.description}
             />
           </Grid>
-
+          <Grid item xs={12} md={6}>
+            <Button variant='contained' component='label'>
+              upload document
+              <input
+                type="file"
+                name="file"
+                hidden
+                onChange={handleChange}
+                required={!policy}
+                style={{ marginTop: '16px' }}
+              />
+            </Button>
+            {errors.file && (
+              <FormHelperText error>{errors.file}</FormHelperText>
+            )}
+          </Grid>
 
           <Grid item xs={12}>
-            <Button
-              style={{
-                fontSize: '18px',
-                fontWeight: 600,
-                color: 'white',
-                padding: 15,
-                backgroundColor: '#ff902f',
-                width: 250
-              }}
-              variant='contained'
-              fullWidth
-              onClick={handleSubmit}
-            >
-              {policy ? 'UPDATE POICY' : 'ADD POLICY'}
+            <Button variant='contained' color='primary' onClick={handleSubmit}>
+              {policy ? 'Update' : 'Add'} Policy
             </Button>
           </Grid>
         </Grid>
       </Box>
-    )
+    );
   }
+
 
   const handlePolicyAddClick = () => {
     setSelectedPolicy(null)
@@ -194,16 +273,41 @@ export default function PolicyGrid() {
   }
 
   const columns: GridColDef[] = [
-    { field: '_id', headerName: 'ID', width: 90 },
-    { field: 'name', headerName: 'Name', headerClassName: 'super-app-theme--header', width: 200, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'document_url', headerName: 'Document Url', headerClassName: 'super-app-theme--header', width: 150, headerAlign: 'center', align: 'center', sortable: false },
-    { field: 'description', headerName: 'Description', headerClassName: 'super-app-theme--header', width: 100, headerAlign: 'center', align: 'center', sortable: false },
+    { field: 'name', headerName: 'Name', headerClassName: 'super-app-theme--header', flex: 2, headerAlign: 'center', align: 'center', sortable: false },
+    {
+      field: 'document_url',
+      headerName: 'Document Url',
+      headerClassName: 'super-app-theme--header',
+      flex: 2,
+      headerAlign: 'center',
+      align: 'center',
+      sortable: false,
+      renderCell: (params) => {
+        const documentUrl = params.value;
+        const previewUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(documentUrl)}&embedded=true`;
+
+        return (
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              window.open(previewUrl, '_blank');
+            }}
+          >
+            Open Document
+          </Button>
+        );
+      }
+
+    },
+
+    { field: 'description', headerName: 'Description', headerClassName: 'super-app-theme--header', flex: 2, headerAlign: 'center', align: 'center', sortable: false },
     ...(userRole === '1' ? [{
       field: 'edit',
       headerName: 'Edit',
       sortable: false,
       headerAlign: 'center',
-      width: 160,
+      flex: 1,
       headerClassName: 'super-app-theme--header',
       renderCell: ({ row: { _id } }) => (
         <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
@@ -245,6 +349,7 @@ export default function PolicyGrid() {
               color='warning'
               startIcon={<AddIcon />}
               onClick={handlePolicyAddClick}
+
             >
               Add Policy
             </Button>
@@ -253,53 +358,59 @@ export default function PolicyGrid() {
         <Grid container spacing={6} alignItems='center' mb={2}>
 
           <Grid item xs={12} md={3}>
-            <TextField fullWidth label='Policy Name' variant='outlined' />
+            <TextField fullWidth label='Policy Name' variant='outlined' value={selectedKeyword} onChange={handleInputChange} InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }} />
           </Grid>
-          <Grid item xs={12} md={3}>
+          {/* <Grid item xs={12} md={3}>
             <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>
               SEARCH
             </Button>
-          </Grid>
+          </Grid> */}
         </Grid>
       </Box>
       <Box sx={{ height: 500, width: '100%' }}>
         <DataGrid
           sx={{
             '& .super-app-theme--header': {
-              fontSize: 15,
-
-              fontWeight: 600
+              fontSize: 17,
+              fontWeight: 600,
+              alignItems: 'center',
             },
             '& .MuiDataGrid-cell': {
-              fontSize: '1em',
-
+              fontSize: '10',
               align: 'center',
             },
             '& .MuiDataGrid-row': {
               '&:nth-of-type(odd)': {
-
+                backgroundColor: 'rgb(46 38 61 / 12%)',
               },
+              '&:nth-of-type(even)': {
+                backgroundColor: '#fffff',
+              },
+              fontWeight: '600',
+              fontSize: '14px',
+              boxSizing: 'border-box',
             },
           }}
           components={{
             Toolbar: GridToolbar,
           }}
-          rows={policies}
+          rows={filteredPolicies?.length > 0 ? filteredPolicies : policies}
           columns={columns}
           getRowId={(row) => row._id}
-          initialState={{
-            pagination: {
-              paginationModel: {
-                pageSize: 10,
-              },
-            },
-            sorting: {
-              sortModel: [{ field: 'employee_id', sort: 'asc' }],
-            },
-          }}
+          paginationMode="server"
+          rowCount={total}
+          onPaginationModelChange={handlePaginationModelChange}
           pageSizeOptions={[10, 20, 30]}
+          paginationModel={{ page: page - 1, pageSize: limit }}
           checkboxSelection
-          disableRowSelectionOnClick />
+          disableRowSelectionOnClick
+        />
       </Box>
     </Box>
   );

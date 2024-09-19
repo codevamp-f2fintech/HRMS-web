@@ -21,6 +21,8 @@ import EventIcon from '@mui/icons-material/Event';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import DescriptionIcon from '@mui/icons-material/Description';
 import AccessTimeFilledIcon from '@mui/icons-material/AccessTimeFilled';
+import ProductionQuantityLimitsIcon from '@mui/icons-material/ProductionQuantityLimits';
+import SchoolIcon from '@mui/icons-material/School';
 
 import StyledVerticalNavExpandIcon from '@menu/styles/vertical/StyledVerticalNavExpandIcon'
 import useVerticalNav from '@menu/hooks/useVerticalNav'
@@ -163,6 +165,13 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
           </MenuItem>
           <MenuItem href={`/policy`} icon={<DescriptionIcon />}>
             Policy
+          </MenuItem>
+          <MenuItem href={`/inventory`} icon={<ProductionQuantityLimitsIcon />}>
+            Inventory
+          </MenuItem>
+
+          <MenuItem href={`/designation`} icon={<SchoolIcon />}>
+            Designations
           </MenuItem>
 
           <MenuItem href='/account-settings' icon={<i className='ri-user-settings-line' />}>

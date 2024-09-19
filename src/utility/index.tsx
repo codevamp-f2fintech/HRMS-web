@@ -1,3 +1,5 @@
+import { jwtDecode, JwtPayload } from 'jwt-decode';
+
 export const utility = () => {
     /**
      * Retrieves the role based on the role priority.
@@ -17,6 +19,26 @@ export const utility = () => {
             default:
                 return "";
         }
+    };
+
+    /**
+     * Capitalizes the first letter of each word in the input value and passes the modified value
+     * to the provided `handleChange` function.
+     *
+     * @param {Object} e - The event object triggered by the input change event.
+     * @param {Function} handleChange - A callback function to handle the change of the input value.
+     */
+    const capitalizeInput = (e: any, handleChange: any) => {
+        const { name, value } = e.target;
+
+        // Capitalize each word in the input value
+        const capitalizedValue = value
+            .split(' ')
+            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+
+        // Pass the modified event object to the handleChange function
+        handleChange({ target: { name, value: capitalizedValue } });
     };
 
     /**
@@ -63,10 +85,29 @@ export const utility = () => {
         }
     };
 
+    /**
+     * Checks if the JWT token is expired.
+     * @param {string | null} token - The JWT token to check.
+     * @returns {boolean} - True if the token is expired, false otherwise.
+     */
+    const isTokenExpired = (token: string | null): boolean => {
+        if (!token) return true;
+
+        try {
+            const decodedToken = jwtDecode<JwtPayload>(token);
+            const currentTime = Date.now() / 1000; // in seconds
+            return decodedToken.exp ? decodedToken.exp < currentTime : true;
+        } catch (error) {
+            return true;
+        }
+    };
+
     return {
         getRole,
         getLocalStorage,
         remLocalStorage,
-        setLocalStorage
+        setLocalStorage,
+        capitalizeInput,
+        isTokenExpired
     };
 };

@@ -1,84 +1,95 @@
-//MUI Imports
+'use client'
+import { useEffect, useState } from 'react'
+
+// MUI Imports
 import Card from '@mui/material/Card'
-import CardHeader from '@mui/material/CardHeader'
 import CardContent from '@mui/material/CardContent'
-import Typography from '@mui/material/Typography'
 import Grid from '@mui/material/Grid'
+import Typography from '@mui/material/Typography'
+import Box from '@mui/material/Box'
+import Avatar from '@mui/material/Avatar'
+import Divider from '@mui/material/Divider'
+import IconButton from '@mui/material/IconButton'
+import { styled } from '@mui/material/styles'
 
-// Type Imports
-import type { ThemeColor } from '@core/types'
+// Icon Imports
+import EditIcon from '@mui/icons-material/Edit'
 
-// Components Imports
-import OptionMenu from '@core/components/option-menu'
-import CustomAvatar from '@core/components/mui/Avatar'
-
-type DataType = {
-  icon: string
-  stats: string
-  title: string
-  color: ThemeColor
-}
-
-// Vars
-const data: DataType[] = [
-  {
-    stats: '245k',
-    title: 'Sales',
-    color: 'primary',
-    icon: 'ri-pie-chart-2-line'
+// Styled components
+const StyledCard = styled(Card)(({ theme }) => ({
+  boxShadow: theme.shadows[3],
+  borderRadius: theme.shape.borderRadius,
+  padding: theme.spacing(3),
+  transition: 'transform 0.2s ease-in-out',
+  '&:hover': {
+    transform: 'scale(1.02)',
+    boxShadow: theme.shadows[6],
   },
-  {
-    stats: '12.5k',
-    title: 'Users',
-    color: 'success',
-    icon: 'ri-group-line'
-  },
-  {
-    stats: '1.54k',
-    color: 'warning',
-    title: 'Products',
-    icon: 'ri-macbook-line'
-  },
-  {
-    stats: '$88k',
-    color: 'info',
-    title: 'Revenue',
-    icon: 'ri-money-dollar-circle-line'
-  }
-]
+}))
 
-const Transactions = () => {
+const StyledAvatar = styled(Avatar)(({ theme }) => ({
+  width: theme.spacing(10),
+  height: theme.spacing(10),
+  border: `3px solid ${theme.palette.primary.main}`,
+}))
+
+const Welcome = () => {
+  const [userData, setUserData] = useState<any>(null)
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
+
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/employees/get/${user.id}`)
+        const data = await response.json()
+
+        setUserData(data)
+      } catch (error) {
+        console.error('Error fetching user data:', error)
+      }
+    }
+
+    if (user.id) {
+      fetchUserData()
+    }
+  }, [])
+
+  if (!userData) return null
+
   return (
-    <Card className='bs-full'>
-      <CardHeader
-        title='Transactions'
-        action={<OptionMenu iconClassName='text-textPrimary' options={['Refresh', 'Share', 'Update']} />}
-        subheader={
-          <p className='mbs-3'>
-            <span className='font-medium text-textPrimary'>Total 48.5% Growth 😎</span>
-            <span className='text-textSecondary'>this month</span>
-          </p>
-        }
-      />
-      <CardContent className='!pbs-5'>
-        <Grid container spacing={2}>
-          {data.map((item, index) => (
-            <Grid item xs={6} md={3} key={index}>
-              <div className='flex items-center gap-3'>
-                <CustomAvatar variant='rounded' color={item.color} className='shadow-xs'>
-                  <i className={item.icon}></i>
-                </CustomAvatar>
-                <div>
-                  <Typography>{item.title}</Typography>
-                  <Typography variant='h5'>{item.stats}</Typography>
-                </div>
-              </div>
-            </Grid>
-          ))}
+    <StyledCard>
+      <CardContent>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Typography variant="h4" fontWeight="bold" color="primary">
+            Welcome Back, {userData.first_name}!👋
+          </Typography>
+        </Box>
+        <Divider sx={{ mb: 3 }} />
+        <Grid container spacing={4}>
+          {/* <Grid item xs={12} sm={4}>
+            <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
+              <StyledAvatar src={userData.image} alt={`${userData.first_name} ${userData.last_name}`} />
+              <Typography variant="h6" fontWeight="bold">
+                {userData.first_name} {userData.last_name}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                {userData.designation}
+              </Typography>
+            </Box>
+          </Grid> */}
+          <Grid item xs={12} sm={8}>
+            <Typography variant="body1" gutterBottom>
+              We're excited to have you back! Explore your dashboard, track progress, and manage your tasks efficiently.
+            </Typography>
+            <Typography variant="body2" color="textSecondary">
+              Let's make today productive!
+            </Typography>
+          </Grid>
         </Grid>
       </CardContent>
-    </Card>
+    </StyledCard>
   )
 }
 
-export default Transactions
+export default Welcome

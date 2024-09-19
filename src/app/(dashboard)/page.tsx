@@ -1,74 +1,81 @@
-// MUI Imports
+'use client'
+import { useEffect, useState, useRef } from 'react'
+import { motion, useInView } from 'framer-motion'
 import Grid from '@mui/material/Grid'
 
 // Components Imports
 import Award from '@views/dashboard/Award'
 import Transactions from '@views/dashboard/Transactions'
-import WeeklyOverview from '@views/dashboard/WeeklyOverview'
+import UpcomingBirthdays from '@/views/dashboard/UpcomingBirthdays'
 import TotalEarning from '@views/dashboard/TotalEarning'
-import LineChart from '@views/dashboard/LineChart'
-import DistributedColumnChart from '@views/dashboard/DistributedColumnChart'
 import DepositWithdraw from '@views/dashboard/DepositWithdraw'
-import SalesByCountries from '@views/dashboard/SalesByCountries'
-import CardStatVertical from '@components/card-statistics/Vertical'
-import Table from '@views/dashboard/Table'
+import TotalHolidays from '@/views/dashboard/TotolHolidays'
+import TotalLeaves from '@/views/dashboard/TotalLeaves'
+
+const MotionGrid = motion(Grid)
 
 const DashboardAnalytics = () => {
+  const [userRole, setUserRole] = useState<string>("");
+  const bottomLeftRef = useRef(null);
+  const bottomRightRef = useRef(null);
+  const isBottomLeftInView = useInView(bottomLeftRef, { once: true, amount: 0.5 });
+  const isBottomRightInView = useInView(bottomRightRef, { once: true, amount: 0.5 });
+
+  useEffect(() => {
+    if (userRole === "") {
+      const user = JSON.parse(localStorage.getItem("user") || '{}');
+      setUserRole(user.role);
+    }
+  }, [userRole]);
+
+  const fadeInLeft = {
+    initial: { opacity: 0, x: -30 },
+    animate: { opacity: 1, x: 0 },
+    transition: { duration: 1.2, ease: "easeOut" }
+  };
+
+  const fadeInRight = {
+    initial: { opacity: 0, x: 30 },
+    animate: { opacity: 1, x: 0 },
+    transition: { duration: 1.2, ease: "easeOut" }
+  };
+
   return (
     <Grid container spacing={6}>
-      <Grid item xs={12} md={4}>
+      <MotionGrid item xs={12} md={4} {...fadeInLeft} transition={{ delay: 0.2 }}>
         <Award />
-      </Grid>
-      <Grid item xs={12} md={8} lg={8}>
+      </MotionGrid>
+      <MotionGrid item xs={12} md={8} lg={8} {...fadeInRight} transition={{ delay: 0.4 }}>
         <Transactions />
-      </Grid>
-      <Grid item xs={12} md={6} lg={4}>
-        <WeeklyOverview />
-      </Grid>
-      <Grid item xs={12} md={6} lg={4}>
+      </MotionGrid>
+      <MotionGrid item xs={12} md={5} lg={5} {...fadeInLeft} transition={{ delay: 0.6 }}>
+        <UpcomingBirthdays />
+      </MotionGrid>
+      <MotionGrid item xs={12} md={7} lg={7} {...fadeInRight} transition={{ delay: 0.8 }}>
         <TotalEarning />
-      </Grid>
-      <Grid item xs={12} md={6} lg={4}>
-        <Grid container spacing={6}>
-          <Grid item xs={12} sm={6}>
-            <LineChart />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <CardStatVertical
-              title='Total Profit'
-              stats='$25.6k'
-              avatarIcon='ri-pie-chart-2-line'
-              avatarColor='secondary'
-              subtitle='Weekly Profit'
-              trendNumber='42%'
-              trend='positive'
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <CardStatVertical
-              stats='862'
-              trend='negative'
-              trendNumber='18%'
-              title='New Project'
-              subtitle='Yearly Project'
-              avatarColor='primary'
-              avatarIcon='ri-file-word-2-line'
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <DistributedColumnChart />
-          </Grid>
-        </Grid>
-      </Grid>
-      <Grid item xs={12} md={6} lg={4}>
-        <SalesByCountries />
-      </Grid>
-      <Grid item xs={12} lg={8}>
-        <DepositWithdraw />
-      </Grid>
-      <Grid item xs={12}>
-        <Table />
-      </Grid>
+      </MotionGrid>
+      <MotionGrid
+        item
+        xs={12}
+        md={6}
+        ref={bottomLeftRef}
+        initial={{ opacity: 0, x: -30 }}
+        animate={isBottomLeftInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -30 }}
+        transition={{ duration: 1.2, ease: "easeOut" }}
+      >
+        {userRole === '3' ? <TotalLeaves /> : <DepositWithdraw />}
+      </MotionGrid>
+      <MotionGrid
+        item
+        xs={12}
+        md={6}
+        ref={bottomRightRef}
+        initial={{ opacity: 0, x: 30 }}
+        animate={isBottomRightInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 30 }}
+        transition={{ duration: 1.2, ease: "easeOut" }}
+      >
+        <TotalHolidays />
+      </MotionGrid>
     </Grid>
   )
 }

@@ -1,433 +1,274 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable padding-line-between-statements */
 'use client'
-
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState, useMemo } from 'react'
 
 import { debounce } from 'lodash';
-
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import type { GridColDef } from '@mui/x-data-grid';
-import { DataGrid, GridToolbar } from '@mui/x-data-grid'
+import { DataGrid, GridColDef } from '@mui/x-data-grid'
 import {
   Button,
   Typography,
   Box,
   Grid,
-  IconButton,
   TextField,
   Dialog,
   DialogContent,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
   Avatar,
 } from '@mui/material'
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
+import SearchIcon from '@mui/icons-material/Search';
+import ContrastIcon from '@mui/icons-material/Contrast';
+
+import InputAdornment from '@mui/material/InputAdornment';
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material'
 import { useDispatch, useSelector } from 'react-redux';
 
+import { format } from 'date-fns';
+
 import type { AppDispatch, RootState } from '@/redux/store';
-import { fetchLeaves, filterLeave } from '@/redux/features/leaves/leavesSlice';
-import { fetchEmployees } from '@/redux/features/employees/employeesSlice';
+import { fetchLeaves } from '@/redux/features/leaves/leavesSlice';
 import { apiResponse } from '@/utility/apiResponse/employeesResponse';
+import AddLeavesForm from '@/components/leave/LeaveForm';
 
 export default function LeavesGrid() {
-  const dispatch: AppDispatch = useDispatch();
-  const { leaves, loading, error, filteredLeave, total } = useSelector((state: RootState) => state.leaves)
+  const dispatch = useDispatch<AppDispatch>();
+  const { leaves, total } = useSelector((state: RootState) => state.leaves);
 
-  // const { employees } = useSelector((state: RootState) => state.employees)
+  console.log(leaves)
+
   const [showForm, setShowForm] = useState(false)
   const [selectedLeaves, setSelectedLeaves] = useState(null)
   const [userRole, setUserRole] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
-  const [searchName, setSearchName] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
   const [employees, setEmployees] = useState([])
   const [selectedKeyword, setSelectedKeyword] = useState('');
-  const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(10)
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
-  // const limit = 10;
-
-  const debouncedFetch = useCallback(
-    debounce(() => {
+  const debouncedFetch = useMemo(
+    () => debounce(() => {
       dispatch(fetchLeaves({ page, limit, keyword: selectedKeyword }));
     }, 300),
-    [page, limit, selectedKeyword]
+    [dispatch]
   );
 
-  useEffect(() => {
-    debouncedFetch();
-
-    return debouncedFetch.cancel;
-  }, [page, limit, selectedKeyword, debouncedFetch]);
-
-  const handleInputChange = (e) => {
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedKeyword(e.target.value);
-  };
+  }, []);
 
-  const handlePageChange = (newPage: number, newPageSize: number) => {
+  const handlePageChange = useCallback((newPage: number, newPageSize: number) => {
     setPage(newPage + 1);
     setLimit(newPageSize);
+  }, []);
 
-  };
-  console.log('limit', setLimit)
-
-  const handlePaginationModelChange = (params: { page: number; pageSize: number }) => {
+  const handlePaginationModelChange = useCallback((params: { page: number; pageSize: number }) => {
     handlePageChange(params.page, params.pageSize);
     debouncedFetch();
-  };
-
-
-  // useEffect(() => {
-  //   dispatch(fetchLeaves({ page, limit }))
-  //   console.log('page', page, limit)
-  // }, [dispatch, page])
+  }, [handlePageChange, debouncedFetch]);
 
   useEffect(() => {
+    debouncedFetch();
+
     if (leaves.length === 0) {
-      dispatch(fetchLeaves({ page, limit, keyword: selectedKeyword }))
+      dispatch(fetchLeaves({ page, limit, keyword: selectedKeyword }));
     }
 
-    // Fetch employees and set the state
-    const fetchEmployees = async () => {
-      const data = await apiResponse();
+    const user = JSON.parse(localStorage.getItem("user") || '{}');
+    setUserRole(user.role);
+    setUserId(user.id);
 
-      setEmployees(data);
-    };
-
-    fetchEmployees();
-  }, [dispatch, leaves.length, page])
-
-
-  // useEffect(() => {
-  //   // Fetch employees and set the state
-  //   const fetchEmployees = async () => {
-  //     const data = await apiResponse();
-
-  //     setEmployees(data);
-  //   };
-
-  //   fetchEmployees();
-  // }, [dispatch])
+    return debouncedFetch.cancel;
+  }, [debouncedFetch, dispatch, leaves.length, limit, page, selectedKeyword]);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user") || '{}')
-    setUserRole(user.role)
-    setUserId(user.id)
-  }, [])
-
-  function AddLeavesForm({ handleClose, leave }) {
-    const [formData, setFormData] = useState({
-      employee: '',
-      start_date: '',
-      end_date: '',
-      status: '',
-      application: '',
-      type: '',
-      day: ''
-    })
-
-    useEffect(() => {
-      if (leave) {
-        const selected = leaves.find(l => l._id === leave)
-        if (selected) {
-          setFormData({
-            employee: selected.employee._id,
-            start_date: selected.start_date,
-            end_date: selected.end_date,
-            status: selected.status,
-            application: selected.application,
-            type: selected.type,
-            day: selected.day,
-          })
-        }
-      }
-    }, [leave, leaves])
-
-    const handleChange = (e) => {
-      const { name, value } = e.target
-      setFormData(prevState => ({
-        ...prevState,
-        [name]: value
-      }))
+    if (Number(userRole) < 3 && employees.length === 0) {
+      const fetchEmployees = async () => {
+        const employeeData = await apiResponse();
+        setEmployees(employeeData);
+      };
+      fetchEmployees();
     }
+  }, [userRole, employees.length]);
 
-    const handleSubmit = () => {
-      const method = leave ? 'PUT' : 'POST'
-      const url = leave ? `${process.env.NEXT_PUBLIC_APP_URL}/leaves/update/${leave}` : `${process.env.NEXT_PUBLIC_APP_URL}/leaves/create`
-      console.log("submitted form data", formData);
-
-      fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.message) {
-            if (data.message.includes('success')) {
-              toast.success(data.message, {
-                position: 'top-center',
-              });
-            } else {
-              toast.error('Error: ' + data.message, {
-                position: 'top-center',
-              });
-            }
-          } else {
-            toast.error('Unexpected error occurred', {
-              position: 'top-center',
-            });
-          }
-          handleClose();
-          dispatch(fetchLeaves({ page, limit, keyword: selectedKeyword }));
-        })
-        .catch(error => {
-          console.log('Error', error);
-        });
-    };
-
-    return (
-      <Box sx={{ flexGrow: 1, padding: 2 }}>
-        <Box display='flex' justifyContent='space-between' alignItems='center'>
-          <Typography style={{ fontSize: '2em' }} variant='h5' gutterBottom>
-            {leave ? 'Edit Leave' : 'Add Leave'}
-          </Typography>
-          <IconButton onClick={handleClose}>
-            <CloseIcon />
-          </IconButton>
-        </Box>
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={6}>
-            <FormControl fullWidth required>
-              <InputLabel required id='demo-simple-select-label'>Employee</InputLabel>
-              <Select
-                label='Select Employee'
-                labelId='demo-simple-select-label'
-                id='demo-simple-select'
-                name="employee"
-                value={formData.employee}
-                onChange={handleChange}
-                required
-              >
-                {employees.map((employee) => (
-                  <MenuItem key={employee._id} value={employee._id}>
-                    {employee.first_name} {employee.last_name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Start Date'
-              name='start_date'
-              value={formData.start_date}
-              type='date'
-              onChange={handleChange}
-              InputLabelProps={{ shrink: true }}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='End Date'
-              name='end_date'
-              type='date'
-              value={formData.end_date}
-              onChange={handleChange}
-              InputLabelProps={{ shrink: true }}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <FormControl fullWidth required>
-              <InputLabel required id='demo-simple-select-label'>Status</InputLabel>
-              <Select
-                label='Select Status'
-                labelId='demo-simple-select-label'
-                id='demo-simple-select'
-                name='status'
-                value={formData.status}
-                onChange={handleChange}
-              >
-                <MenuItem value='Pending'>Pending</MenuItem>
-                <MenuItem value='Approved'>Approved</MenuItem>
-                <MenuItem value='Rejected'>Rejected</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Application'
-              name='application'
-              value={formData.application}
-              onChange={handleChange}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <FormControl fullWidth required>
-              <InputLabel required id='demo-simple-select-label'>Type</InputLabel>
-              <Select
-                label='Select Type'
-                labelId='demo-simple-select-label'
-                id='demo-simple-select'
-                name='type'
-                value={formData.type}
-                onChange={handleChange}
-              >
-                <MenuItem value='Annual'>ANNUAL</MenuItem>
-                <MenuItem value='Sick'>SICK</MenuItem>
-                <MenuItem value='Unpaid'>UNPAID</MenuItem>
-                <MenuItem value='Other'>OTHER</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Day'
-              name='day'
-              value={formData.day}
-              onChange={handleChange}
-              required
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <Button
-              style={{
-                fontSize: '18px',
-                fontWeight: 600,
-                color: 'white',
-                padding: 15,
-                backgroundColor: '#ff902f',
-                width: 200
-              }}
-              variant='contained'
-              fullWidth
-              onClick={handleSubmit}
-            >
-              {leave ? 'UPDATE LEAVE' : 'ADD LEAVE'}
-            </Button>
-          </Grid>
-        </Grid>
-      </Box>
-    )
-  }
-
-  const handleLeaveAddClick = () => {
+  const handleLeaveAddClick = useCallback(() => {
     setSelectedLeaves(null)
     setShowForm(true)
-  }
+  }, []);
 
-  const handleLeaveEditClick = (id) => {
+  const handleLeaveEditClick = useCallback((id) => {
     setSelectedLeaves(id)
     setShowForm(true)
-  }
+  }, []);
 
-
-
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setShowForm(false)
+  }, []);
+
+  function capitalizeFirstLetterEachWord(str) {
+    return str
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   }
 
 
-  const generateColumns = () => {
-    const columns: GridColDef[] = [
-      {
+  const generateColumns = useMemo(() => {
+    return [
+      ...(userRole === '1' ? [{
         field: 'employee_name',
         headerName: 'Employee',
-        width: 220,
+        flex: 1,
+        minWidth: 200,
         headerClassName: 'super-app-theme--header',
         sortable: true,
         align: 'center',
+        renderCell: (params) => (
+          <Box display="flex" alignItems="center">
+            <Avatar src={params.row.employee_image} alt={params.row.employee_name} sx={{ mr: 2 }} />
+            <Typography sx={{ fontSize: '1em', fontWeight: 'bold' }}>{params.row.employee_name}</Typography>
+          </Box>
+        ),
+      }] : []),
+      {
+        field: 'day',
+        headerName: 'Day',
+        flex: 0.5,
+        headerAlign: 'center',
+        headerClassName: 'super-app-theme--header',
         renderCell: (params) => {
-          // Define basic styles
-          const textStyle = {
-            fontSize: '1em', // Example styling
-            fontWeight: 'bold', // Example styling
-            // Example styling
-          };
+          const dayValue = parseFloat(params.value);
+          const halfDayPeriod = params.row.half_day_period;
+
+          if (dayValue === 0.5 && halfDayPeriod) {
+            return (
+              <Box
+                sx={{
+                  position: 'relative',
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <ContrastIcon
+                  sx={{
+                    color: '#989c9a',
+                    fontSize: 40,
+                  }}
+                />
+
+                <Typography
+                  fontWeight="bold"
+                  fontSize="0.9em"
+                  color="black"
+                  sx={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                  }}
+                >
+                  {halfDayPeriod === 'First Half' ? 'FH' : 'SH'}
+                </Typography>
+              </Box>
+            );
+          }
 
           return (
-            <Box display="flex" alignItems="center">
-              <Avatar src={params.row.employee_image} alt={params.row.employee_name} sx={{ mr: 2 }} />
-              <Typography sx={textStyle}>{params.row.employee_name}</Typography>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                width: '100%',
+                height: '100%',
+              }}
+            >
+              <Typography fontWeight="bold">
+                {dayValue}
+              </Typography>
             </Box>
           );
         },
       },
-      { field: 'start_date', headerName: 'Start Date', headerClassName: 'super-app-theme--header', width: 130, sortable: false },
-      { field: 'end_date', headerName: 'End Date', headerClassName: 'super-app-theme--header', width: 130, sortable: false },
-      { field: 'status', headerName: 'Status', headerClassName: 'super-app-theme--header', width: 110, sortable: false },
-      { field: 'application', headerName: 'Application', headerClassName: 'super-app-theme--header', width: 150, sortable: false },
-      { field: 'type', headerName: 'Type', headerClassName: 'super-app-theme--header', width: 100, sortable: false },
-      { field: 'day', headerName: 'Day', headerClassName: 'super-app-theme--header', width: 180, sortable: false },
+      {
+        field: 'start_date',
+        headerName: 'Start Date',
+        flex: 1,
+        minWidth: 150,
+        headerClassName: 'super-app-theme--header',
+        renderCell: (params) => {
+          if (params.value) {
+            try {
+              const date = new Date(params.value);
+
+              return !isNaN(date.getTime()) ? format(date, 'dd-MMM-yyyy').toUpperCase() : 'Invalid Date';
+            } catch (error) {
+              return 'Invalid Date';
+            }
+          }
+
+          return 'No Date';
+        },
+      },
+      {
+        field: 'end_date',
+        headerName: 'End Date',
+        flex: 1,
+        minWidth: 150,
+        headerClassName: 'super-app-theme--header',
+        renderCell: (params) => {
+          const endDateValue = params.value || params.row.start_date;
+          if (endDateValue) {
+            try {
+              const date = new Date(endDateValue);
+
+              return !isNaN(date.getTime()) ? format(date, 'dd-MMM-yyyy').toUpperCase() : 'Invalid Date';
+            } catch (error) {
+              return 'Invalid Date';
+            }
+          }
+
+          return 'No End Date';
+        },
+      },
+      { field: 'type', headerName: 'Type', flex: 0.6, headerClassName: 'super-app-theme--header' },
+      { field: 'status', headerName: 'Status', flex: 1, headerClassName: 'super-app-theme--header' },
+      { field: 'application', headerName: 'Reason', flex: 1, minWidth: 150, headerClassName: 'super-app-theme--header', renderCell: (params) => capitalizeFirstLetterEachWord(params.value || ''), },
       ...(userRole === '1' ? [{
         field: 'edit',
         headerName: 'Edit',
-        sortable: false,
+        flex: 0.5,
         headerAlign: 'center',
-        width: 160,
         headerClassName: 'super-app-theme--header',
         renderCell: ({ row: { _id } }) => (
-          <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
-            <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleLeaveEditClick(_id)}>
+          <Box display="flex" justifyContent="space-around">
+            <Button color="info" variant="contained" onClick={() => handleLeaveEditClick(_id)}>
               <DriveFileRenameOutlineOutlined />
             </Button>
           </Box>
         ),
-      }] : [])
+      }] : []),
     ];
+  }, [userRole]);
 
-    return columns;
-  }
-
-  const transformData = () => {
-
-    const dataToUse = searchName || selectedStatus ? filteredLeave : leaves;
-    const filteredLeaves = userRole === '3'
-      ? dataToUse.filter(leave => leave.employee._id === userId)
-      : dataToUse;
-    const groupedData = filteredLeaves.reduce((acc, curr) => {
-      const { employee, start_date, end_date, status, application, type, day, _id } = curr;
-
-      if (!employee) {
-        // If employee is null or undefined, skip this attendance record
-        return acc;
-      }
-
-      acc.push({
-        _id,
-        employee_id: employee._id,
-        employee_name: `${employee.first_name} ${employee.last_name}`,
-        employee_image: employee.image,
-        start_date,
-        end_date,
-        status,
-        application,
-        type,
-        day,
-      });
-
-      return acc;
-    }, []);
-
-    return groupedData;
-  };
-
-  const columns = generateColumns();
-  const rows = transformData();
+  const rows = useMemo(() => {
+    return leaves.map((leave) => ({
+      _id: leave._id,
+      employee_name: `${leave.employee?.first_name} ${leave.employee?.last_name}`,
+      employee_image: leave.employee?.image,
+      start_date: leave.start_date,
+      end_date: leave.end_date,
+      type: leave.type,
+      status: leave.status,
+      day: leave.day,
+      application: leave.application,
+      half_day_period: leave.half_day_period,
+    }));
+  }, [leaves]);
 
   return (
     <Box>
@@ -435,7 +276,17 @@ export default function LeavesGrid() {
       <Box sx={{ flexGrow: 1, padding: 2 }}>
         <Dialog open={showForm} onClose={handleClose} fullWidth maxWidth='md'>
           <DialogContent>
-            <AddLeavesForm leave={selectedLeaves} handleClose={handleClose} />
+            {/* <AddLeavesForm leave={selectedLeaves} handleClose={handleClose} /> */}
+            <AddLeavesForm
+              handleClose={handleClose}
+              leave={selectedLeaves}
+              leaves={leaves}
+              userRole={userRole}
+              userId={userId}
+              employees={employees}
+              page={page}
+              limit={limit}
+              selectedKeyword={selectedKeyword} />
           </DialogContent>
         </Dialog>
         <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
@@ -452,17 +303,7 @@ export default function LeavesGrid() {
             </Typography>
           </Box>
           <Box display='flex' alignItems='center'>
-            {userRole === "1" ? (
-              <Button
-                style={{ borderRadius: 50, backgroundColor: '#ff902f' }}
-                variant='contained'
-                color='warning'
-                startIcon={<AddIcon />}
-                onClick={handleLeaveAddClick}
-              >
-                Add Leave
-              </Button>
-            ) : userRole === "3" ? (
+            {Number(userRole) >= 2 && (
               <Button
                 style={{ borderRadius: 50, backgroundColor: '#ff902f' }}
                 variant='contained'
@@ -472,44 +313,30 @@ export default function LeavesGrid() {
               >
                 Apply Leave
               </Button>
-            ) : null}
+            )}
           </Box>
 
         </Box>
         <Grid container spacing={6} alignItems='center' mb={2}>
-          {/* <Grid item xs={12} md={3}>
-            <FormControl fullWidth>
-              <InputLabel id='status-select-label'>Status</InputLabel>
-              <Select
-                labelId='status-select-label'
-                id='status-select'
-                value={selectedStatus === '' ? 'All' : selectedStatus}
-                label='Status'
-                onChange={(e) => handleInputChange(e, 'selectedStatus')}
-              >
-                <MenuItem value='All'>All</MenuItem>
-                <MenuItem value='Pending'>Pending</MenuItem>
-                <MenuItem value='Approved'>Approved</MenuItem>
-                <MenuItem value='Rejected'>Rejected</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid> */}
           {userRole === "1" && (
-            <Grid item xs={12} md={3}>
+            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label='Employee Name'
-                variant='outlined'
+                label="search"
+                variant="outlined"
                 value={selectedKeyword}
                 onChange={handleInputChange}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
               />
             </Grid>
+
           )}
-          <Grid item xs={12} md={3}>
-            <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>
-              SEARCH
-            </Button>
-          </Grid>
         </Grid>
       </Box>
       <Box sx={{ height: 500, width: '100%' }}>
@@ -540,7 +367,7 @@ export default function LeavesGrid() {
             },
           }}
           rows={rows}
-          columns={columns}
+          columns={generateColumns}
           getRowId={(row) => row._id}
           paginationMode="server"
           rowCount={total}
