@@ -54,6 +54,7 @@ export default function EmployeeGrid() {
 
   useEffect(() => {
     if (isTokenExpired(token)) {
+      console.log("isTokenExpired(token)", isTokenExpired(token));
       localStorage.removeItem('token');
       router.push('/login');
     } else {
@@ -106,7 +107,7 @@ export default function EmployeeGrid() {
   const debouncedSearch = useCallback(
     debounce(() => {
       dispatch(resetEmployees());
-      dispatch(fetchEmployees({ page: 1, limit: searchName !== '' ? 0 : 12, search: searchName, designation: selectedDesignation }));
+      dispatch(fetchEmployees({ page: 1, limit: 12, search: searchName, designation: selectedDesignation }));
     }, 500),
     [searchName, selectedDesignation, dispatch]
   );
@@ -200,25 +201,6 @@ export default function EmployeeGrid() {
             />
           </FormControl>
         </Grid>
-        {/* <Grid item xs={12} md={6}>
-          <FormControl fullWidth>
-            <InputLabel id='demo-simple-select-label'>Select Designation</InputLabel>
-            <Select
-              label='Select Designation'
-              labelId='demo-simple-select-label'
-              id='demo-simple-select'
-              fullWidth
-              value={selectedDesignation}
-              onChange={handleDesignationChange}
-            >
-              <MenuItem value="">Discard</MenuItem>
-              <MenuItem value='1'>Admin</MenuItem>
-              <MenuItem value='2'>Manager</MenuItem>
-              <MenuItem value='3'>Employee</MenuItem>
-              <MenuItem value='4'>Channel Partner</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid> */}
       </Grid>
       <Grid container spacing={6}>
         {error ? (
