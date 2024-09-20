@@ -317,7 +317,6 @@ export default function AttendanceGrid() {
   const [prefillEmployeeName, setPrefillEmployeeName] = useState('');
   const [prefillDate, setPrefillDate] = useState('');
 
-  console.log('attendances issss', attendances)
 
   const debouncedSearch = useCallback(
     debounce(() => {

@@ -47,8 +47,6 @@ export default function PolicyGrid() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
 
-  console.log('fetchpolicy', policies)
-
   const debouncedFetch = useCallback(
     debounce(() => {
       dispatch(fetchPolicies({ page, limit, keyword: selectedKeyword }));
@@ -134,6 +132,7 @@ export default function PolicyGrid() {
       }
 
       setErrors(newErrors);
+
       return isValid;
     };
 

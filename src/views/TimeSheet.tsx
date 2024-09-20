@@ -112,8 +112,6 @@ export default function TimeSheetGrid() {
       } else {
         if (attendances.length === 0) {
           const response = await dispatch(fetchAttendances());
-
-          console.log('Attendance API response:', response);
         }
       }
     };
@@ -129,7 +127,7 @@ export default function TimeSheetGrid() {
   }, []);
 
   const toggleRow = (employee_id) => {
-    console.log('employeee dataaaaaaaa', employee_id);
+
     setExpandedRows((prev) => ({
       ...prev,
       [employee_id]: !prev[employee_id],
