@@ -606,7 +606,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
             ),
         },
         {
-            label: Number(logedUser.role) < 3 ? 'Preview' : 'Preview & Submit',
+            label: logedUser.id === profileId ? 'Preview & Submit' : 'Preview',
             content: (
                 <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl mx-auto">
                     <h4 className="text-center mb-6 text-2xl font-bold text-gray-800">Preview</h4>
@@ -724,7 +724,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                         </section>
                     </div>
 
-                    {Number(logedUser.role) < 3 ? null : <Button
+                    {logedUser.id === profileId && <Button
                         onClick={handleSubmit}
                         disabled={isCompressing || loading}
                         className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300"
