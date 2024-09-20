@@ -480,9 +480,9 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
               onChange={handleChange}
               fullWidth
             >
-              <MenuItem value='Noida'>Noida</MenuItem>
-              <MenuItem value='Bareilly'>Bareilly</MenuItem>
-              <MenuItem value='Patel Nagar'>Patel Nagar</MenuItem>
+              <MenuItem value='noida'>Noida</MenuItem>
+              <MenuItem value='bareilly'>Bareilly</MenuItem>
+              <MenuItem value='patel nagar'>Patel Nagar</MenuItem>
             </Select>
             {errors.location && <Typography color='error'>{errors.location}</Typography>}
           </FormControl>
