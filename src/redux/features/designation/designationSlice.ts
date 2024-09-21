@@ -15,6 +15,7 @@ interface designationsState {
   error: string | null;
   total: number
 }
+
 const initialState: designationsState = {
   designations: [],
   filteredDesignation: [],
@@ -34,7 +35,7 @@ export const fetchDesignations = createAsyncThunk<{
         keyword
       )}`
     );
-    console.log('res1', response)
+
     if (!response.ok) {
       throw new Error('Failed to fetch designations');
     }

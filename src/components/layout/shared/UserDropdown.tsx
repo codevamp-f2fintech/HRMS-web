@@ -84,7 +84,7 @@ const UserDropdown = () => {
         const data = await response.json()
 
         setUserData(data)
-        console.log("res>>", data)
+
       } catch (error) {
         console.error("Error fetching user data:", error)
       }

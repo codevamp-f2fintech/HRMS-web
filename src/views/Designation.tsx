@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useCallback, useEffect, useState } from 'react';
+
 import { debounce } from 'lodash';
 import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 import {
@@ -21,9 +22,11 @@ import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '@/redux/store';
-import { fetchDesignations } from '@/redux/features/designation/designationSlice';
+
 import { ToastContainer, toast } from 'react-toastify';
+
+import type { AppDispatch, RootState } from '@/redux/store';
+import { fetchDesignations } from '@/redux/features/designation/designationSlice';
 import 'react-toastify/dist/ReactToastify.css';
 
 const Designation = () => {
@@ -37,7 +40,6 @@ const Designation = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
 
-  console.log('designations=>', designations);
 
   const debouncedFetch = useCallback(
     debounce(() => {
@@ -93,6 +95,7 @@ const Designation = () => {
     useEffect(() => {
       if (id) {
         const selected = designations.find(des => des._id === id);
+
         console.log('selected', selected);
 
         if (selected) {
@@ -107,6 +110,7 @@ const Designation = () => {
 
     const validateForm = () => {
       let isValid = true;
+
       const newErrors = {
         title: '',
         description: '',
@@ -119,6 +123,7 @@ const Designation = () => {
       }
 
       setErrors(newErrors);
+
       return isValid
 
     };
@@ -159,6 +164,7 @@ const Designation = () => {
                 position: 'top-center',
               });
             }
+
             if (data.message.includes('success')) {
               handleClose();
               debouncedFetch();
