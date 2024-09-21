@@ -51,7 +51,7 @@ export default function LeavesGrid() {
     () => debounce(() => {
       dispatch(fetchLeaves({ page, limit, keyword: selectedKeyword }));
     }, 300),
-    [dispatch]
+    [dispatch, page, limit, selectedKeyword]
   );
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,9 +64,10 @@ export default function LeavesGrid() {
   }, []);
 
   const handlePaginationModelChange = useCallback((params: { page: number; pageSize: number }) => {
-    handlePageChange(params.page, params.pageSize);
-    debouncedFetch();
-  }, [handlePageChange, debouncedFetch]);
+    setPage(params.page + 1); // Add +1 because MUI starts page index at 0
+    setLimit(params.pageSize);
+  }, []);
+
 
   useEffect(() => {
     debouncedFetch();
