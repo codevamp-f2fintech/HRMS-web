@@ -71,14 +71,22 @@ const getManagerNameById = (id, employees) => {
   return manager ? `${manager.first_name} ${manager.last_name}` : '';
 };
 
-const getEmployeeCountByIds = (ids, employees) => {
+const getEmployeeCountByIds = (ids, employees, managerId) => {
   if (!ids) return 0;
+
+
   const idArray = ids.split(',');
+
+
   const validIds = idArray.filter(id => employees.some(emp => emp._id === id));
 
 
-  return validIds.length;
+  const isManagerIncluded = employees.some(emp => emp._id === managerId);
+
+
+  return validIds.length + (isManagerIncluded ? 1 : 0);
 };
+
 
 
 const getEmployeeNamesByIds = (ids, employees) => {
@@ -449,7 +457,7 @@ export default function TeamGrid() {
       field: 'employee_ids',
       headerName: 'No. of Employees',
       editable: true,
-      renderCell: (params) => getEmployeeCountByIds(params.value, employees),
+      renderCell: (params) => getEmployeeCountByIds(params.value, employees, params.row.manager_id),
 
       flex: 1,
       headerAlign: 'center',
