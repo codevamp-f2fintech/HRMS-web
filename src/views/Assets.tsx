@@ -6,29 +6,37 @@ import { debounce } from 'lodash';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import type { SelectChangeEvent } from '@mui/material';
-import { Avatar, Button, Dialog, DialogContent, FormControl, Grid, IconButton, InputLabel, MenuItem, Select, TextField, Typography, FormHelperText, Autocomplete } from '@mui/material';
+import { Avatar, Button, Dialog, DialogContent, FormControl, Grid, IconButton, Accordion, AccordionSummary, AccordionDetails, TextField, Typography, FormHelperText, Autocomplete, Divider, Table, TableHead, TableRow, TableCell, TableBody } from '@mui/material';
+import { styled } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { DataGrid } from '@mui/x-data-grid';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+
 import SearchIcon from '@mui/icons-material/Search';
 import InputAdornment from '@mui/material/InputAdornment';
-import { DriveFileRenameOutlineOutlined } from '@mui/icons-material';
+import { DriveFileRenameOutlineOutlined, Padding } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 
 import type { AppDispatch, RootState } from '@/redux/store';
-import { fetchAssests, filterAssest } from '@/redux/features/assests/assestsSlice';
+import { fetchAssests } from '@/redux/features/assests/assestsSlice';
 import { fetchEmployees } from '@/redux/features/employees/employeesSlice';
 import { fetchAddAssets } from '@/redux/features/addAssets/addAssetsSlice';
 import { apiResponse } from '@/utility/apiResponse/employeesResponse';
+import { group } from 'console';
+import AddAssets from './AddAssets';
 
+
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  fontWeight: 'bold',
+}));
 
 
 export default function AssestsGrid() {
   const dispatch: AppDispatch = useDispatch();
   const { assests, loading, error, filteredAssest, total } = useSelector((state: RootState) => state.assests);
-
   const [showForm, setShowForm] = useState(false)
   const [selectedAsset, setSelectedAsset] = useState<string>("");
   const [userRole, setUserRole] = useState<string>("");
@@ -36,8 +44,6 @@ export default function AssestsGrid() {
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
   const [userId, setUserId] = useState<string>("");
-
-  console.log('assests', assests);
 
   const debouncedFetch = useCallback(
     debounce(() => {
@@ -85,22 +91,14 @@ export default function AssestsGrid() {
 
     const [formData, setFormData] = useState({
       employee: '',
-      description: '',
-      model: '',
       name: '',
-      sno: '',
-      type: '',
       assignment_date: '',
       return_date: '',
     })
 
     const [errors, setErrors] = useState({
       employee: '',
-      description: '',
-      model: '',
       name: '',
-      sno: '',
-      type: '',
       assignment_date: '',
       return_date: ''
     });
@@ -108,25 +106,21 @@ export default function AssestsGrid() {
     useEffect(() => {
       if (asset) {
         const selected = assests.find(ast => ast._id === asset);
+        console.log("selected", selected)
 
         if (selected) {
           setFormData({
             employee: selected.employee._id,
-            description: selected.description,
-            model: selected.model,
             name: selected.name,
-            sno: selected.sno,
-            type: selected.type,
             assignment_date: selected.assignment_date,
             return_date: selected.return_date,
           })
         }
       }
-    }, [asset, assests])
+    }, [asset, addassets])
 
     useEffect(() => {
       dispatch(fetchEmployees({ page: 1, limit: 0, search: "" }))
-      console.log("employee", employees)
 
     }, [])
 
@@ -139,11 +133,7 @@ export default function AssestsGrid() {
 
       const newErrors = {
         employee: '',
-        description: '',
-        model: '',
         name: '',
-        sno: '',
-        type: '',
         assignment_date: '',
         return_date: ''
       };
@@ -152,42 +142,10 @@ export default function AssestsGrid() {
         newErrors.employee = 'Employee is not selected';
         isValid = false;
       }
-
-      // if (!formData.description.trim()) {
-      //   newErrors.description = 'Required';
-      //   isValid = false;
-      // }
-
-      // if (!formData.model.trim()) {
-      //   newErrors.model = 'Required';
-      //   isValid = false;
-      // }
-
       if (!formData.name.trim()) {
         newErrors.name = 'Required';
         isValid = false;
       }
-
-      // if (!formData.sno.trim()) {
-      //   newErrors.sno = 'Required';
-      //   isValid = false;
-      // }
-
-      // if (!formData.type.trim()) {
-      //   newErrors.type = 'Type is not defined';
-      //   isValid = false;
-      // }
-
-      // if (!formData.assignment_date.trim()) {
-      //   newErrors.assignment_date = 'Date is required';
-      //   isValid = false;
-      // }
-
-      // if (!formData.return_date.trim()) {
-      //   newErrors.return_date = 'Date is required';
-      //   isValid = false;
-      // }
-
       setErrors(newErrors);
 
       return isValid;
@@ -215,8 +173,8 @@ export default function AssestsGrid() {
       if (validateForm()) {
         const method = asset ? 'PUT' : 'POST'
         const url = asset ? `${process.env.NEXT_PUBLIC_APP_URL}/assests/update/${asset}` : `${process.env.NEXT_PUBLIC_APP_URL}/assests/create`
+        console.log('asset', asset)
 
-        console.log('Submitting form data:', formData);
         fetch(url, {
           method,
           headers: { 'Content-Type': 'application/json' },
@@ -224,7 +182,6 @@ export default function AssestsGrid() {
         })
           .then(response => response.json())
           .then(data => {
-            console.log('data', data)
             if (data.message) {
               if (data.message.includes('success')) {
                 toast.success(data.message, {
@@ -245,7 +202,6 @@ export default function AssestsGrid() {
             dispatch(fetchAssests({ page, limit, keyword: selectedKeyword }));
           })
           .catch(error => {
-            console.log('Error', error);
           });
       }
     };
@@ -289,20 +245,7 @@ export default function AssestsGrid() {
                 <Typography color="error">{errors.employee}</Typography>
               )}
             </FormControl>
-
           </Grid>
-          {/* <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Model'
-              name='model'
-              value={formData.model}
-              onChange={handleTextFieldChange}
-              required
-              error={!!errors.name}
-              helperText={errors.name}
-            />
-          </Grid> */}
           <Grid item xs={12} md={6}>
             <FormControl fullWidth required>
               <Autocomplete
@@ -314,7 +257,7 @@ export default function AssestsGrid() {
                     const nameB = `${b.assetName}`.toLowerCase();
                     return nameA.localeCompare(nameB);
                   })}
-                getOptionLabel={(option) => `${option.assetName}-${option.model}-${option.serialNo}`}
+                getOptionLabel={(option) => `${option.assetName} - ${option.model}- ${option.serialNo}`}
                 renderOption={(props, option) => (
                   <li {...props} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
                     <span style={{ width: '100%', textAlign: 'center' }}>{option.assetName}</span>
@@ -335,10 +278,10 @@ export default function AssestsGrid() {
                     {children}
                   </div>
                 )}
-                value={addassets.find(asset => `${asset.assetName}-${asset.model}-${asset.serialNo}` === formData.name) || null}
+                value={addassets.find(asset => `${asset.assetName} - ${asset.model} - ${asset.serialNo}` === formData.name) || null}
                 onChange={(event, newValue) => {
                   if (newValue) {
-                    handleSelectChange({ target: { name: "name", value: `${newValue.assetName}-${newValue.model}-${newValue.serialNo}` } });
+                    handleSelectChange({ target: { name: "name", value: `${newValue.assetName} - ${newValue.model} - ${newValue.serialNo}` } });
                   }
                 }}
               />
@@ -347,42 +290,6 @@ export default function AssestsGrid() {
               )}
             </FormControl>
           </Grid>
-          {/* <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='SNO'
-              name='sno'
-              value={formData.sno}
-              onChange={handleTextFieldChange}
-              required
-              error={!!errors.name}
-              helperText={errors.name}
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Type'
-              name='type'
-              value={formData.type}
-              onChange={handleTextFieldChange}
-              required
-              error={!!errors.name}
-              helperText={errors.name}
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Description'
-              name='description'
-              value={formData.description}
-              onChange={handleTextFieldChange}
-              required
-              error={!!errors.name}
-              helperText={errors.name}
-            />
-          </Grid> */}
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
@@ -397,20 +304,23 @@ export default function AssestsGrid() {
               helperText={errors.name}
             />
           </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Return Date'
-              name='return_date'
-              value={formData.return_date}
-              type='date'
-              onChange={handleTextFieldChange}
-              InputLabelProps={{ shrink: true }}
-              required
-              error={!!errors.name}
-              helperText={errors.name}
-            />
-          </Grid>
+          {asset ? (
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label='Return Date'
+                name='return_date'
+                value={formData.return_date}
+                type='date'
+                onChange={handleTextFieldChange}
+                InputLabelProps={{ shrink: true }}
+                required
+                error={!!errors.return_date}
+                helperText={errors.return_date}
+              />
+            </Grid>
+          ) : null}
+
           <Grid item xs={12}>
             <Button
               style={{
@@ -446,96 +356,209 @@ export default function AssestsGrid() {
   const handleClose = () => {
     setShowForm(false)
   }
+  function transformEmployeeData() {
+    // Create an empty object to group employees by their `_id`
+    const groupedData = {};
+
+    // Loop over each entry in the data
+    assests.forEach((item) => {
+      const employeeId = item.employee._id;
+
+      // If the employeeId is not in groupedData, initialize it
+      if (!groupedData[employeeId]) {
+        groupedData[employeeId] = {
+          _id: employeeId,
+          employee: item.employee,
+          assets: [],
+          totalAssets: 0,
+        };
+      }
+
+      // Push the asset details for the current employee
+      groupedData[employeeId].assets.push({
+        _id: item._id,
+        name: item.name,
+        assignment_date: item.assignment_date,
+        return_date: item.return_date,
+      });
+
+      // Increment the total assets count
+      groupedData[employeeId].totalAssets += 1;
+    });
+
+    // Return the grouped data as an array (if needed)
+    return Object.values(groupedData);
+  }
+  const assetsRow = transformEmployeeData()
 
   const generateColumns = () => {
-    const columns: GridColDef[] = [
-      ...(userRole === '1' ? [{
-        field: 'employee_name',
-        headerName: 'Employee',
-        width: 220,
+    const columns = [
+      ...(userRole === '1' ? [
+        {
+          field: 'employee_name',
+          headerName: 'Employee',
+          width: 220,
+          headerClassName: 'super-app-theme--header',
+          sortable: true,
+          align: 'center',
+          renderCell: (params) => {
+            const textStyle = {
+              fontSize: '1em',
+              fontWeight: 'bold',
+            };
+
+            return (
+              <Box display="flex" alignItems="center">
+                <Avatar src={params.row.employee_image} alt={params.row.employee_name} sx={{ mr: 2 }} />
+                <Typography sx={textStyle}>{params.row.employee_name}</Typography>
+              </Box>
+            );
+          },
+        },
+      ] : []),
+
+      {
+        field: 'assets',
+        headerName: 'Assets',
+        width: 700,
         headerClassName: 'super-app-theme--header',
-        sortable: true,
-        align: 'center',
         renderCell: (params) => {
-
-          const textStyle = {
-            fontSize: '1em',
-            fontWeight: 'bold',
-          };
-
+          // Group assets
+          const groupedAssets = params.row.assets.reduce((acc, asset) => {
+            const groupKey = 'View all assets';
+            if (!acc[groupKey]) {
+              acc[groupKey] = [];
+            }
+            acc[groupKey].push(asset);
+            return acc;
+          }, {});
           return (
-            <Box display="flex" alignItems="center">
-              <Avatar src={params.row.employee_image} alt={params.row.employee_name} sx={{ mr: 2 }} />
-              <Typography sx={textStyle}>{params.row.employee_name}</Typography>
+            <Box>
+              {Object.keys(groupedAssets).map((groupKey, index) => (
+                <Accordion key={`accordion-${index}`} sx={{ mb: 1 }}>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography>
+                      {groupKey} ({groupedAssets[groupKey].length})
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <StyledTableCell>Asset Name - modal No - serial No</StyledTableCell>
+                          {/* <StyledTableCell>Model No.</StyledTableCell>
+                          <StyledTableCell>Serial No.</StyledTableCell> */}
+                          <StyledTableCell>Assign Date</StyledTableCell>
+                          <StyledTableCell>Return Date</StyledTableCell>
+                          <StyledTableCell>Edit</StyledTableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {groupedAssets[groupKey].map((asset, idx) => (
+                          <TableRow key={`asset-${idx}`}>
+                            <TableCell sx={{ padding: '2px' }}>{asset.name}</TableCell>
+                            {/* <TableCell></TableCell>
+                            <TableCell></TableCell> */}
+                            <TableCell>{new Date(asset.assignment_date).toLocaleDateString('en-GB')}</TableCell>
+                            <TableCell>{new Date(asset.return_date).toLocaleDateString('en-GB')}</TableCell>
+                            <TableCell>
+                              <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleEditAssetClick(asset._id)}>
+                                <DriveFileRenameOutlineOutlined />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </AccordionDetails>
+                </Accordion>
+              ))}
             </Box>
           );
-        },
-      }] : []),
+        }
+      },
 
-      {
-        field: 'name',
-        headerName: 'Asset Name',
-        width: 180,
-        headerClassName: 'super-app-theme--header',
-      },
-      {
-        field: 'assignment_date',
-        headerName: 'Assign Date',
-        type: 'string',
-        width: 180,
-        editable: true,
-        headerClassName: 'super-app-theme--header',
-        headerAlign: 'center',
-        align: 'center',
-      },
-      {
-        field: 'return_date',
-        headerName: 'Return Date',
-        type: 'string',
-        width: 180,
-        editable: true,
-        headerClassName: 'super-app-theme--header',
-        headerAlign: 'center',
-        align: 'center',
-      },
-      ...(userRole === '1'
-        ? [{
-          field: 'edit',
-          headerName: 'Action',
-          sortable: false,
-          headerAlign: 'center',
-          width: 160,
-          headerClassName: 'super-app-theme--header',
-          renderCell: (params: GridRenderCellParams) => (
-            <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
-              <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleEditAssetClick(params.row._id)}>
-                <DriveFileRenameOutlineOutlined />
-              </Button>
-            </Box>
-          ),
-        }]
-        : [])
+      // {
+      //   field: 'assignment_date',
+      //   headerName: 'Assign Date',
+      //   type: 'string',
+      //   width: 180,
+      //   editable: true,
+      //   headerClassName: 'super-app-theme--header',
+      //   headerAlign: 'center',
+      //   align: 'center',
+      // },
+      // {
+      //   field: 'return_date',
+      //   headerName: 'Return Date',
+      //   type: 'string',
+      //   width: 180,
+      //   editable: true,
+      //   headerClassName: 'super-app-theme--header',
+      //   headerAlign: 'center',
+      //   align: 'center',
+      // // },
+      // ...(userRole === '1' ? [
+      //   {
+      // {
+      //     field: 'return_date',
+      //     headerName: 'Return Date',
+      //     type: 'string',
+      //     width: 180,
+      //     editable: true,
+      //     headerClassName: 'super-app-theme--header',
+      //     headerAlign: 'center',
+      //     align: 'center',
+      //   },
+      //   ...(userRole === '1'
+      //     ? [{
+      //   {
+      //       field: 'return_date',
+      //       headerName: 'Return Date',
+      //       type: 'string',
+      //       width: 180,
+      //       editable: true,
+      //       headerClassName: 'super-app-theme--header',
+      //       headerAlign: 'center',
+      //       align: 'center',
+      //     }
+
+      // ...(userRole === '1'
+      //   ? [{
+      //     field: 'edit',
+      //     headerName: 'Action',
+      //     sortable: false,
+      //     headerAlign: 'center',
+      //     width: 120,
+      //     headerClassName: 'super-app-theme--header',
+      //     renderCell: (params) => (
+      //       <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
+      //         <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleEditAssetClick(params.row._id)}>
+      //           <DriveFileRenameOutlineOutlined />
+      //         </Button>
+      //       </Box>
+      //     ),
+      //   }
+      //   ] : []),
     ];
 
     return columns;
-  }
+  };
 
+  // Define the row structure for the data
   interface GroupedData {
     _id: string;
     employee_id: string;
     employee_name: string;
     employee_image: string;
-    description: string;
-    model: string;
-    name: string;
-    sno: string;
-    type: string;
+    assets: Array<{ name: string; assignment_date: string; return_date: string }>;
     assignment_date: string;
     return_date: string;
   }
 
+  // Function to transform data into rows suitable for the table
   const transformData = (): GroupedData[] => {
-    let assestSource = Array.isArray(filteredAssest) && filteredAssest.length > 0 ? filteredAssest : Array.isArray(assests) ? assests : [];
+    let assestSource = Array.isArray(filteredAssest) && filteredAssest.length > 0 ? filteredAssest : Array.isArray(assetsRow) ? assetsRow : [];
 
     if (Number(userRole) >= 2) {
 
@@ -547,9 +570,9 @@ export default function AssestsGrid() {
     }
 
     const groupedData = assestSource.reduce<GroupedData[]>((acc, curr) => {
-      const { employee, description, model, name, sno, type, assignment_date, return_date, _id } = curr;
+      const { employee, assets, _id } = curr;
 
-      if (!employee) {
+      if (!employee || !Array.isArray(assets)) {
         return acc;
       }
 
@@ -557,14 +580,15 @@ export default function AssestsGrid() {
         _id,
         employee_id: employee._id,
         employee_name: `${employee.first_name} ${employee.last_name}`,
-        employee_image: employee.image,
-        description,
-        model,
-        name,
-        sno,
-        type,
-        assignment_date,
-        return_date,
+        employee_image: employee.image || '',
+        assets: assets.map(asset => ({
+          _id: asset._id,
+          name: asset.name,
+          assignment_date: asset.assignment_date,
+          return_date: asset.return_date,
+        })),
+        assignment_date: assets.length > 0 ? assets[0].assignment_date : '',
+        return_date: assets.length > 0 ? assets[0].return_date : '',
       });
 
       return acc;
@@ -606,7 +630,7 @@ export default function AssestsGrid() {
               startIcon={<AddIcon />}
               onClick={handleAssetAddClick}
             >
-              Add Asset
+              Assign Asset
             </Button>
           </Box>}
         </Box>
@@ -630,16 +654,11 @@ export default function AssestsGrid() {
               }}
             />
           </Grid>
-
-          {/* <Grid item xs={12} md={3}>
-            <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>
-              SEARCH
-            </Button>
-          </Grid> */}
         </Grid>}
       </Box>
       <Box sx={{ height: 500, width: '100%' }}>
         <DataGrid
+          getRowHeight={() => 'auto'}
           sx={{
             '& .super-app-theme--header': {
               fontSize: 17,

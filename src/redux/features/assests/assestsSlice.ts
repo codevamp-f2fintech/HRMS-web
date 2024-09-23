@@ -14,10 +14,6 @@ interface Assest {
   };
   employee_id: string;
   name: string;
-  model: string;
-  sno: string;
-  type: string;
-  description: string;
   assignment_date: string;
   return_date: string;
 }
