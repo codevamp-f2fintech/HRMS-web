@@ -51,7 +51,7 @@ export default function LeavesGrid() {
     () => debounce(() => {
       dispatch(fetchLeaves({ page, limit, keyword: selectedKeyword }));
     }, 300),
-    [dispatch]
+    [dispatch, page, limit, selectedKeyword]
   );
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,9 +64,10 @@ export default function LeavesGrid() {
   }, []);
 
   const handlePaginationModelChange = useCallback((params: { page: number; pageSize: number }) => {
-    handlePageChange(params.page, params.pageSize);
-    debouncedFetch();
-  }, [handlePageChange, debouncedFetch]);
+    setPage(params.page + 1); // Add +1 because MUI starts page index at 0
+    setLimit(params.pageSize);
+  }, []);
+
 
   useEffect(() => {
     debouncedFetch();
@@ -235,14 +236,15 @@ export default function LeavesGrid() {
           return 'No End Date';
         },
       },
-      { field: 'type', headerName: 'Type', flex: 0.6, headerClassName: 'super-app-theme--header' },
+      { field: 'type', headerName: 'Type', flex: 1, headerClassName: 'super-app-theme--header' },
       { field: 'status', headerName: 'Status', flex: 1, headerClassName: 'super-app-theme--header' },
-      { field: 'application', headerName: 'Reason', flex: 1, minWidth: 150, headerClassName: 'super-app-theme--header', renderCell: (params) => capitalizeFirstLetterEachWord(params.value || ''), },
+      { field: 'application', headerName: 'Reason', flex: 1.5, headerAlign: 'center', align: 'center', headerClassName: 'super-app-theme--header' },
       ...(userRole === '1' ? [{
         field: 'edit',
         headerName: 'Edit',
         flex: 0.5,
         headerAlign: 'center',
+        minWidth: 100,
         headerClassName: 'super-app-theme--header',
         renderCell: ({ row: { _id } }) => (
           <Box display="flex" justifyContent="space-around">
@@ -326,7 +328,11 @@ export default function LeavesGrid() {
                 variant="outlined"
                 value={selectedKeyword}
                 onChange={handleInputChange}
+
                 InputProps={{
+                  sx: {
+                    borderRadius: "50px", // To make the TextField rounded
+                  },
                   endAdornment: (
                     <InputAdornment position="end">
                       <SearchIcon />
@@ -347,6 +353,9 @@ export default function LeavesGrid() {
 
               fontWeight: 600,
               alignItems: 'center'
+            },
+            '& .mui-yrdy0g-MuiDataGrid-columnHeaderRow ': {
+              background: 'linear-gradient(270deg, var(--mui-palette-primary-main), rgb(197, 171, 255) 100%) !important',
             },
             '& .MuiDataGrid-cell': {
               fontSize: '10',

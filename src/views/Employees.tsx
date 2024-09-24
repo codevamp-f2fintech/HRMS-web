@@ -14,23 +14,27 @@ import {
   MenuItem,
   Dialog,
   DialogContent,
+  Autocomplete,
 } from '@mui/material';
 import InputLabel from '@mui/material/InputLabel';
 import FormControl from '@mui/material/FormControl';
 import AddIcon from '@mui/icons-material/Add';
 import { fetchEmployees, resetEmployees } from '../redux/features/employees/employeesSlice';
+import { fetchDesignations } from '@/redux/features/designation/designationSlice';
 import Loader from "../components/loader/loader";
 import EmployeeForm from '@/components/employee/EmployeeForm';
 import EmployeeCard from '@/components/employee/EmployeeCard';
 import { utility } from '@/utility';
 
 import 'react-toastify/dist/ReactToastify.css';
+import { RootState } from '@/redux/store';
 
 const { isTokenExpired } = utility();
 
 export default function EmployeeGrid() {
   const dispatch = useDispatch();
-  const { employees, hasMore, loading, error } = useSelector((state) => state.employees);
+  const { employees, hasMore, loading, error } = useSelector((state: RootState) => state.employees);
+  const { designations } = useSelector((state: RootState) => state.designations);
 
   const [showForm, setShowForm] = useState(false);
   const [userRole, setUserRole] = useState("");
@@ -50,6 +54,7 @@ export default function EmployeeGrid() {
 
   useEffect(() => {
     if (isTokenExpired(token)) {
+      console.log("isTokenExpired(token)", isTokenExpired(token));
       localStorage.removeItem('token');
       router.push('/login');
     } else {
@@ -61,10 +66,14 @@ export default function EmployeeGrid() {
   }, [token, userRole, router]);
 
   useEffect(() => {
+    dispatch(fetchDesignations({ page: 1, limit: 0, keyword: "" }));
+  }, [])
+
+  useEffect(() => {
     if (searchName === '' && selectedDesignation === '') {
-      dispatch(fetchEmployees({ page, limit: 12 }));
+      dispatch(fetchEmployees({ page, limit: 12, searchName: '', selectedDesignation: '' }));
     }
-  }, [dispatch, page]);
+  }, [dispatch, page, searchName, selectedDesignation]);
 
   const handleScroll = useCallback(() => {
     if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 && !loading && hasMore) {
@@ -98,7 +107,7 @@ export default function EmployeeGrid() {
   const debouncedSearch = useCallback(
     debounce(() => {
       dispatch(resetEmployees());
-      dispatch(fetchEmployees({ page: 1, limit: searchName !== '' ? 0 : 12, search: searchName, designation: selectedDesignation }));
+      dispatch(fetchEmployees({ page: 1, limit: 12, search: searchName, designation: selectedDesignation }));
     }, 500),
     [searchName, selectedDesignation, dispatch]
   );
@@ -124,7 +133,7 @@ export default function EmployeeGrid() {
     const designationValue = e.target.value;
 
     setSearchName('');
-    setSelectedDesignation(designationValue);
+    setSelectedDesignation(designationValue === null ? '' : designationValue);
     if (designationValue === '') {
       setPage(1);
       dispatch(resetEmployees());
@@ -176,21 +185,20 @@ export default function EmployeeGrid() {
         </Grid>
         <Grid item xs={12} md={6}>
           <FormControl fullWidth>
-            <InputLabel id='demo-simple-select-label'>Select Designation</InputLabel>
-            <Select
-              label='Select Designation'
-              labelId='demo-simple-select-label'
-              id='demo-simple-select'
-              fullWidth
+            <Autocomplete
+              id="designation-select"
+              options={designations
+                .map((designation) => designation.title)
+                .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))}
+              getOptionLabel={(option) => option}
+              renderInput={(params) => (
+                <TextField {...params} label="Select Designation" variant="outlined" />
+              )}
               value={selectedDesignation}
-              onChange={handleDesignationChange}
-            >
-              <MenuItem value="">Discard</MenuItem>
-              <MenuItem value='1'>Admin</MenuItem>
-              <MenuItem value='2'>Manager</MenuItem>
-              <MenuItem value='3'>Employee</MenuItem>
-              <MenuItem value='4'>Channel Partner</MenuItem>
-            </Select>
+              onChange={(event, newValue) => {
+                handleDesignationChange({ target: { name: "designation", value: newValue } });
+              }}
+            />
           </FormControl>
         </Grid>
       </Grid>
@@ -198,7 +206,7 @@ export default function EmployeeGrid() {
         {error ? (
           <Typography>Error: {error}</Typography>
         ) : (
-          employees.map(employee => (
+          employees.map((employee: any) => (
             <Grid item xs={12} sm={6} md={3} key={employee._id}>
               <EmployeeCard employee={employee} id={employee._id} handleEditEmployeeClick={handleEditEmployeeClick} capitalizeWords={capitalizeWords} />
             </Grid>

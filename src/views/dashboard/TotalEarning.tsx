@@ -10,6 +10,7 @@ function TradingViewWidget() {
   useEffect(() => {
     if (!scriptLoaded) {
       const script = document.createElement("script");
+
       script.src = "https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js";
       script.type = "text/javascript";
       script.async = true;

@@ -112,8 +112,6 @@ export default function TimeSheetGrid() {
       } else {
         if (attendances.length === 0) {
           const response = await dispatch(fetchAttendances());
-
-          console.log('Attendance API response:', response);
         }
       }
     };
@@ -129,7 +127,7 @@ export default function TimeSheetGrid() {
   }, []);
 
   const toggleRow = (employee_id) => {
-    console.log('employeee dataaaaaaaa', employee_id);
+
     setExpandedRows((prev) => ({
       ...prev,
       [employee_id]: !prev[employee_id],
@@ -139,7 +137,7 @@ export default function TimeSheetGrid() {
 
 
   const handleEditClick = (row) => {
-    const isAttendance = row.attendance_status === 'Present' || row.attendance_status === 'On Half';
+    const isAttendance = row.attendance_status === 'Present' || row.attendance_status === 'On Half' || row.attendance_status === 'On Wfh' || row.attendance_status === 'On Field';
     const isTimeSheet = row._id !== null;
 
     if (isAttendance || isTimeSheet) {
@@ -270,6 +268,8 @@ export default function TimeSheetGrid() {
           submission_date: timesheet ? timesheet.submission_date : ''
         };
       });
+
+    updatedData.sort((a, b) => a.employee_name.localeCompare(b.employee_name));
 
     return updatedData;
   };

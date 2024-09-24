@@ -1,4 +1,6 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+
 import type { RootState } from '../../store';
 
 interface Employee {
@@ -46,9 +48,12 @@ export const fetchUpcomingBirthdays = createAsyncThunk(
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_APP_URL}/employees/upcoming-birthdays?days=${days}`
     );
+
     if (!response.ok) {
       throw new Error('Failed to fetch upcoming birthdays');
     }
+
+
     return response.json();
   }
 );
@@ -64,6 +69,7 @@ export const fetchEmployees = createAsyncThunk(
     const isSearch = search.trim().length > 0;
 
     let token: string | null = null;
+
     if (typeof window !== "undefined") {
       token = localStorage?.getItem("token");
     }
@@ -85,7 +91,7 @@ export const fetchEmployees = createAsyncThunk(
 
     const data = await response.json();
 
-    let employees = isSearch ? [] : state.employees.employees;
+    const employees = isSearch ? [] : state.employees.employees;
 
     const newEmployees = data.filter(
       (employee: Employee) => !employees.some((existingEmployee) => existingEmployee._id === employee._id)

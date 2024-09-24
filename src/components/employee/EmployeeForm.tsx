@@ -80,7 +80,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
 
   useEffect(() => {
     dispatch(fetchDesignations({ page: 1, limit: 0, keyword: "" }));
-    console.log("designation", designations)
+
   }, [])
 
   const handleClickShowPassword = () => setIsPasswordShown(show => !show);
@@ -469,7 +469,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
           />
         </Grid>
         <Grid item xs={12} md={6}>
-          <FormControl fullWidth >
+          <FormControl fullWidth error={!!errors.location}>
             <InputLabel id='demo-simple-select-label'>Select Location</InputLabel>
             <Select
               label='Select Location'
@@ -484,6 +484,7 @@ const EmployeeForm = ({ handleClose, employee, employees, fetchEmployees, page }
               <MenuItem value='bareilly'>Bareilly</MenuItem>
               <MenuItem value='patel nagar'>Patel Nagar</MenuItem>
             </Select>
+            {errors.location && <Typography color='error'>{errors.location}</Typography>}
           </FormControl>
         </Grid>
         <Grid item xs={12} md={6}>

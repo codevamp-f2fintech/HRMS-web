@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from "react";
+
 import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from "@/redux/store";
-import { fetchHolidays } from '@/redux/features/holidays/holidaysSlice';
 
 import { Card, CardHeader, CardContent, Typography, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Pagination } from '@mui/material';
+
 import { styled } from '@mui/material/styles';
+
+import type { AppDispatch, RootState } from "@/redux/store";
+import { fetchHolidays } from '@/redux/features/holidays/holidaysSlice';
+
 
 const StyledCard = styled(Card)(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
@@ -13,7 +17,7 @@ const StyledCard = styled(Card)(({ theme }) => ({
 }));
 
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
-  // maxHeight: 440,
+  height: 468,
   '&::-webkit-scrollbar': {
     width: '0.4em',
     height: '0.4em',

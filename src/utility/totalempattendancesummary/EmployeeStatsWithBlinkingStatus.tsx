@@ -29,6 +29,8 @@ import {
   DirectionsRun as OnFieldIcon,
 } from '@mui/icons-material';
 
+import HomeIcon from '@mui/icons-material/Home';
+
 import { apiResponse } from '@/utility/apiResponse/employeesResponse';
 
 interface Employee {
@@ -42,6 +44,7 @@ interface AttendanceCounts {
   OnLeave: number;
   OnHalf: number;
   OnField: number;
+  OnWfh: number;
 }
 
 interface LocationAttendanceCounts {
@@ -54,6 +57,7 @@ interface LocationAttendanceCounts {
       OnLeave: string[];
       OnHalf: string[];
       OnField: string[];
+      OnWfh: string[];
     };
   };
 }
@@ -133,6 +137,8 @@ const StatusCard: React.FC<{ count: number; status: string; employees: string[];
         return { icon: <HalfDayIcon />, color: theme.palette.info.main, backgroundColor: theme.palette.info.light };
       case 'On Field':
         return { icon: <OnFieldIcon />, color: theme.palette.primary.main, backgroundColor: theme.palette.primary.light };
+      case 'On Wfh': // New status
+        return { icon: <HomeIcon />, color: theme.palette.secondary.main, backgroundColor: theme.palette.secondary.light };
       default:
         return { icon: <PersonIcon />, color: theme.palette.grey[500], backgroundColor: theme.palette.grey[200] };
     }
@@ -231,6 +237,7 @@ const EmployeeAttendanceStatus: React.FC = () => {
                     OnLeave: 0,
                     OnHalf: 0,
                     OnField: 0,
+                    OnWfh: 0,
                   },
                   totalEmployeesToday: 0,
                   employeesByStatus: {
@@ -239,6 +246,7 @@ const EmployeeAttendanceStatus: React.FC = () => {
                     OnLeave: [],
                     OnHalf: [],
                     OnField: [],
+                    OnWfh: [],
                   },
                 };
               }
@@ -293,13 +301,23 @@ const EmployeeAttendanceStatus: React.FC = () => {
                 <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
                   <Box display="flex" alignItems="center">
                     <LocationIcon sx={{ color: theme.palette.primary.main, mr: 1 }} />
-                    <Typography variant="h6" color="primary" sx={{ textTransform: 'uppercase' }}>
+                    <Typography
+                      variant="h6"
+                      color="primary"
+                      sx={{
+                        textTransform: 'uppercase',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        width: '150px',
+                      }}
+                    >
                       {location}
                     </Typography>
                   </Box>
                   {/* Display Today Total just right to the location */}
                   <Typography variant="subtitle1" color="text.secondary">
-                    Today Total: {data.totalEmployeesToday}
+                    Today's Count: {data.totalEmployeesToday}
                   </Typography>
                 </Box>
                 <Divider sx={{ mb: 2 }} />

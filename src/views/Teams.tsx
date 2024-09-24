@@ -32,6 +32,7 @@ import {
 import type { GridColDef } from '@mui/x-data-grid';
 import { DataGrid } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material';
@@ -70,9 +71,23 @@ const getManagerNameById = (id, employees) => {
   return manager ? `${manager.first_name} ${manager.last_name}` : '';
 };
 
-const getEmployeeCountByIds = (ids) => {
-  return ids ? ids.split(',').length : 0;
+const getEmployeeCountByIds = (ids, employees, managerId) => {
+  if (!ids) return 0;
+
+
+  const idArray = ids.split(',');
+
+
+  const validIds = idArray.filter(id => employees.some(emp => emp._id === id));
+
+
+  const isManagerIncluded = employees.some(emp => emp._id === managerId);
+
+
+  return validIds.length + (isManagerIncluded ? 1 : 0);
 };
+
+
 
 const getEmployeeNamesByIds = (ids, employees) => {
   if (!ids) return '';
@@ -91,7 +106,7 @@ const getEmployeeNamesByIds = (ids, employees) => {
 
 export default function TeamGrid() {
   const dispatch: AppDispatch = useDispatch();
-  const { teams, loading, error } = useSelector((state: RootState) => state.teams);
+  const { teams, total, loading, error } = useSelector((state: RootState) => state.teams);
   const { employees } = useSelector((state: RootState) => state.employees);
 
   const [showForm, setShowForm] = useState(false);
@@ -397,6 +412,33 @@ export default function TeamGrid() {
     setViewDetails(team);
   };
 
+  const handleDeleteTeam = (id) => {
+    if (window.confirm('Are you sure you want to delete this team?')) {
+      fetch(`${process.env.NEXT_PUBLIC_APP_URL}/teams/delete/${id}`, {
+        method: 'DELETE',
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.message) {
+            toast.success(data.message, {
+              position: 'top-center',
+            });
+            debouncedFetch(); // Refresh the team list
+          } else {
+            toast.error('Error deleting team', {
+              position: 'top-center',
+            });
+          }
+        })
+        .catch(error => {
+          console.log('Error', error);
+          toast.error('Unexpected error occurred', {
+            position: 'top-center',
+          });
+        });
+    }
+  };
+
   const columns: GridColDef[] = [
     {
       field: 'name',
@@ -415,7 +457,7 @@ export default function TeamGrid() {
       field: 'employee_ids',
       headerName: 'No. of Employees',
       editable: true,
-      renderCell: (params) => getEmployeeCountByIds(params.value),
+      renderCell: (params) => getEmployeeCountByIds(params.value, employees, params.row.manager_id),
 
       flex: 1,
       headerAlign: 'center',
@@ -437,6 +479,9 @@ export default function TeamGrid() {
           <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
             <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleEditTeamClick(_id)}>
               <DriveFileRenameOutlineOutlined />
+            </Button>
+            <Button color="error" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleDeleteTeam(_id)}>
+              <DeleteIcon />
             </Button>
           </Box>
         ),
@@ -545,7 +590,7 @@ export default function TeamGrid() {
                               <Typography variant="h6"  >{`${manager.first_name} ${manager.last_name}`}</Typography>
                               <Typography variant="body2" color="textSecondary"
                                 sx={{ textAlign: 'center' }}
-                              >Manager</Typography>
+                              >{manager.designation}</Typography>
                             </Box>
                           </Box>
                         ) : <Typography>No manager assigned</Typography>
@@ -632,7 +677,7 @@ export default function TeamGrid() {
                                   sx={{ width: 60, height: 60, marginBottom: 1, border: '2px solid #7b1fa2' }}
                                 />
                                 <Typography variant="body2" fontWeight="bold">{`${employee.first_name} ${employee.last_name}`}</Typography>
-                                <Typography variant="caption" color="textSecondary">Team Member</Typography>
+                                <Typography variant="caption" color="textSecondary">{employee.designation}</Typography>
                               </Box>
                             </Grid>
                           ) : null;
@@ -651,7 +696,7 @@ export default function TeamGrid() {
                   alignItems: 'center'
                 }}>
                   <Typography variant="body2" color="textSecondary">
-                    Total Members: {viewDetails.employee_ids.split(',').length + 1}
+                    Total Members: {viewDetails ? getEmployeeCountByIds(viewDetails.employee_ids, employees) + 1 : 1}
                   </Typography>
                   <Button
                     variant="contained"
@@ -728,17 +773,13 @@ export default function TeamGrid() {
               rows={teams}
               columns={columns}
               getRowId={(row) => row._id}
-              initialState={{
-                pagination: {
-                  paginationModel: {
-                    pageSize: 10,
-                  },
-                },
-              }}
+              paginationMode="server"
+              rowCount={total}
               pageSizeOptions={[10, 20, 30]}
+              onPaginationModelChange={handlePaginationModelChange}
+              paginationModel={{ page: page - 1, pageSize: limit }}
               checkboxSelection
               disableRowSelectionOnClick
-              onPaginationModelChange={handlePaginationModelChange}
             />
           </Grid>
         </Grid>
