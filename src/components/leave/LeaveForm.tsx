@@ -109,7 +109,7 @@ const AddLeavesForm = ({ handleClose, leave, leaves, userRole, userId, employees
       const startDate = new Date(start);
       const endDate = new Date(end);
       const differenceInTime = endDate.getTime() - startDate.getTime();
-      const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
+      const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24)) + 1;
 
       // Return 1 if start and end dates are the same
       return differenceInDays === 0 ? 1 : differenceInDays;
