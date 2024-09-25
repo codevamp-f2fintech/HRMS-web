@@ -23,7 +23,7 @@ export type Config = {
 }
 
 const themeConfig: Config = {
-  templateName: 'F2-Fintech',
+  templateName: '',
   settingsCookieName: 'F2-Fintech',
   mode: 'light', // 'light', 'dark'
   layoutPadding: 24, // Common padding for header, content, footer layout components (in px)

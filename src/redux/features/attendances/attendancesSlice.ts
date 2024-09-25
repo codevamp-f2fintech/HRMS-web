@@ -114,6 +114,26 @@ export const attendancesSlice = createSlice({
     resetFilter(state) {
       state.filteredAttendance = state.attendances;
     },
+
+    addOrUpdateAttendance(state, action: PayloadAction<Attendance>) {
+      const updatedAttendance = action.payload;
+
+      console.log('updated attendances', updatedAttendance)
+
+      console.log('state attenance', state.attendances)
+
+
+      const index = state.attendances.findIndex(atten => atten._id === updatedAttendance.data._id);
+
+      console.log('index is', index)
+
+      if (index !== -1) {
+        state.attendances[index] = updatedAttendance.data;
+      } else {
+        state.attendances.push(updatedAttendance.data);
+      }
+    },
+
   },
   extraReducers: (builder) => {
     builder.addCase(fetchAttendances.pending, (state) => {
@@ -132,6 +152,6 @@ export const attendancesSlice = createSlice({
 });
 
 
-export const { filterAttendance, resetFilter, resetAttendances } = attendancesSlice.actions;
+export const { filterAttendance, resetFilter, resetAttendances, addOrUpdateAttendance } = attendancesSlice.actions;
 
 export default attendancesSlice.reducer;

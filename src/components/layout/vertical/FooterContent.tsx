@@ -1,4 +1,5 @@
 'use client'
+import { useState } from "react";
 
 // Next Imports
 
@@ -12,14 +13,22 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 
 import useVerticalNav from '@menu/hooks/useVerticalNav';
 
+
+
 const FooterContent = () => {
+  const [showContactDetails, setShowContactDetails] = useState(false);
+
+  const handleContactClick = () => {
+    setShowContactDetails(!showContactDetails); // Toggle contact details visibility
+  };
 
   return (
     <Container
 
       maxWidth={false}
       sx={{
-        background: "linear-gradient(270deg, var(--mui-palette-primary-main), rgb(197, 171, 255) 100%)",
+        background: "linear-gradient(270deg, var(--mui-palette-primary-main), #2c3ce3 100%)",
+
         // padding: '2rem 1rem', // Adjust padding for responsiveness
         // margin: "0px"
       }}
@@ -56,19 +65,6 @@ const FooterContent = () => {
           <Box display="flex" justifyContent={{ xs: "center", md: "flex-start" }} alignItems="center" sx={{ color: "white", lineHeight: "2rem", mt: '1.5rem' }}>
             <LocationOnIcon sx={{ marginRight: "0.5rem" }} />
             <Link
-              href="https://www.google.com/maps/place/28%C2%B038'43.7%22N+77%C2%B010'04.5%22E/@28.6454722,77.1679167,17z/data=!3m1!4b1!4m4!3m3!8m2!3d28.6454722!4d77.1679167?hl=en&entry=ttu"
-              target="_blank"
-              sx={{ color: "white" }}
-              underline="none"
-            >
-              <Typography variant="h6" sx={{ color: "white" }}>
-                Shop No 59, South Patel Nagar, New Delhi - 110008
-              </Typography>
-            </Link>
-          </Box>
-          <Box display="flex" justifyContent={{ xs: "center", md: "flex-start" }} alignItems="center" sx={{ color: "white", lineHeight: "2rem", mt: '1.5rem' }}>
-            <LocationOnIcon sx={{ marginRight: "0.5rem" }} />
-            <Link
               href="https://www.google.com/maps/place/28%C2%B022'20.4%22N+79%C2%B025'25.9%22E/@28.3723431,79.4212761,17z/data=!3m1!4b1!4m4!3m3!8m2!3d28.3723431!4d79.423851?entry=ttu"
               target="_blank"
               sx={{ color: "white" }}
@@ -79,18 +75,20 @@ const FooterContent = () => {
               </Typography>
             </Link>
           </Box>
-          <Box display="flex" justifyContent={{ xs: "center", md: "flex-start" }} alignItems="center" sx={{ color: "white", lineHeight: "3rem", mt: '2rem' }}>
-            <PhoneIcon sx={{ marginRight: "0.5rem" }} />
-            <Typography variant="h6" sx={{ color: "white" }}>
-              +91 8810600135
-            </Typography>
+          <Box display="flex" justifyContent={{ xs: "center", md: "flex-start" }} alignItems="center" sx={{ color: "white", lineHeight: "2rem", mt: '1.5rem' }}>
+            <LocationOnIcon sx={{ marginRight: "0.5rem" }} />
+            <Link
+              href="https://www.google.com/maps/place/28%C2%B038'43.7%22N+77%C2%B010'04.5%22E/@28.6454722,77.1679167,17z/data=!3m1!4b1!4m4!3m3!8m2!3d28.6454722!4d77.1679167?hl=en&entry=ttu"
+              target="_blank"
+              sx={{ color: "white" }}
+              underline="none"
+            >
+              <Typography variant="h6" sx={{ color: "white" }}>
+                Office No 59, South Patel Nagar, New Delhi - 110008
+              </Typography>
+            </Link>
           </Box>
-          <Box display="flex" justifyContent={{ xs: "center", md: "flex-start" }} alignItems="center" sx={{ color: "white", lineHeight: "3rem", mt: '1.5rem' }}>
-            <EmailIcon sx={{ marginRight: "0.5rem" }} />
-            <Typography variant="h6" sx={{ color: "white" }}>
-              wecare@f2fintech.com
-            </Typography>
-          </Box>
+
         </Box>
         <Box
           sx={{ display: "flex", flexDirection: "column", textAlign: { xs: "center", md: "left" }, mb: { xs: 4, md: 0 } }}
@@ -149,10 +147,40 @@ const FooterContent = () => {
           <Link
             underline="none"
             variant="h6"
-            sx={{ color: "white", marginBottom: "1rem" }}
+            sx={{ color: "white", marginBottom: "1rem", cursor: "pointer" }} // Add cursor pointer
+            onClick={handleContactClick} // Handle the click event
           >
             Contact Us
           </Link>
+          {showContactDetails && (
+            <Box
+              sx={{
+                mt: 2,
+                p: 3,
+                borderRadius: "8px", // Rounded corners
+                backgroundColor: "white", // Solid white box background
+                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)", // Soft shadow for depth
+                color: "black", // Set text color to black for readability on white background
+                maxWidth: "500px", // Set max-width for better responsiveness
+                textAlign: "center",
+                mx: "auto", // Center horizontally
+              }}
+            >
+              <Box display="flex" alignItems="center" justifyContent="center" sx={{ mb: 2 }}>
+                <PhoneIcon sx={{ marginRight: "0.5rem", color: "black" }} />
+                <Typography variant="h6" sx={{ fontWeight: "bold" }}>+91 8810600135</Typography>
+              </Box>
+              <Box display="flex" alignItems="center" justifyContent="center" sx={{ mb: 2 }}>
+                <EmailIcon sx={{ marginRight: "0.5rem", color: "black" }} />
+                <Typography variant="h6" sx={{ fontWeight: "bold" }}>wecare@f2fintech.com</Typography>
+              </Box>
+              <Typography variant="h6" sx={{ marginTop: "2rem" }}> {/* Add margin-top for spacing */}
+                We are a Global Electronic Marketplace for Buying & Selling Loans.
+                Delegate your financial worries to us and focus on growing your core profession.
+              </Typography>
+            </Box>
+          )}
+
           <Stack direction="row" spacing={3}>
           </Stack>
         </Box>
@@ -162,8 +190,7 @@ const FooterContent = () => {
       </Typography>
       <Divider color="white" sx={{ height: "1px", mt: 4 }} />
       <Typography sx={{ color: 'white', fontSize: '15px', mt: 2, textAlign: 'center' }}>
-        Open Capital is a platform that connects businesses with lending options offered by RBI-licensed NBFC partners.
-        The loans offered on the platform are subject to the terms and conditions and loan approval process of the NBFC partners.
+        True wealth is not measured by the size of your bank account, but by the freedom to live life on your own terms.
       </Typography>
     </Container>
   )

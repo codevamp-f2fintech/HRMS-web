@@ -98,6 +98,8 @@ export default function HolidayGrid() {
       flex: 1,
       renderCell: (params) => {
         const dateValue = params.value ? new Date(params.value) : null;
+
+
         return dateValue && !isNaN(dateValue.getTime())
           ? format(dateValue, 'dd-MMM-yyyy').toUpperCase()
           : 'Invalid Date';
@@ -112,6 +114,8 @@ export default function HolidayGrid() {
       flex: 1,
       renderCell: (params) => {
         const dateValue = params.value ? new Date(params.value) : null;
+
+
         return dateValue && !isNaN(dateValue.getTime())
           ? format(dateValue, 'dd-MMM-yyyy').toUpperCase()
           : 'Invalid Date';
@@ -210,7 +214,8 @@ export default function HolidayGrid() {
               alignItems: 'center',
             },
             '& .mui-yrdy0g-MuiDataGrid-columnHeaderRow ': {
-              background: 'linear-gradient(270deg, var(--mui-palette-primary-main), rgb(197, 171, 255) 100%) !important',
+              background: 'linear-gradient(270deg, var(--mui-palette-primary-main), #2c3ce3 100%) !important',
+              color: 'white',
             },
             '& .MuiDataGrid-cell': {
               fontSize: '10',

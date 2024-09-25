@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
+
 import { Box, Grid, TextField, Typography, IconButton, Button } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { toast } from 'react-toastify'; // Assuming you're using react-toastify for notifications
+
 import { utility } from '@/utility';
+
 const AddHolidayForm = ({ handleClose, holiday, holidays, isHalfDay, debouncedFetch }) => {
   const { capitalizeInput } = utility();
+
   const [formData, setFormData] = useState({
     title: '',
     note: '',
@@ -77,11 +81,13 @@ const AddHolidayForm = ({ handleClose, holiday, holidays, isHalfDay, debouncedFe
     }
 
     setErrors(newErrors);
+
     return isValid;
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
     setFormData(prevState => {
       const updatedFormData = {
         ...prevState,
@@ -90,6 +96,7 @@ const AddHolidayForm = ({ handleClose, holiday, holidays, isHalfDay, debouncedFe
 
       if (name === 'start_date' || name === 'end_date') {
         const days = calculateDaysDifference(updatedFormData.start_date, updatedFormData.end_date);
+
         updatedFormData.day = isHalfDay ? (days / 2).toString() : days.toString();
       }
 
@@ -101,14 +108,18 @@ const AddHolidayForm = ({ handleClose, holiday, holidays, isHalfDay, debouncedFe
     if (start && end) {
       const startDate = new Date(start);
       const endDate = new Date(end);
+
       if (startDate.toDateString() === endDate.toDateString()) {
         return 0.5;
       }
+
       const differenceInTime = endDate.getTime() - startDate.getTime();
       const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
 
       return differenceInDays > 0 ? differenceInDays : 0;
     }
+
+
     return 0;
   };
 
@@ -222,6 +233,7 @@ const AddHolidayForm = ({ handleClose, holiday, holidays, isHalfDay, debouncedFe
               const [firstWord, ...rest] = value.split(' ');
               const capitalizedFirstWord = firstWord.charAt(0).toUpperCase() + firstWord.slice(1);
               const capitalizedValue = [capitalizedFirstWord, ...rest].join(' ');
+
               handleChange({ target: { name, value: capitalizedValue } });
             }}
 

@@ -20,21 +20,21 @@ import useVerticalNav from '@menu/hooks/useVerticalNav'
 // Style Imports
 import navigationCustomStyles from '@core/styles/vertical/navigationCustomStyles'
 
-const StyledBoxForShadow = styled('div')(({ theme }) => ({
-  top: 60,
-  left: -8,
-  zIndex: 2,
-  opacity: 0,
-  position: 'absolute',
-  pointerEvents: 'none',
-  width: 'calc(100% + 15px)',
-  height: theme.mixins.toolbar.minHeight,
-  transition: 'opacity .15s ease-in-out',
-  background: `linear-gradient(var(--mui-palette-background-default) 5%, rgb(var(--mui-palette-background-defaultChannel) / 0.85) 30%, rgb(var(--mui-palette-background-defaultChannel) / 0.5) 65%, rgb(var(--mui-palette-background-defaultChannel) / 0.3) 75%, transparent)`,
-  '&.scrolled': {
-    opacity: 1
-  }
-}))
+// const StyledBoxForShadow = styled('div')(({ theme }) => ({
+//   top: 60,
+//   left: -8,
+//   zIndex: 2,
+//   opacity: 0,
+//   position: 'absolute',
+//   pointerEvents: 'none',
+//   width: 'calc(100% + 15px)',
+//   height: theme.mixins.toolbar.minHeight,
+//   transition: 'opacity .15s ease-in-out',
+//   background: `linear-gradient(var(--mui-palette-background-default) 5%, rgb(var(--mui-palette-background-defaultChannel) / 0.85) 30%, rgb(var(--mui-palette-background-defaultChannel) / 0.5) 65%, rgb(var(--mui-palette-background-defaultChannel) / 0.3) 75%, transparent)`,
+//   '&.scrolled': {
+//     opacity: 1
+//   }
+// }))
 
 const Navigation = () => {
   // Hooks
@@ -49,13 +49,13 @@ const Navigation = () => {
 
     if (shadowRef && container.scrollTop > 0) {
       // @ts-ignore
-      if (!shadowRef.current.classList.contains('scrolled')) {
+      if (!shadowRef.current?.classList?.contains('scrolled')) {
         // @ts-ignore
-        shadowRef.current.classList.add('scrolled')
+        shadowRef.current?.classList?.add('scrolled')
       }
     } else {
       // @ts-ignore
-      shadowRef.current.classList.remove('scrolled')
+      shadowRef.current?.classList?.remove('scrolled')
     }
   }
 
@@ -70,7 +70,7 @@ const Navigation = () => {
         </Link>
         {isBreakpointReached && <i className='ri-close-line text-xl' onClick={() => toggleVerticalNav(false)} />}
       </NavHeader>
-      <StyledBoxForShadow ref={shadowRef} />
+      {/* <StyledBoxForShadow ref={shadowRef} /> */}
       <VerticalMenu scrollMenu={scrollMenu} />
     </VerticalNav>
   )
