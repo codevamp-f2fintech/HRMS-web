@@ -1,4 +1,6 @@
 // MUI Imports
+import { useEffect, useState } from 'react';
+
 import Chip from '@mui/material/Chip'
 import { useTheme } from '@mui/material/styles'
 
@@ -23,6 +25,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import AccessTimeFilledIcon from '@mui/icons-material/AccessTimeFilled';
 import ProductionQuantityLimitsIcon from '@mui/icons-material/ProductionQuantityLimits';
 import SchoolIcon from '@mui/icons-material/School';
+import GavelIcon from '@mui/icons-material/Gavel';
 
 import StyledVerticalNavExpandIcon from '@menu/styles/vertical/StyledVerticalNavExpandIcon'
 import useVerticalNav from '@menu/hooks/useVerticalNav'
@@ -44,7 +47,7 @@ const RenderExpandIcon = ({ open, transitionDuration }: RenderExpandIconProps) =
   </StyledVerticalNavExpandIcon>
 )
 
-const role = 2;
+
 
 const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectScrollbar: boolean) => void }) => {
   // Hooks
@@ -52,6 +55,14 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
   const { isBreakpointReached, transitionDuration } = useVerticalNav()
 
   const ScrollWrapper = isBreakpointReached ? 'div' : PerfectScrollbar
+
+  const [userRole, setUserRole] = useState<string>('');
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    setUserRole(user.role || null);
+  }, []);
 
   return (
     // eslint-disable-next-line lines-around-comment
@@ -166,13 +177,17 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
           <MenuItem href={`/policy`} icon={<DescriptionIcon />}>
             Policy
           </MenuItem>
-          <MenuItem href={`/inventory`} icon={<ProductionQuantityLimitsIcon />}>
+          {userRole === '1' && <MenuItem href={`/inventory`} icon={<ProductionQuantityLimitsIcon />}>
             Inventory
           </MenuItem>
-
-          <MenuItem href={`/designation`} icon={<SchoolIcon />}>
-            Designations
+          }
+          <MenuItem href={`/fine`} icon={<GavelIcon />}>
+            Fine
           </MenuItem>
+
+          {userRole === '1' && <MenuItem href={`/designation`} icon={<SchoolIcon />}>
+            Designations
+          </MenuItem>}
 
           {/* <MenuItem href='/account-settings' icon={<i className='ri-user-settings-line' />}>
             Account Settings

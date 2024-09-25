@@ -49,7 +49,7 @@ import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 
 import type { AppDispatch, RootState } from '@/redux/store';
-import { fetchAttendances, filterAttendance, resetAttendances } from '@/redux/features/attendances/attendancesSlice';
+import { fetchAttendances, filterAttendance, resetAttendances, addOrUpdateAttendance } from '@/redux/features/attendances/attendancesSlice';
 import { fetchEmployees } from '@/redux/features/employees/employeesSlice';
 import { apiResponse } from '@/utility/apiResponse/employeesResponse';
 import AttendanceSummary from '@/utility/attendancesummry/AttendanceSummary';
@@ -449,9 +449,13 @@ export default function AttendanceGrid() {
           body: JSON.stringify(formData),
         })
           .then(response => response.json())
+
           .then(data => {
+
+
             if (data.message) {
               if (data.message.includes('success')) {
+                dispatch(addOrUpdateAttendance(data))
                 toast.success(data.message, {
                   position: 'top-center',
                 });
@@ -467,8 +471,11 @@ export default function AttendanceGrid() {
             }
 
             handleClose();
-            dispatch(resetAttendances());
-            dispatch(fetchAttendances());
+
+            // dispatch(resetAttendances());
+
+            // dispatch(fetchAttendances());
+
           })
           .catch(error => {
             console.log('Error', error);
@@ -653,7 +660,7 @@ export default function AttendanceGrid() {
         return acc;
       }, {} as Record<string, string>);
 
-    console.log('Aggregated attendance data:', employeeAttendances);
+
 
     if (Object.keys(employeeAttendances).length > 0) {
       setViewAttendanceData(employeeAttendances);
@@ -1125,3 +1132,6 @@ export default function AttendanceGrid() {
     </Box>
   );
 }
+
+
+

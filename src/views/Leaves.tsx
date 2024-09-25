@@ -355,7 +355,8 @@ export default function LeavesGrid() {
               alignItems: 'center'
             },
             '& .mui-yrdy0g-MuiDataGrid-columnHeaderRow ': {
-              background: 'linear-gradient(270deg, var(--mui-palette-primary-main), rgb(197, 171, 255) 100%) !important',
+              background: 'linear-gradient(270deg, var(--mui-palette-primary-main), #2c3ce3 100%) !important',
+              color: 'white',
             },
             '& .MuiDataGrid-cell': {
               fontSize: '10',

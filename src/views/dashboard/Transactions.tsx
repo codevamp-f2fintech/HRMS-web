@@ -13,6 +13,7 @@ import {
   Button,
   Divider,
   Tooltip,
+  TextareaAutosize,
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import CloseIcon from '@mui/icons-material/Close';
@@ -179,7 +180,7 @@ const Welcome = () => {
       <StyledCard>
         <CardContent>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-            <Typography variant="h4" fontWeight="bold" color="primary">
+            <Typography variant="h4" fontWeight="bold" color="#2c3ce3">
               {userData ? `Welcome Back, ${userData.first_name}! 👋` : 'Welcome! 👋'}
             </Typography>
             {userRole === '1' && <Tooltip title="Add daily quotes">
@@ -227,12 +228,19 @@ const Welcome = () => {
               <CloseIcon />
             </IconButton>
           </Box>
-          <TextField
-            fullWidth
-            label="Quote"
+          <TextareaAutosize
+            minRows={5}
+            placeholder="Enter your quote"
             value={quote}
             onChange={(e) => setQuote(e.target.value)}
-            margin="normal"
+            style={{
+              width: '100%',
+              padding: '10px',
+              borderColor: '#ccc',
+              borderRadius: '4px',
+              marginTop: '16px',
+              marginBottom: '16px',
+            }}
           />
           <TextField
             fullWidth
