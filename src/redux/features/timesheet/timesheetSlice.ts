@@ -16,6 +16,8 @@ interface TimeSheet {
   };
   employee_id: string;
   time: string;
+  startShift: string;
+  endShift: string;
   date: string;
   note: string;
   submission_date: string;
