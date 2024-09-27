@@ -16,11 +16,20 @@ import {
   Dialog,
   DialogContent,
   Avatar,
+  Table,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
+import { styled } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
 import ContrastIcon from '@mui/icons-material/Contrast';
-
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import InputAdornment from '@mui/material/InputAdornment';
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material'
 import { useDispatch, useSelector } from 'react-redux';
@@ -28,16 +37,18 @@ import { useDispatch, useSelector } from 'react-redux';
 import { format } from 'date-fns';
 
 import type { AppDispatch, RootState } from '@/redux/store';
-import { fetchLeaves } from '@/redux/features/leaves/leavesSlice';
+import { fetchLeaves, filterLeave } from '@/redux/features/leaves/leavesSlice';
 import { apiResponse } from '@/utility/apiResponse/employeesResponse';
 import AddLeavesForm from '@/components/leave/LeaveForm';
+import { Console } from 'console';
+
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  fontWeight: 'bold',
+}));
 
 export default function LeavesGrid() {
   const dispatch = useDispatch<AppDispatch>();
   const { leaves, total } = useSelector((state: RootState) => state.leaves);
-
-  console.log(leaves)
-
   const [showForm, setShowForm] = useState(false)
   const [selectedLeaves, setSelectedLeaves] = useState(null)
   const [userRole, setUserRole] = useState<string>("");
@@ -107,12 +118,93 @@ export default function LeavesGrid() {
     setShowForm(false)
   }, []);
 
-  function capitalizeFirstLetterEachWord(str) {
-    return str
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+
+  function transformEmployeeData() {
+    const groupedData = {};
+
+    // Loop over each entry in the data
+    leaves.forEach((item) => {
+      const employeeId = item.employee._id;
+
+      // If the employeeId is not in groupedData, initialize it
+      if (!groupedData[employeeId]) {
+        groupedData[employeeId] = {
+          _id: employeeId,
+          employee_name: `${item.employee?.first_name} ${item.employee?.last_name}`,
+          employee_image: item.employee?.image,
+          leave: [],
+          totalLeaves: 0,
+        };
+      }
+
+      // Push the asset details for the current employee
+      groupedData[employeeId].leave.push({
+        _id: item._id,
+        day: item.day,
+        start_date: item.start_date,
+        end_date: item.end_date,
+        status: item.status,
+        application: item.application,
+        type: item.type,
+
+      });
+
+      // Increment the total assets count
+      groupedData[employeeId].totalLeaves += 1;
+    });
+
+    // Return the grouped data as an array (if needed)
+    return Object.values(groupedData);
   }
+  const leavesRow = useMemo(() => transformEmployeeData(), [leaves]);
+
+  const renderAccordion = (params) => {
+    const leaves = params.row.leave || [];
+    console.log("leaves", leaves)
+    return (
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography>{`View all Leaves (${params.row.totalLeaves})`}</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <StyledTableCell>Days</StyledTableCell>
+                <StyledTableCell>Start Date</StyledTableCell>
+                <StyledTableCell>End Date</StyledTableCell>
+                <StyledTableCell>Type</StyledTableCell>
+                <StyledTableCell>Application</StyledTableCell>
+                <StyledTableCell>Status</StyledTableCell>
+                {userRole === '1' ? (
+                  <StyledTableCell>Edit</StyledTableCell>
+                ) : ''}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {leaves.map((leave) => (
+                <TableRow key={leave._id}>
+                  <TableCell>{leave.day}</TableCell>
+                  <TableCell>{leave.start_date}</TableCell>
+                  <TableCell>{leave.end_date}</TableCell>
+                  <TableCell>{leave.type}</TableCell>
+                  <TableCell>{leave.application}</TableCell>
+                  <TableCell>{leave.status}</TableCell>
+                  {userRole === '1' ? (
+                    <TableCell>
+                      <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleLeaveEditClick(leave._id)}>
+                        <DriveFileRenameOutlineOutlined />
+                      </Button>
+                    </TableCell>
+                  ) : ''}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </AccordionDetails>
+      </Accordion>
+    );
+  };
 
 
   const generateColumns = useMemo(() => {
@@ -120,8 +212,8 @@ export default function LeavesGrid() {
       ...(userRole === '1' ? [{
         field: 'employee_name',
         headerName: 'Employee',
-        flex: 1,
-        minWidth: 200,
+        minWidth: 220,
+        headerAlign: 'center',
         headerClassName: 'super-app-theme--header',
         sortable: true,
         align: 'center',
@@ -131,137 +223,130 @@ export default function LeavesGrid() {
             <Typography sx={{ fontSize: '1em', fontWeight: 'bold' }}>{params.row.employee_name}</Typography>
           </Box>
         ),
-      }] : []),
+      },
       {
-        field: 'day',
-        headerName: 'Day',
-        flex: 0.5,
+        field: 'leave',
+        headerName: 'Leave Details',
+        width: 800,
         headerAlign: 'center',
         headerClassName: 'super-app-theme--header',
-        renderCell: (params) => {
-          const dayValue = parseFloat(params.value);
-          const halfDayPeriod = params.row.half_day_period;
+        renderCell: renderAccordion
+      },
+      ] : [
 
-          if (dayValue === 0.5 && halfDayPeriod) {
+
+        {
+          field: 'day',
+          headerName: 'Day',
+          flex: 0.5,
+          headerAlign: 'center',
+          headerClassName: 'super-app-theme--header',
+          renderCell: (params) => {
+            const dayValue = parseFloat(params.value);
+            const halfDayPeriod = params.row.half_day_period;
+
+            if (dayValue === 0.5 && halfDayPeriod) {
+              return (
+                <Box
+                  sx={{
+                    position: 'relative',
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  <ContrastIcon
+                    sx={{
+                      color: '#989c9a',
+                      fontSize: 40,
+                    }}
+                  />
+
+                  <Typography
+                    fontWeight="bold"
+                    fontSize="0.9em"
+                    color="black"
+                    sx={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                    }}
+                  >
+                    {halfDayPeriod === 'First Half' ? 'FH' : 'SH'}
+                  </Typography>
+                </Box>
+              );
+            }
+
             return (
               <Box
                 sx={{
-                  position: 'relative',
-                  width: '100%',
-                  height: '100%',
                   display: 'flex',
                   justifyContent: 'center',
                   alignItems: 'center',
+                  width: '100%',
+                  height: '100%',
                 }}
               >
-                <ContrastIcon
-                  sx={{
-                    color: '#989c9a',
-                    fontSize: 40,
-                  }}
-                />
-
-                <Typography
-                  fontWeight="bold"
-                  fontSize="0.9em"
-                  color="black"
-                  sx={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                  }}
-                >
-                  {halfDayPeriod === 'First Half' ? 'FH' : 'SH'}
+                <Typography fontWeight="bold">
+                  {dayValue}
                 </Typography>
               </Box>
             );
           }
-
-          return (
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                width: '100%',
-                height: '100%',
-              }}
-            >
-              <Typography fontWeight="bold">
-                {dayValue}
-              </Typography>
-            </Box>
-          );
         },
-      },
-      {
-        field: 'start_date',
-        headerName: 'Start Date',
-        flex: 1,
-        minWidth: 150,
-        headerClassName: 'super-app-theme--header',
-        renderCell: (params) => {
-          if (params.value) {
-            try {
-              const date = new Date(params.value);
+        {
+          field: 'start_date',
+          headerName: 'Start Date',
+          flex: 1,
+          headerClassName: 'super-app-theme--header',
+          renderCell: (params) => {
+            if (params.value) {
+              try {
+                const date = new Date(params.value);
 
-              return !isNaN(date.getTime()) ? format(date, 'dd-MMM-yyyy').toUpperCase() : 'Invalid Date';
-            } catch (error) {
-              return 'Invalid Date';
+                return !isNaN(date.getTime()) ? format(date, 'dd-MMM-yyyy').toUpperCase() : 'Invalid Date';
+              } catch (error) {
+                return 'Invalid Date';
+              }
             }
-          }
 
-          return 'No Date';
+            return 'No Date';
+          },
         },
-      },
-      {
-        field: 'end_date',
-        headerName: 'End Date',
-        flex: 1,
-        minWidth: 150,
-        headerClassName: 'super-app-theme--header',
-        renderCell: (params) => {
-          const endDateValue = params.value || params.row.start_date;
-          if (endDateValue) {
-            try {
-              const date = new Date(endDateValue);
+        {
+          field: 'end_date',
+          headerName: 'End Date',
+          flex: 1,
+          headerClassName: 'super-app-theme--header',
+          renderCell: (params) => {
+            const endDateValue = params.value || params.row.start_date;
+            if (endDateValue) {
+              try {
+                const date = new Date(endDateValue);
 
-              return !isNaN(date.getTime()) ? format(date, 'dd-MMM-yyyy').toUpperCase() : 'Invalid Date';
-            } catch (error) {
-              return 'Invalid Date';
+                return !isNaN(date.getTime()) ? format(date, 'dd-MMM-yyyy').toUpperCase() : 'Invalid Date';
+              } catch (error) {
+                return 'Invalid Date';
+              }
             }
-          }
 
-          return 'No End Date';
+            return 'No End Date';
+          },
         },
-      },
-      { field: 'type', headerName: 'Type', flex: 1, headerClassName: 'super-app-theme--header' },
-      { field: 'status', headerName: 'Status', flex: 1, headerClassName: 'super-app-theme--header' },
-      { field: 'application', headerName: 'Reason', flex: 1.5, headerAlign: 'center', align: 'center', headerClassName: 'super-app-theme--header' },
-      ...(userRole === '1' ? [{
-        field: 'edit',
-        headerName: 'Edit',
-        flex: 0.5,
-        headerAlign: 'center',
-        minWidth: 100,
-        headerClassName: 'super-app-theme--header',
-        renderCell: ({ row: { _id } }) => (
-          <Box display="flex" justifyContent="space-around">
-            <Button color="info" variant="contained" onClick={() => handleLeaveEditClick(_id)}>
-              <DriveFileRenameOutlineOutlined />
-            </Button>
-          </Box>
-        ),
-      }] : []),
+        { field: 'type', headerName: 'Type', flex: 1, headerAlign: 'center', align: 'center', headerClassName: 'super-app-theme--header' },
+        { field: 'application', headerName: 'Reason', flex: 1.5, headerAlign: 'center', align: 'center', headerClassName: 'super-app-theme--header' },
+        { field: 'status', headerName: 'Status', flex: 1, headerAlign: 'center', align: 'center', headerClassName: 'super-app-theme--header' },
+      ]),
     ];
   }, [userRole]);
 
   const rows = useMemo(() => {
     return leaves.map((leave) => ({
       _id: leave._id,
-      employee_name: `${leave.employee?.first_name} ${leave.employee?.last_name}`,
-      employee_image: leave.employee?.image,
       start_date: leave.start_date,
       end_date: leave.end_date,
       type: leave.type,
@@ -347,6 +432,7 @@ export default function LeavesGrid() {
       </Box>
       <Box sx={{ height: 500, width: '100%' }}>
         <DataGrid
+          getRowHeight={() => 'auto'}
           sx={{
             '& .super-app-theme--header': {
               fontSize: 17,
@@ -376,7 +462,7 @@ export default function LeavesGrid() {
               boxSizing: 'border-box'
             },
           }}
-          rows={rows}
+          rows={userRole === "1" ? (leavesRow) : (rows)}
           columns={generateColumns}
           getRowId={(row) => row._id}
           paginationMode="server"

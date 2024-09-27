@@ -1,5 +1,5 @@
 'use client'
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { debounce } from 'lodash';
 
@@ -357,7 +357,6 @@ export default function AssestsGrid() {
     setShowForm(false)
   }
   function transformEmployeeData() {
-    // Create an empty object to group employees by their `_id`
     const groupedData = {};
 
     // Loop over each entry in the data
@@ -374,7 +373,6 @@ export default function AssestsGrid() {
         };
       }
 
-      // Push the asset details for the current employee
       groupedData[employeeId].assets.push({
         _id: item._id,
         name: item.name,
@@ -382,7 +380,6 @@ export default function AssestsGrid() {
         return_date: item.return_date,
       });
 
-      // Increment the total assets count
       groupedData[employeeId].totalAssets += 1;
     });
 
@@ -398,6 +395,7 @@ export default function AssestsGrid() {
           field: 'employee_name',
           headerName: 'Employee',
           width: 220,
+          headerAlign: 'center',
           headerClassName: 'super-app-theme--header',
           sortable: true,
           align: 'center',
@@ -415,131 +413,99 @@ export default function AssestsGrid() {
             );
           },
         },
-      ] : []),
-
-      {
-        field: 'assets',
-        headerName: 'Assets',
-        width: 700,
-        headerClassName: 'super-app-theme--header',
-        renderCell: (params) => {
-          // Group assets
-          const groupedAssets = params.row.assets.reduce((acc, asset) => {
-            const groupKey = 'View all assets';
-            if (!acc[groupKey]) {
-              acc[groupKey] = [];
-            }
-            acc[groupKey].push(asset);
-            return acc;
-          }, {});
-          return (
-            <Box>
-              {Object.keys(groupedAssets).map((groupKey, index) => (
-                <Accordion key={`accordion-${index}`} sx={{ mb: 1 }}>
-                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography>
-                      {groupKey} ({groupedAssets[groupKey].length})
-                    </Typography>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <StyledTableCell>Asset Name - modal No - serial No</StyledTableCell>
-                          {/* <StyledTableCell>Model No.</StyledTableCell>
-                          <StyledTableCell>Serial No.</StyledTableCell> */}
-                          <StyledTableCell>Assign Date</StyledTableCell>
-                          <StyledTableCell>Return Date</StyledTableCell>
-                          <StyledTableCell>Edit</StyledTableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {groupedAssets[groupKey].map((asset, idx) => (
-                          <TableRow key={`asset-${idx}`}>
-                            <TableCell sx={{ padding: '2px' }}>{asset.name}</TableCell>
-                            {/* <TableCell></TableCell>
-                            <TableCell></TableCell> */}
-                            <TableCell>{new Date(asset.assignment_date).toLocaleDateString('en-GB')}</TableCell>
-                            <TableCell>{new Date(asset.return_date).toLocaleDateString('en-GB')}</TableCell>
-                            <TableCell>
-                              <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleEditAssetClick(asset._id)}>
-                                <DriveFileRenameOutlineOutlined />
-                              </Button>
-                            </TableCell>
+        {
+          field: 'assets',
+          headerName: 'Assets Details',
+          width: 700,
+          headerAlign: 'center',
+          headerClassName: 'super-app-theme--header',
+          renderCell: (params) => {
+            // Group assets
+            const groupedAssets = params.row.assets.reduce((acc, asset) => {
+              const groupKey = 'View all assets';
+              if (!acc[groupKey]) {
+                acc[groupKey] = [];
+              }
+              acc[groupKey].push(asset);
+              return acc;
+            }, {});
+            return (
+              <Box>
+                {Object.keys(groupedAssets).map((groupKey, index) => (
+                  <Accordion key={`accordion-${index}`} sx={{ mb: 1 }}>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                      <Typography>
+                        {groupKey} ({groupedAssets[groupKey].length})
+                      </Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      <Table>
+                        <TableHead>
+                          <TableRow>
+                            <StyledTableCell>Asset Name - modal No - serial No</StyledTableCell>
+                            <StyledTableCell>Assign Date</StyledTableCell>
+                            <StyledTableCell>Return Date</StyledTableCell>
+                            {userRole === '1' ? (
+                              <StyledTableCell>Edit</StyledTableCell>
+                            ) : ''}
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </AccordionDetails>
-                </Accordion>
-              ))}
-            </Box>
-          );
-        }
-      },
+                        </TableHead>
+                        <TableBody>
+                          {groupedAssets[groupKey].map((asset, idx) => (
+                            <TableRow key={`asset-${idx}`}>
+                              <TableCell sx={{ padding: '2px' }}>{asset.name}</TableCell>
+                              {/* <TableCell></TableCell>
+                              <TableCell></TableCell> */}
+                              <TableCell>{new Date(asset.assignment_date).toLocaleDateString('en-GB')}</TableCell>
+                              <TableCell>{new Date(asset.return_date).toLocaleDateString('en-GB')}</TableCell>
+                              {userRole === '1' ? (
+                                <TableCell>
+                                  <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleEditAssetClick(asset._id)}>
+                                    <DriveFileRenameOutlineOutlined />
+                                  </Button>
+                                </TableCell>
+                              ) : ''}
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </AccordionDetails>
+                  </Accordion>
+                ))}
+              </Box>
+            );
+          }
+        },
+      ] : [
 
-      // {
-      //   field: 'assignment_date',
-      //   headerName: 'Assign Date',
-      //   type: 'string',
-      //   width: 180,
-      //   editable: true,
-      //   headerClassName: 'super-app-theme--header',
-      //   headerAlign: 'center',
-      //   align: 'center',
-      // },
-      // {
-      //   field: 'return_date',
-      //   headerName: 'Return Date',
-      //   type: 'string',
-      //   width: 180,
-      //   editable: true,
-      //   headerClassName: 'super-app-theme--header',
-      //   headerAlign: 'center',
-      //   align: 'center',
-      // // },
-      // ...(userRole === '1' ? [
-      //   {
-      // {
-      //     field: 'return_date',
-      //     headerName: 'Return Date',
-      //     type: 'string',
-      //     width: 180,
-      //     editable: true,
-      //     headerClassName: 'super-app-theme--header',
-      //     headerAlign: 'center',
-      //     align: 'center',
-      //   },
-      //   ...(userRole === '1'
-      //     ? [{
-      //   {
-      //       field: 'return_date',
-      //       headerName: 'Return Date',
-      //       type: 'string',
-      //       width: 180,
-      //       editable: true,
-      //       headerClassName: 'super-app-theme--header',
-      //       headerAlign: 'center',
-      //       align: 'center',
-      //     }
+        {
+          field: 'name',
+          headerName: 'Assets Name - Model Nu. - Serial Nu',
+          width: 500,
+          headerAlign: 'center',
+          headerClassName: 'super-app-theme--header',
+          align: 'center',
+        },
 
-      // ...(userRole === '1'
-      //   ? [{
-      //     field: 'edit',
-      //     headerName: 'Action',
-      //     sortable: false,
-      //     headerAlign: 'center',
-      //     width: 120,
-      //     headerClassName: 'super-app-theme--header',
-      //     renderCell: (params) => (
-      //       <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
-      //         <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleEditAssetClick(params.row._id)}>
-      //           <DriveFileRenameOutlineOutlined />
-      //         </Button>
-      //       </Box>
-      //     ),
-      //   }
-      //   ] : []),
+        {
+          field: 'assignment_date',
+          headerName: 'Assign Date',
+          width: 200,
+          headerClassName: 'super-app-theme--header',
+          headerAlign: 'center',
+          align: 'center',
+        },
+        {
+          field: 'return_date',
+          headerName: 'Return Date',
+          width: 200,
+          headerClassName: 'super-app-theme--header',
+          headerAlign: 'center',
+          align: 'center',
+        },
+      ]),
+
+
     ];
 
     return columns;
@@ -600,6 +566,17 @@ export default function AssestsGrid() {
   const columns = generateColumns();
   const rows = transformData();
 
+  const userAssets = useMemo(() => {
+    return assests.map((asset) => ({
+      _id: asset._id,
+      name: asset.name,
+      assignment_date: asset.assignment_date,
+      return_date: asset.return_date,
+
+    }))
+  }, [assests])
+  console.log("userasset", assests)
+
   return (
     <>
       <ToastContainer />
@@ -645,7 +622,11 @@ export default function AssestsGrid() {
               variant="outlined"
               value={selectedKeyword}
               onChange={handleInputChange}
+
               InputProps={{
+                sx: {
+                  borderRadius: "50px", // To make the TextField rounded
+                },
                 endAdornment: (
                   <InputAdornment position="end">
                     <SearchIcon />
@@ -666,6 +647,9 @@ export default function AssestsGrid() {
               fontWeight: 600,
               alignItems: 'center'
             },
+            '& .mui-yrdy0g-MuiDataGrid-columnHeaderRow ': {
+              background: 'linear-gradient(270deg, var(--mui-palette-primary-main), rgb(197, 171, 255) 100%) !important',
+            },
             '& .MuiDataGrid-cell': {
               fontSize: '10',
 
@@ -684,7 +668,7 @@ export default function AssestsGrid() {
               boxSizing: 'border-box'
             },
           }}
-          rows={rows}
+          rows={userRole === "1" ? (rows) : (userAssets)}
           columns={columns}
           getRowId={(row) => row._id}
           paginationMode="server"
