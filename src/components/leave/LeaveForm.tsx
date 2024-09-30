@@ -16,6 +16,7 @@ const AddLeavesForm = ({ handleClose, leave, leaves, userRole, userId, employees
     end_date: '',
     status: 'Pending',
     application: '',
+    reason: '',
     type: '',
     day: '',
     half_day_period: null // Set half_day_period to null initially
@@ -27,6 +28,7 @@ const AddLeavesForm = ({ handleClose, leave, leaves, userRole, userId, employees
     end_date: '',
     status: '',
     application: '',
+    reason: '',
     type: '',
     day: '',
     half_day_period: ''
@@ -47,6 +49,7 @@ const AddLeavesForm = ({ handleClose, leave, leaves, userRole, userId, employees
           end_date: selected.end_date,
           status: selected.status,
           application: selected.application,
+          reason: selected.reason || '',
           type: selected.type,
           day: selected.day ? selected.day : calculateDaysDifference(selected.start_date, selected.end_date),
           half_day_period: selected.day === "0.5" ? selected.half_day_period : null // Set half_day_period only if half-day
@@ -328,7 +331,7 @@ const AddLeavesForm = ({ handleClose, leave, leaves, userRole, userId, employees
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label='Reason'
+            label='Application'
             name='application'
             value={formData.application}
             onChange={handleChange}
@@ -337,6 +340,21 @@ const AddLeavesForm = ({ handleClose, leave, leaves, userRole, userId, employees
             helperText={errors.application}
           />
         </Grid>
+
+        {userRole === '1' && (
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label='Reason for Approval/Rejection'
+              name='reason'
+              value={formData.reason}
+              onChange={handleChange}
+              required
+              error={!!errors.reason}
+              helperText={errors.reason}
+            />
+          </Grid>
+        )}
         {Number(userRole) < 3 && (
           <Grid item xs={12} md={6}>
             <FormControl fullWidth required error={!!errors.status}>

@@ -254,18 +254,26 @@ export default function TimeSheetGrid() {
         [field]: value
       }
 
-      // Time is calculated here but may not trigger immediate re-render
+      // Time is calculated here and will trigger re-render
       const calculatedTime = calculateTimeDifference(updatedRow.startShift || '00:00', updatedRow.endShift || '00:00')
+
+      // Auto-set status to "Approved" if time is 9:00 or more
+      let updatedStatus = updatedRow.status;
+      if (calculatedTime >= '09:00') {
+        updatedStatus = 'Approved';
+      }
 
       return {
         ...prev,
         [id]: {
           ...updatedRow,
-          time: calculatedTime
+          time: calculatedTime,
+          status: updatedStatus // Update the status here
         }
       }
     })
   }
+
 
   const handleSaveAll = () => {
     const hasLessThanNineHours = Object.values(editableRows).some(row => parseInt(row.time, 10) < 9)
@@ -279,16 +287,27 @@ export default function TimeSheetGrid() {
     }
 
     const savePromises = Object.keys(editableRows).map(id => {
-      const method = id.toString() !== editableRows[id].attendance ? 'PUT' : 'POST'
+      const row = editableRows[id]
+
+      // Auto-approve status if time is 9:00 or more
+      let updatedStatus = row.status;
+      if (row.time >= '09:00') {
+        updatedStatus = 'Approved';
+      }
+
+      const method = id.toString() !== row.attendance ? 'PUT' : 'POST'
       const url =
-        id.toString() !== editableRows[id].attendance
+        id.toString() !== row.attendance
           ? `${process.env.NEXT_PUBLIC_APP_URL}/timesheets/update/${id}`
           : `${process.env.NEXT_PUBLIC_APP_URL}/timesheets/create`
 
       return fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editableRows[id])
+        body: JSON.stringify({
+          ...row,
+          status: updatedStatus // Include updated status when saving
+        })
       }).then(response => {
         if (!response.ok) {
           return response.json().then(err => {
@@ -317,6 +336,7 @@ export default function TimeSheetGrid() {
         })
       })
   }
+
 
   const transformData = () => {
     const filteredAttendances = attendances.filter(att => new Date(att.date).getMonth() + 1 === month)

@@ -1,128 +1,131 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react'
 
-import { useDispatch, useSelector } from 'react-redux';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import Tooltip from '@mui/material/Tooltip';
-import Box from '@mui/material/Box';
+import { useDispatch, useSelector } from 'react-redux'
+import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
+import Typography from '@mui/material/Typography'
+import IconButton from '@mui/material/IconButton'
+import MoreVertIcon from '@mui/icons-material/MoreVert'
+import Tooltip from '@mui/material/Tooltip'
+import Box from '@mui/material/Box'
 
-import { apiResponse } from '@/utility/apiResponse/employeesResponse';
-import { fetchAwards, addAward } from '@/redux/features/performer/performereSlice';
-import type { AppDispatch, RootState } from '@/redux/store';
+import { apiResponse } from '@/utility/apiResponse/employeesResponse'
+import { fetchAwards, addAward } from '@/redux/features/performer/performereSlice'
+import type { AppDispatch, RootState } from '@/redux/store'
 
-import AwardForm from '@/components/performer/AwardForm';
-import { formatAmount } from '@/utility/formatAmount/formatAmount';
+import AwardForm from '@/components/performer/AwardForm'
+import { formatAmount } from '@/utility/formatAmount/formatAmount'
 
 const LocationWisePerformer = () => {
-  const dispatch: AppDispatch = useDispatch();
-  const { awards, loading, error } = useSelector((state: RootState) => state.awards);
+  const dispatch: AppDispatch = useDispatch()
+  const { awards, loading, error } = useSelector((state: RootState) => state.awards)
 
-  const [selectedAwardIndex, setSelectedAwardIndex] = useState<number | null>(null);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [employees, setEmployees] = useState([]);
-  const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
-  const [amount, setAmount] = useState<string>('');
+  const [selectedAwardIndex, setSelectedAwardIndex] = useState<number | null>(null)
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [employees, setEmployees] = useState([])
+  const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null)
+  const [amount, setAmount] = useState<string>('')
+  const [awardTitle, setAwardTitle] = useState('')
 
-
-  const [userId, setUserId] = useState<string | null>(null);
-  const [userDesg, setUserDesg] = useState(null);
+  const [userId, setUserId] = useState<string | null>(null)
+  const [userDesg, setUserDesg] = useState(null)
 
   useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
 
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-
-    setUserId(user.id);
-    setUserDesg(user.desg);
+    setUserId(user.id)
+    setUserDesg(user.desg)
 
     const fetchEmployees = async () => {
       try {
-        const data = await apiResponse();
+        const data = await apiResponse()
 
-        setEmployees(data);
+        setEmployees(data)
       } catch (error) {
-        console.error('Error fetching employees:', error);
+        console.error('Error fetching employees:', error)
       }
-    };
+    }
 
-    fetchEmployees();
-    dispatch(fetchAwards());
-  }, [dispatch]);
+    fetchEmployees()
+    dispatch(fetchAwards())
+  }, [dispatch])
 
   const handleMenuClick = (index: number) => {
-    setSelectedAwardIndex(index);
+    setSelectedAwardIndex(index)
 
     if (awards[index]) {
-      setIsEditMode(true);
-      const award = awards[index];
-      const employee = employees.find(emp => emp._id === (award.employee?._id || award.employee));
+      setIsEditMode(true)
+      const award = awards[index]
+      const employee = employees.find(emp => emp._id === (award.employee?._id || award.employee))
 
-      setSelectedEmployee(employee || null);
-      setAmount(award.amount.toString());
+      setSelectedEmployee(employee || null)
+      setAmount(award.amount.toString())
+      setAwardTitle(award.awardTitle || '')
     } else {
-      setIsEditMode(false);
-      setSelectedEmployee(null);
-      setAmount('');
+      setIsEditMode(false)
+      setSelectedEmployee(null)
+      setAmount('')
+      setAwardTitle('')
     }
-  };
+  }
 
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+    event.preventDefault()
 
     try {
-      const url = isEditMode && selectedAwardIndex !== null
-        ? `${process.env.NEXT_PUBLIC_APP_URL}/awards/${awards[selectedAwardIndex]._id}`
-        : `${process.env.NEXT_PUBLIC_APP_URL}/awards`;
+      const url =
+        isEditMode && selectedAwardIndex !== null
+          ? `${process.env.NEXT_PUBLIC_APP_URL}/awards/${awards[selectedAwardIndex]._id}`
+          : `${process.env.NEXT_PUBLIC_APP_URL}/awards`
 
-      const method = isEditMode && selectedAwardIndex !== null ? 'PUT' : 'POST';
+      const method = isEditMode && selectedAwardIndex !== null ? 'PUT' : 'POST'
 
       const response = await fetch(url, {
         method,
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           employee: selectedEmployee ? selectedEmployee._id : '',
-          amount: parseFloat(amount),
-        }),
-      });
+          amount: amount,
+          awardTitle: awardTitle
+        })
+      })
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      const newAward = await response.json();
+      const newAward = await response.json()
 
       if (isEditMode) {
-        dispatch(fetchAwards());
+        dispatch(fetchAwards())
       } else {
-        dispatch(addAward({ ...newAward, employee: selectedEmployee }));
+        dispatch(addAward({ ...newAward, employee: selectedEmployee }))
       }
     } catch (error) {
-      console.error('Error saving award:', error);
+      console.error('Error saving award:', error)
     }
 
-    setSelectedAwardIndex(null);
-  };
+    setSelectedAwardIndex(null)
+  }
 
   const handleCloseForm = () => {
-    setSelectedAwardIndex(null);
-  };
+    setSelectedAwardIndex(null)
+  }
 
   return (
-    <Box position="relative">
+    <Box position='relative'>
       <Card>
         <CardContent>
           {loading && <Typography>Loading awards...</Typography>}
-          {error && <Typography color="error">{error}</Typography>}
+          {error && <Typography color='error'>{error}</Typography>}
           <Box display='flex' flexDirection='column' gap={4}>
             {[...awards, ...new Array(3 - awards.length).fill(null)].map((award, index) => (
               <Card key={award ? award._id : index}>
                 <CardContent className='relative flex flex-col gap-2'>
                   {/* Highlighted Location on Top */}
-                  <Box mb={2} display="flex" alignItems="center" justifyContent="space-between">
+                  <Box mb={2} display='flex' alignItems='center' justifyContent='space-between'>
                     {/* Image on the left */}
                     {award && award.employee && award.employee.image && (
                       <img
@@ -133,7 +136,10 @@ const LocationWisePerformer = () => {
                     )}
 
                     {/* Centered Location Text */}
-                    <Typography variant='h6' style={{ fontWeight: 'bold', textTransform: 'uppercase', flexGrow: 1, textAlign: 'center' }}>
+                    <Typography
+                      variant='h6'
+                      style={{ fontWeight: 'bold', textTransform: 'uppercase', flexGrow: 1, textAlign: 'center' }}
+                    >
                       {award && award.employee ? award.employee.location : '---'}
                     </Typography>
 
@@ -146,24 +152,36 @@ const LocationWisePerformer = () => {
                       <Typography variant='h5'>
                         {award && award.employee ? (
                           <>
-
                             {userId === award.employee._id ? 'Congratulations' : 'Congratulate'}{' '}
                             <span style={{ fontWeight: 'bold', color: '#1976d2' }}>
                               {award.employee.first_name} {award.employee.last_name}
-                            </span>! 🎉
+                            </span>
+                            ! 🎉
                           </>
                         ) : (
                           'No Award Data'
                         )}
                       </Typography>
                       {award && award.employee && (
-                        <Typography style={{ fontWeight: 'normal', color: '#bb89d8', fontStyle: 'italic', marginTop: '4px' }}>
+                        <Typography
+                          style={{ fontWeight: 'normal', color: '#bb89d8', fontStyle: 'italic', marginTop: '4px' }}
+                        >
                           {award.employee.designation}
                         </Typography>
                       )}
-                      <Typography>
-                        {award ? 'Best seller of the day' : 'No data available'}
-                      </Typography>
+                      <div style={{ paddingRight: '80px', wordWrap: 'break-word', wordBreak: 'break-all' }}>
+                        <Typography
+                          variant='h6'
+                          style={{
+                            fontSize: '1rem',
+                            marginTop: '8px',
+                            wordWrap: 'break-word', // Ensure word wrapping
+                            wordBreak: 'break-all',  // Break words that are too long
+                          }}
+                        >
+                          {award?.awardTitle || 'Best seller of the month'}
+                        </Typography>
+                      </div>
                     </div>
                     {userDesg === 'Sr. Operation Manager' && (
                       <Tooltip title='Add/Edit'>
@@ -176,9 +194,9 @@ const LocationWisePerformer = () => {
                       </Tooltip>
                     )}
                   </Box>
-                  <div>
-                    <Typography variant='h4' color='primary'>
-                      {award ? formatAmount(award.amount) : '---'}
+                  <div style={{ paddingRight: '80px', wordWrap: 'break-word', wordBreak: 'break-all' }}>
+                    <Typography variant='h5' color='primary' style={{ wordWrap: 'break-word', wordBreak: 'break-all' }}>
+                      {award?.amount ? award.amount : 'N/A'}
                     </Typography>
                   </div>
                   <img
@@ -200,6 +218,8 @@ const LocationWisePerformer = () => {
           employees={employees}
           selectedEmployee={selectedEmployee}
           amount={amount}
+          awardTitle={awardTitle}
+          setAwardTitle={setAwardTitle}
           isEditMode={isEditMode}
           onSubmit={handleFormSubmit}
           onClose={handleCloseForm}
@@ -208,7 +228,7 @@ const LocationWisePerformer = () => {
         />
       )}
     </Box>
-  );
-};
+  )
+}
 
-export default LocationWisePerformer;
+export default LocationWisePerformer
