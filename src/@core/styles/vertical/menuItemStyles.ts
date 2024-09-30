@@ -13,9 +13,9 @@ const menuItemStyles = (theme: Theme): MenuItemStyles => {
     root: {
       marginBlockStart: theme.spacing(1.5),
       [`&.${menuClasses.subMenuRoot}.${menuClasses.open} > .${menuClasses.button}, &.${menuClasses.subMenuRoot} > .${menuClasses.button}.${menuClasses.active}`]:
-        {
-          backgroundColor: 'var(--mui-palette-action-selected) !important'
-        },
+      {
+        backgroundColor: 'var(--mui-palette-action-selected) !important'
+      },
       [`&.${menuClasses.disabled} > .${menuClasses.button}`]: {
         color: 'var(--mui-palette-text-disabled)',
         [`& .${menuClasses.icon}`]: {
@@ -24,16 +24,7 @@ const menuItemStyles = (theme: Theme): MenuItemStyles => {
       },
       [`&:not(.${menuClasses.subMenuRoot}) > .${menuClasses.button}.${menuClasses.active}`]: {
         color: 'var(--mui-palette-primary-contrastText)',
-        background:
-          theme.direction === 'ltr'
-            ? `linear-gradient(270deg, var(--mui-palette-primary-main), ${lighten(
-                theme.palette.primary.main,
-                0.5
-              )} 100%)`
-            : `linear-gradient(270deg, ${lighten(
-                theme.palette.primary.main,
-                0.5
-              )}, var(--mui-palette-primary-main) 100%)`,
+        background: '#2c3ce3',
         [`& .${menuClasses.icon}`]: {
           color: 'inherit'
         }

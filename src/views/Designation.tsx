@@ -315,7 +315,7 @@ const Designation = () => {
           headerClassName: 'super-app-theme--header',
           renderCell: ({ row: { _id } }) => (
             <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
-              <Button color="info" variant="contained" sx={{ minWidth: '50px' }} onClick={() => handleDesignationEditClick(_id)}>
+              <Button color="info" variant="contained" sx={{ minWidth: '50px', backgroundColor: '#2c3ce3' }} onClick={() => handleDesignationEditClick(_id)}>
                 <DriveFileRenameOutlineOutlined />
               </Button>
             </Box>
@@ -372,7 +372,7 @@ const Designation = () => {
               alignItems: 'center',
             },
             '& .mui-yrdy0g-MuiDataGrid-columnHeaderRow ': {
-              background: 'linear-gradient(270deg, var(--mui-palette-primary-main), #2c3ce3 100%) !important',
+              background: '#2c3ce3 !important',
               color: 'white',
             },
             '& .MuiDataGrid-cell': {

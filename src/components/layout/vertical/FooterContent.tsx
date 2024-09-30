@@ -27,7 +27,7 @@ const FooterContent = () => {
 
       maxWidth={false}
       sx={{
-        background: "linear-gradient(270deg, var(--mui-palette-primary-main), #2c3ce3 100%)",
+        background: "#2c3ce3",
 
         // padding: '2rem 1rem', // Adjust padding for responsiveness
         // margin: "0px"

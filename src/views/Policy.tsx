@@ -381,7 +381,7 @@ export default function PolicyGrid() {
               alignItems: 'center',
             },
             '& .mui-yrdy0g-MuiDataGrid-columnHeaderRow ': {
-              background: 'linear-gradient(270deg, var(--mui-palette-primary-main), #2c3ce3 100%) !important',
+              background: '#2c3ce3 !important',
               color: 'white',
             },
             '& .MuiDataGrid-cell': {
