@@ -1,123 +1,125 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react'
 
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
+import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
+import Typography from '@mui/material/Typography'
+import IconButton from '@mui/material/IconButton'
+import Tooltip from '@mui/material/Tooltip'
+import MoreVertIcon from '@mui/icons-material/MoreVert'
 
-import AwardForm from '../../components/performer/AwardForm';
-import { apiResponse } from '@/utility/apiResponse/employeesResponse';
-import { formatAmount } from '@/utility/formatAmount/formatAmount';
+import AwardForm from '../../components/performer/AwardForm'
+import { apiResponse } from '@/utility/apiResponse/employeesResponse'
 
 const Award = () => {
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [employees, setEmployees] = useState([]);
-  const [employeeName, setEmployeeName] = useState(null);
-  const [amount, setAmount] = useState('');
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [awardData, setAwardData] = useState(null);
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [employees, setEmployees] = useState([])
+  const [employeeName, setEmployeeName] = useState(null)
+  const [amount, setAmount] = useState('')
+  const [awardTitle, setAwardTitle] = useState('')
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [awardData, setAwardData] = useState(null)
 
-
-  const [userId, setUserId] = useState(null);
-  const [userDesg, setUserDesg] = useState(null);
-
+  const [userId, setUserId] = useState(null)
+  const [userDesg, setUserDesg] = useState(null)
 
   useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
 
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-
-    setUserId(user.id);
-    setUserDesg(user.desg);
+    setUserId(user.id)
+    setUserDesg(user.desg)
 
     const fetchEmployeesAndAwards = async () => {
       try {
-        const employeesData = await apiResponse();
+        const employeesData = await apiResponse()
 
-        setEmployees(employeesData);
+        setEmployees(employeesData)
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/awards/get`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/awards/get`)
 
         if (!response.ok) {
-          throw new Error('Failed to fetch award');
+          throw new Error('Failed to fetch award')
         }
 
-        const awardData = await response.json();
+        const awardData = await response.json()
 
         if (Array.isArray(awardData) && awardData.length > 0) {
-          const award = awardData[0];
+          const award = awardData[0]
 
-          award.employee = employeesData.find(emp => emp._id === award.employee._id) || award.employee;
-          setAwardData(award);
+          award.employee = employeesData.find(emp => emp._id === award.employee._id) || award.employee
+          setAwardData(award)
+          setAwardTitle(award.awardTitle || 'Best seller of the month')
         } else {
-          setAwardData(awardData);
+          setAwardData(awardData)
         }
 
-        setIsEditMode(!!awardData);
+        setIsEditMode(!!awardData)
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching data:', error)
       }
-    };
+    }
 
-    fetchEmployeesAndAwards();
-  }, []);
+    fetchEmployeesAndAwards()
+  }, [])
 
-  const handleFormSubmit = async (event) => {
-    event.preventDefault();
+  const handleFormSubmit = async event => {
+    event.preventDefault()
 
     try {
-      let url = `${process.env.NEXT_PUBLIC_APP_URL}/awards/performer/month`;
-      const method = awardData && awardData._id ? 'PUT' : 'POST';
+      let url = `${process.env.NEXT_PUBLIC_APP_URL}/awards/performer/month`
+      const method = awardData && awardData._id ? 'PUT' : 'POST'
 
       if (method === 'PUT') {
-        url = `${process.env.NEXT_PUBLIC_APP_URL}/awards/month/performer/${awardData._id}`;
+        url = `${process.env.NEXT_PUBLIC_APP_URL}/awards/month/performer/${awardData._id}`
       }
 
       const response = await fetch(url, {
         method,
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           employee: employeeName?._id,
-          amount: parseFloat(amount),
-        }),
-      });
+          amount,
+          awardTitle
+        })
+      })
 
       if (!response.ok) {
-        throw new Error('Failed to save award');
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to save award')
       }
 
-      const newAward = await response.json();
-      const updatedEmployee = employees.find(emp => emp._id === newAward.employee);
+      const newAward = await response.json()
+      const updatedEmployee = employees.find(emp => emp._id === newAward.employee)
 
       setAwardData({
         ...newAward,
-        employee: updatedEmployee || newAward.employee,
-      });
+        employee: updatedEmployee || newAward.employee
+      })
 
-      setEmployeeName(null);
-      setIsFormOpen(false);
+      setEmployeeName(null)
+      setIsFormOpen(false)
     } catch (error) {
-      console.error('Error saving award:', error);
+      console.error('Error saving award:', error.message)
+      alert(`Error: ${error.message}`)
     }
-  };
+  }
 
   const handleEditClick = () => {
-    setIsEditMode(true);
+    setIsEditMode(true)
 
     if (awardData) {
-      setEmployeeName(awardData.employee);
-      setAmount(awardData.amount?.toString());
+      setEmployeeName(awardData.employee)
+      setAmount(awardData.amount?.toString())
+      setAwardTitle(awardData.awardTitle || 'Best seller of the month')
     }
 
-    setIsFormOpen(true);
-  };
+    setIsFormOpen(true)
+  }
 
   const handleCloseForm = () => {
-    setIsFormOpen(false);
-  };
+    setIsFormOpen(false)
+  }
 
   return (
     <>
@@ -125,12 +127,11 @@ const Award = () => {
         key={awardData ? awardData._id : 'no-award'}
         sx={{ minHeight: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
       >
-        <CardContent className="flex-grow relative flex flex-col gap-2 items-start">
+        <CardContent className='flex-grow relative flex flex-col gap-2 items-start'>
           <div>
-            <Typography variant="h5">
+            <Typography variant='h5'>
               {awardData && awardData.employee ? (
                 <>
-                  {/* Conditional rendering based on whether the logged-in user's ID matches the employee's ID */}
                   {userId === awardData.employee._id ? 'Congratulations' : 'Congratulate'}{' '}
                   <span style={{ fontWeight: 'bold', color: '#1efd44' }}>
                     {awardData.employee.first_name} {awardData.employee.last_name}🎉
@@ -146,36 +147,35 @@ const Award = () => {
                 {awardData.employee.designation}
               </Typography>
             )}
-            <Typography
-              style={{
-                fontSize: '1rem',
-                marginTop: '8px'
-              }}
-            >
-              Best seller of the month
-            </Typography>
+            <div style={{ paddingRight: '80px', wordWrap: 'break-word', wordBreak: 'break-all' }}>
+              <Typography
+                variant='h6'
+                style={{
+                  fontSize: '1rem',
+                  marginTop: '8px',
+                  wordWrap: 'break-word', // Ensure word wrapping
+                  wordBreak: 'break-all',  // Break words that are too long
+                }}
+              >
+                {awardData?.awardTitle || 'Best seller of the month'}
+              </Typography>
+            </div>
+
           </div>
-          <div>
-            <Typography variant="h4" color="primary">
-              {awardData?.amount ? formatAmount(parseFloat(awardData.amount)) : 'N/A'}
+
+          <div style={{ paddingRight: '80px', wordWrap: 'break-word', wordBreak: 'break-all' }}>
+            <Typography variant='h5' color='primary' style={{ wordWrap: 'break-word', wordBreak: 'break-all' }}>
+              {awardData?.amount ? awardData.amount : 'N/A'}
             </Typography>
           </div>
 
-          <div className="relative w-full">
-            <img
-              src="/images/pages/trophy.png"
-              alt="trophy image"
-              height={60}
-              className="absolute right-4 bottom-6"
-            />
+          <div className='relative w-full'>
+            <img src='/images/pages/trophy.png' alt='trophy image' height={70} className='absolute right-4 bottom-6' />
           </div>
 
           {userDesg === 'Sr. Operation Manager' && (
-            <Tooltip title="Add/Edit">
-              <IconButton
-                onClick={handleEditClick}
-                style={{ position: 'absolute', top: 1, right: 0, zIndex: 6 }}
-              >
+            <Tooltip title='Add/Edit'>
+              <IconButton onClick={handleEditClick} style={{ position: 'absolute', top: 1, right: 0, zIndex: 6 }}>
                 <MoreVertIcon />
               </IconButton>
             </Tooltip>
@@ -189,6 +189,8 @@ const Award = () => {
             setSelectedEmployee={setEmployeeName}
             amount={amount}
             setAmount={setAmount}
+            awardTitle={awardTitle}
+            setAwardTitle={setAwardTitle}
             isEditMode={isEditMode}
             onSubmit={handleFormSubmit}
             onClose={handleCloseForm}
@@ -196,7 +198,7 @@ const Award = () => {
         )}
       </Card>
     </>
-  );
-};
+  )
+}
 
-export default Award;
+export default Award

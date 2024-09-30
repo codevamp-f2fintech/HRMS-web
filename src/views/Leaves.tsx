@@ -146,6 +146,7 @@ export default function LeavesGrid() {
         status: item.status,
         application: item.application,
         type: item.type,
+        reason: item.reason || 'N/A',
 
       });
 
@@ -176,6 +177,7 @@ export default function LeavesGrid() {
                 <StyledTableCell>Type</StyledTableCell>
                 <StyledTableCell>Application</StyledTableCell>
                 <StyledTableCell>Status</StyledTableCell>
+                <StyledTableCell>Decision</StyledTableCell>
                 {userRole === '1' ? (
                   <StyledTableCell>Edit</StyledTableCell>
                 ) : ''}
@@ -185,11 +187,12 @@ export default function LeavesGrid() {
               {leaves.map((leave) => (
                 <TableRow key={leave._id}>
                   <TableCell>{leave.day}</TableCell>
-                  <TableCell>{leave.start_date}</TableCell>
-                  <TableCell>{leave.end_date}</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>{leave.start_date}</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>{leave.end_date}</TableCell>
                   <TableCell>{leave.type}</TableCell>
                   <TableCell>{leave.application}</TableCell>
                   <TableCell>{leave.status}</TableCell>
+                  <TableCell sx={{ minWidth: 130 }}>{leave.reason}</TableCell>
                   {userRole === '1' ? (
                     <TableCell>
                       <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleLeaveEditClick(leave._id)}>
@@ -338,8 +341,9 @@ export default function LeavesGrid() {
           },
         },
         { field: 'type', headerName: 'Type', flex: 1, headerAlign: 'center', align: 'center', headerClassName: 'super-app-theme--header' },
-        { field: 'application', headerName: 'Reason', flex: 1.5, headerAlign: 'center', align: 'center', headerClassName: 'super-app-theme--header' },
+        { field: 'application', headerName: 'Application', flex: 1.5, headerAlign: 'center', align: 'center', headerClassName: 'super-app-theme--header' },
         { field: 'status', headerName: 'Status', flex: 1, headerAlign: 'center', align: 'center', headerClassName: 'super-app-theme--header' },
+        { field: 'reason', headerName: 'Decision', flex: 1, headerAlign: 'center', align: 'center', headerClassName: 'super-app-theme--header' },
       ]),
     ];
   }, [userRole]);
@@ -354,6 +358,7 @@ export default function LeavesGrid() {
       day: leave.day,
       application: leave.application,
       half_day_period: leave.half_day_period,
+      reason: leave.reason || 'N/A',
     }));
   }, [leaves]);
 
@@ -461,6 +466,7 @@ export default function LeavesGrid() {
               fontSize: '14px',
               boxSizing: 'border-box'
             },
+
           }}
           rows={userRole === "1" ? (leavesRow) : (rows)}
           columns={generateColumns}
@@ -470,7 +476,7 @@ export default function LeavesGrid() {
           onPaginationModelChange={handlePaginationModelChange}
           pageSizeOptions={[10, 20, 30]}
           paginationModel={{ page: page - 1, pageSize: limit }}
-          checkboxSelection
+
           disableRowSelectionOnClick
         />
       </Box>

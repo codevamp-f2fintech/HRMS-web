@@ -16,6 +16,7 @@ interface Leave {
   end_date: string;
   status: string;
   application: string;
+  reason: string;
   type: string;
   day: string;
 }
