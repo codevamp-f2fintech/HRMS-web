@@ -1,3 +1,4 @@
+import { RootState } from "@/redux/store";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
@@ -21,6 +22,7 @@ interface attendancesState {
   filteredAttendance: Attendance[];
   loading: boolean;
   error: string | null;
+  total: number;
 }
 
 const initialState: attendancesState = {
@@ -28,32 +30,38 @@ const initialState: attendancesState = {
   filteredAttendance: [],
   loading: false,
   error: null,
+  total: 0
 };
 
 
 
-export const fetchAttendances = createAsyncThunk('attendances/fetchAttendances', async () => {
-  let token: string | null = null;
+export const fetchAttendances = createAsyncThunk<{
+  attendances: Attendance[];
+  total: number;
+}, { page?: number; limit?: number; keyword?: string }, { state: RootState }>(
+  'attendances/fetchAttendances',
+  async ({ page, limit, keyword }: { page: number; limit: number; keyword?: string }) => {
+    let token: string | null = null;
 
-  if (typeof window !== 'undefined') {
-    token = localStorage.getItem('token');
+    if (typeof window !== 'undefined') {
+      token = localStorage.getItem('token');
+    }
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/attendence/get?page=${page}&limit=${limit}&keyword=${encodeURIComponent(keyword)}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch attendances');
+    }
+
+    return (await response.json()) as { attendances: Attendance[], total: number };
   }
-
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/attendence/get`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch attendances')
-  }
-
-
-  return (await response.json()) as Attendance[]
-})
+);
 
 export const fetchEmployeeAttendances = createAsyncThunk(
   'attendances/fetchEmployeeAttendances',
@@ -141,7 +149,8 @@ export const attendancesSlice = createSlice({
       state.error = null;
     })
       .addCase(fetchAttendances.fulfilled, (state, action) => {
-        state.attendances = action.payload;
+        state.attendances = action.payload.attendances; // Set attendances data
+        state.total = action.payload.total;             // Set total number of records
         state.loading = false;
       })
       .addCase(fetchAttendances.rejected, (state, action) => {

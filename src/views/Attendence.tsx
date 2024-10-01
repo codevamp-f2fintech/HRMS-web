@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 
 import { debounce } from 'lodash';
 import { ToastContainer, toast } from 'react-toastify';
@@ -298,7 +298,7 @@ function AttendanceStatusList({ attendanceData, selectedMonth }) {
 
 export default function AttendanceGrid() {
   const dispatch: AppDispatch = useDispatch();
-  const { attendances, loading, error, filteredAttendance } = useSelector((state: RootState) => state.attendances);
+  const { attendances, loading, error, total, filteredAttendance } = useSelector((state: RootState) => state.attendances);
 
   const [showForm, setShowForm] = useState(false);
   const [selectedAttendance, setSelectedAttendance] = useState(null);
@@ -317,24 +317,24 @@ export default function AttendanceGrid() {
   const [prefillEmployeeName, setPrefillEmployeeName] = useState('');
   const [prefillDate, setPrefillDate] = useState('');
 
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [searchKeyword, setSearchKeyword] = useState('');
 
-  const debouncedSearch = useCallback(
-    debounce(() => {
-      console.log('debounce triggered');
-      dispatch(filterAttendance({ name: searchName, location: searchLocation }));
-    }, 300),
-    [searchName, searchLocation]
-  );
+
+  const debouncedFetch = useMemo(() => debounce(() => {
+    console.log('search keyword', searchKeyword)
+    dispatch(fetchAttendances({ page, limit, keyword: searchKeyword }));
+  }, 300), [dispatch, page, limit, searchKeyword]);
 
   useEffect(() => {
-    debouncedSearch();
+    debouncedFetch();
+    return debouncedFetch.cancel;
+  }, [debouncedFetch, page, limit, searchKeyword]);
 
-    return debouncedSearch.cancel;
-  }, [searchName, searchLocation, debouncedSearch]);
-
-  const handleInputChange = (e) => {
-    setSearchName(e.target.value);
-  };
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchKeyword(e.target.value);
+  }, []);
 
   const handleLocationInputChange = (e) => {
     setSearchLoaction(e.target.value);
@@ -342,7 +342,7 @@ export default function AttendanceGrid() {
 
   useEffect(() => {
     if (attendances.length === 0) {
-      dispatch(fetchAttendances());
+      dispatch(fetchAttendances({ page, limit }));
     }
 
     const fetchEmployees = async () => {
@@ -352,7 +352,7 @@ export default function AttendanceGrid() {
     };
 
     fetchEmployees();
-  }, [dispatch, attendances.length]);
+  }, [dispatch, attendances.length, page, limit]);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -812,7 +812,8 @@ export default function AttendanceGrid() {
 
 
   const transformData = () => {
-    const attendanceSource = filteredAttendance.length > 0 ? filteredAttendance : attendances;
+    console.log('attendances', attendances)
+    const attendanceSource = attendances.length > 0 ? attendances : attendances;
 
     const groupedData = attendanceSource.reduce((acc, curr) => {
       const { employee, date, status, timeComplete, _id } = curr;
@@ -882,6 +883,8 @@ export default function AttendanceGrid() {
         }
       }
 
+      console.log('acc is', acc);
+
       return acc;
     }, {});
 
@@ -889,6 +892,18 @@ export default function AttendanceGrid() {
 
     return sortedData;
   };
+
+  const handlePaginationModelChange = (params: { page: number; pageSize: number }) => {
+    const newPage = params.page + 1; // MUI uses 0-based indexing, we use 1-based indexing
+    const newLimit = params.pageSize;
+
+    setPage(newPage);
+    setLimit(newLimit);
+
+    // Fetch attendances based on the current search keyword and pagination settings
+    dispatch(fetchAttendances({ page: newPage, limit: newLimit, keyword: searchKeyword }));
+  };
+
 
   const columns = generateColumns();
   const rows = transformData();
@@ -1025,7 +1040,7 @@ export default function AttendanceGrid() {
               fullWidth
               label='Employee Name'
               variant='outlined'
-              value={searchName}
+              value={searchKeyword}
               onChange={handleInputChange}
               InputProps={{
                 endAdornment: (
@@ -1097,6 +1112,8 @@ export default function AttendanceGrid() {
               rows={rows}
               columns={columns}
               getRowId={(row) => row._id}
+              paginationMode="server"
+              rowCount={total}
               initialState={{
                 pagination: {
                   paginationModel: {
@@ -1107,7 +1124,9 @@ export default function AttendanceGrid() {
                   sortModel: [{ field: 'employee_id', sort: 'asc' }],
                 },
               }}
+              onPaginationModelChange={handlePaginationModelChange}
               pageSizeOptions={[10, 20, 30]}
+              paginationModel={{ page: page - 1, pageSize: limit }}
               checkboxSelection
               disableRowSelectionOnClick
             />
