@@ -269,7 +269,7 @@ export default function LeavesGrid() {
         sortable: true,
         align: 'center',
         renderCell: (params) => (
-          <Box display="flex" alignItems="center">
+          <Box display="flex" alignItems="center" alignItems="center" justifyContent='center' height='100%'>
             <Avatar src={params.row.employee_image} alt={params.row.employee_name} sx={{ mr: 2 }} />
             <Typography sx={{ fontSize: '1em', fontWeight: 'bold' }}>{params.row.employee_name}</Typography>
           </Box>

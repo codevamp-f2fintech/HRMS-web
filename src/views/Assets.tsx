@@ -394,11 +394,10 @@ export default function AssestsGrid() {
         {
           field: 'employee_name',
           headerName: 'Employee',
-          width: 220,
+          width: 250,
           headerAlign: 'center',
           headerClassName: 'super-app-theme--header',
           sortable: true,
-          align: 'center',
           renderCell: (params) => {
             const textStyle = {
               fontSize: '1em',
@@ -406,7 +405,7 @@ export default function AssestsGrid() {
             };
 
             return (
-              <Box display="flex" alignItems="center">
+              <Box display="flex" alignItems="center" justifyContent='center' height='100%'>
                 <Avatar src={params.row.employee_image} alt={params.row.employee_name} sx={{ mr: 2 }} />
                 <Typography sx={textStyle}>{params.row.employee_name}</Typography>
               </Box>
@@ -679,7 +678,6 @@ export default function AssestsGrid() {
           onPaginationModelChange={handlePaginationModelChange}
           pageSizeOptions={[10, 20, 30]}
           paginationModel={{ page: page - 1, pageSize: limit }}
-          checkboxSelection
           disableRowSelectionOnClick
         />
 
