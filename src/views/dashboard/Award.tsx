@@ -18,15 +18,18 @@ const Award = () => {
   const [awardTitle, setAwardTitle] = useState('')
   const [isEditMode, setIsEditMode] = useState(false)
   const [awardData, setAwardData] = useState(null)
-
+  const [userRole, setUserRole] = useState<string>("");
   const [userId, setUserId] = useState(null)
   const [userDesg, setUserDesg] = useState(null)
+
+  console.log('userDesg', userDesg)
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}')
 
     setUserId(user.id)
     setUserDesg(user.desg)
+    setUserRole(user.role);
 
     const fetchEmployeesAndAwards = async () => {
       try {
@@ -127,26 +130,27 @@ const Award = () => {
         key={awardData ? awardData._id : 'no-award'}
         sx={{ minHeight: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
       >
-        <CardContent className='flex-grow relative flex flex-col gap-2 items-start'>
+        <CardContent className='flex-grow relative flex flex-col gap-2 items-start' sx={{ height: '40vh' }}>
           <div>
             <Typography variant='h5'>
               {awardData && awardData.employee ? (
-                <>
+                <Typography variant='h4'>
                   {userId === awardData.employee._id ? 'Congratulations' : 'Congratulate'}{' '}
                   <span style={{ fontWeight: 'bold', color: '#1efd44' }}>
                     {awardData.employee.first_name} {awardData.employee.last_name}🎉
                   </span>
-                </>
+                </Typography>
               ) : (
                 'No Award Data'
               )}
-            </Typography>
 
-            {awardData && awardData.employee && (
-              <Typography style={{ fontWeight: 'normal', color: '#bb89d8', fontStyle: 'italic', marginTop: '4px' }}>
-                {awardData.employee.designation}
-              </Typography>
-            )}
+
+              {awardData && awardData.employee && (
+                <Typography style={{ fontWeight: 'normal', color: '#bb89d8', fontStyle: 'italic', marginTop: '4px' }}>
+                  {awardData.employee.designation}
+                </Typography>
+              )}
+            </Typography>
             <div style={{ paddingRight: '80px', wordWrap: 'break-word', wordBreak: 'break-all' }}>
               <Typography
                 variant='h6'
@@ -175,7 +179,7 @@ const Award = () => {
 
           {userDesg === 'Sr. Operation Manager' && (
             <Tooltip title='Add/Edit'>
-              <IconButton onClick={handleEditClick} style={{ position: 'absolute', top: 1, right: 0, zIndex: 6 }}>
+              <IconButton onClick={handleEditClick} style={{ position: 'absolute', top: 8, right: 8, zIndex: 10 }}>
                 <MoreVertIcon />
               </IconButton>
             </Tooltip>
