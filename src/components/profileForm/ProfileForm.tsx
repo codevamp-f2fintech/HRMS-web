@@ -46,6 +46,10 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
     verify: false
   });
 
+  const [userRole, setUserRole] = useState("");
+  const [userId, setUserId] = useState(null);
+
+  const isFormDisabled = userRole !== '1' && logedUser.id !== profileId;
 
 
   const handleTabChange = (event, newValue) => {
@@ -138,6 +142,11 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
     }
   };
 
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user") || '{}');
+    setUserRole(user.role);
+    setUserId(user.id);
+  }, []);
 
   useEffect(() => {
     const checkIfExist = async () => {
@@ -357,8 +366,10 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
               label="Skills"
               placeholder="Press Enter to Add more skills"
               fullWidth
+              disabled={isFormDisabled}
             />
           )}
+          disabled={isFormDisabled}
         />
       ),
     },
@@ -372,6 +383,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
             margin="normal"
             value={formData.bankDetails.bankName}
             onChange={(e) => handleInputChange('bankDetails', '', 'bankName', e.target.value)}
+            disabled={isFormDisabled}
           />
           <TextField
             label="Account Number"
@@ -379,6 +391,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
             margin="normal"
             value={formData.bankDetails.accountNumber}
             onChange={(e) => handleInputChange('bankDetails', '', 'accountNumber', e.target.value)}
+            disabled={isFormDisabled}
           />
           <TextField
             label="IFSC Code"
@@ -386,6 +399,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
             margin="normal"
             value={formData.bankDetails.ifscCode}
             onChange={(e) => handleInputChange('bankDetails', '', 'ifscCode', e.target.value)}
+            disabled={isFormDisabled}
           />
           <TextField
             label="PAN Card Number"
@@ -393,12 +407,16 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
             margin="normal"
             value={formData.bankDetails.panCardNumber}
             onChange={(e) => handleInputChange('bankDetails', '', 'panCardNumber', e.target.value)}
+            disabled={isFormDisabled}
           />
           <input
             type="file"
             onChange={(e) => handleFileChange('bankDetails', 'panCardImage', e.target.files[0])}
+            disabled={isFormDisabled}
           />
+
         </>
+
       ),
     },
     {
@@ -413,6 +431,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
             rows={4}
             value={formData.addressDetails.permanentAddress}
             onChange={(e) => handleInputChange('addressDetails', '', 'permanentAddress', e.target.value)}
+            disabled={isFormDisabled}
           />
           <TextField
             label="Current Address"
@@ -422,6 +441,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
             rows={4}
             value={formData.addressDetails.currentAddress}
             onChange={(e) => handleInputChange('addressDetails', '', 'currentAddress', e.target.value)}
+            disabled={isFormDisabled}
           />
 
           <TextField
@@ -430,12 +450,14 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
             margin="normal"
             value={formData.addressDetails.aadhaarCardNumber}
             onChange={(e) => handleInputChange('addressDetails', '', 'aadhaarCardNumber', e.target.value)}
+            disabled={isFormDisabled}
           />
           <Box sx={{ mt: 2 }}>
             <Typography variant="subtitle2">Aadhaar Card Front Image</Typography>
             <input
               type="file"
               onChange={(e) => handleFileChange('addressDetails', 'aadhaarFrontImage', e.target.files[0])}
+              disabled={isFormDisabled}
             />
           </Box>
           <Box sx={{ mt: 2 }}>
@@ -443,6 +465,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
             <input
               type="file"
               onChange={(e) => handleFileChange('addressDetails', 'aadhaarBackImage', e.target.files[0])}
+              disabled={isFormDisabled}
             />
           </Box>
         </>
@@ -460,6 +483,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                 margin="normal"
                 value={academic.level}
                 onChange={(e) => handleInputChange('academics', index, 'level', e.target.value)}
+                disabled={isFormDisabled}
               />
               <TextField
                 label="Institution"
@@ -467,6 +491,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                 margin="normal"
                 value={academic.institution}
                 onChange={(e) => handleInputChange('academics', index, 'institution', e.target.value)}
+                disabled={isFormDisabled}
               />
               <TextField
                 label="From Year"
@@ -474,6 +499,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                 margin="normal"
                 value={academic.fromYear}
                 onChange={(e) => handleInputChange('academics', index, 'fromYear', e.target.value)}
+                disabled={isFormDisabled}
               />
               <TextField
                 label="To Year"
@@ -481,6 +507,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                 margin="normal"
                 value={academic.toYear}
                 onChange={(e) => handleInputChange('academics', index, 'toYear', e.target.value)}
+                disabled={isFormDisabled}
               />
               <TextField
                 label="Details"
@@ -490,13 +517,14 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                 rows={2}
                 value={academic.details}
                 onChange={(e) => handleInputChange('academics', index, 'details', e.target.value)}
+                disabled={isFormDisabled}
               />
-              <Button variant="outlined" color="secondary" onClick={() => removeAcademic(index)}>
+              <Button disabled={isFormDisabled} variant="outlined" color="secondary" onClick={() => removeAcademic(index)}>
                 Remove
               </Button>
             </Box>
           ))}
-          <Button variant="contained" color="primary" onClick={addAcademic}>
+          <Button disabled={isFormDisabled} variant="contained" color="primary" onClick={addAcademic}>
             Add More Education
           </Button>
         </>
@@ -519,6 +547,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                   newExperience[index].companyName = e.target.value;
                   setFormData(prev => ({ ...prev, pastExperience: newExperience }));
                 }}
+                disabled={isFormDisabled}
               />
               <TextField
                 label="From Year"
@@ -530,6 +559,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                   newExperience[index].fromYear = e.target.value;
                   setFormData(prev => ({ ...prev, pastExperience: newExperience }));
                 }}
+                disabled={isFormDisabled}
               />
               <TextField
                 label="To Year"
@@ -541,6 +571,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                   newExperience[index].toYear = e.target.value;
                   setFormData(prev => ({ ...prev, pastExperience: newExperience }));
                 }}
+                disabled={isFormDisabled}
               />
               <TextField
                 label="Last CTC in (Rupees)"
@@ -553,6 +584,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                   newExperience[index].lastCtc = e.target.value;
                   setFormData(prev => ({ ...prev, pastExperience: newExperience }));
                 }}
+                disabled={isFormDisabled}
               />
               <TextField
                 label="Designation"
@@ -565,6 +597,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                   newExperience[index].designation = capitalizedDesignation;
                   setFormData(prev => ({ ...prev, pastExperience: newExperience }));
                 }}
+                disabled={isFormDisabled}
               />
               <TextField
                 label="Reference Name"
@@ -576,6 +609,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                   newExperience[index].referenceName = e.target.value;
                   setFormData(prev => ({ ...prev, pastExperience: newExperience }));
                 }}
+                disabled={isFormDisabled}
               />
               <TextField
                 label="Reference Contact"
@@ -587,6 +621,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                   newExperience[index].referenceContact = e.target.value;
                   setFormData(prev => ({ ...prev, pastExperience: newExperience }));
                 }}
+                disabled={isFormDisabled}
               />
             </Box>
           ))}
@@ -599,6 +634,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
                 { companyName: '', fromYear: '', toYear: '', lastCtc: '', designation: '', referenceName: '', referenceContact: '' }
               ]
             }))}
+            disabled={isFormDisabled}
           >
             Add More Experience
           </Button>
