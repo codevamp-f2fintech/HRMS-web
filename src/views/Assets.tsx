@@ -394,11 +394,10 @@ export default function AssestsGrid() {
         {
           field: 'employee_name',
           headerName: 'Employee',
-          width: 220,
+          width: 250,
           headerAlign: 'center',
           headerClassName: 'super-app-theme--header',
           sortable: true,
-          align: 'center',
           renderCell: (params) => {
             const textStyle = {
               fontSize: '1em',
@@ -406,7 +405,7 @@ export default function AssestsGrid() {
             };
 
             return (
-              <Box display="flex" alignItems="center">
+              <Box display="flex" alignItems="center" justifyContent='center' height='100%'>
                 <Avatar src={params.row.employee_image} alt={params.row.employee_name} sx={{ mr: 2 }} />
                 <Typography sx={textStyle}>{params.row.employee_name}</Typography>
               </Box>
@@ -420,7 +419,6 @@ export default function AssestsGrid() {
           headerAlign: 'center',
           headerClassName: 'super-app-theme--header',
           renderCell: (params) => {
-            // Group assets
             const groupedAssets = params.row.assets.reduce((acc, asset) => {
               const groupKey = 'View all assets';
               if (!acc[groupKey]) {
@@ -457,7 +455,10 @@ export default function AssestsGrid() {
                               {/* <TableCell></TableCell>
                               <TableCell></TableCell> */}
                               <TableCell>{new Date(asset.assignment_date).toLocaleDateString('en-GB')}</TableCell>
-                              <TableCell>{new Date(asset.return_date).toLocaleDateString('en-GB')}</TableCell>
+                              {asset.return_date === '' ?
+                                <TableCell>No date</TableCell> : (
+                                  <TableCell>{new Date(asset.return_date).toLocaleDateString('en-GB')}</TableCell>
+                                )}
                               {userRole === '1' ? (
                                 <TableCell>
                                   <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleEditAssetClick(asset._id)}>
@@ -480,7 +481,7 @@ export default function AssestsGrid() {
 
         {
           field: 'name',
-          headerName: 'Assets Name - Model Nu. - Serial Nu',
+          headerName: 'Assets Name - Model No. - Serial No',
           width: 500,
           headerAlign: 'center',
           headerClassName: 'super-app-theme--header',
@@ -677,7 +678,6 @@ export default function AssestsGrid() {
           onPaginationModelChange={handlePaginationModelChange}
           pageSizeOptions={[10, 20, 30]}
           paginationModel={{ page: page - 1, pageSize: limit }}
-          checkboxSelection
           disableRowSelectionOnClick
         />
 

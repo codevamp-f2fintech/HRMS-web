@@ -123,7 +123,7 @@ const LocationWisePerformer = () => {
           <Box display='flex' flexDirection='column' gap={4}>
             {[...awards, ...new Array(3 - awards.length).fill(null)].map((award, index) => (
               <Card key={award ? award._id : index}>
-                <CardContent className='relative flex flex-col gap-2'>
+                <CardContent className='relative flex flex-col gap-2' sx={{ height: '35vh' }}>
                   {/* Highlighted Location on Top */}
                   <Box mb={2} display='flex' alignItems='center' justifyContent='space-between'>
                     {/* Image on the left */}
