@@ -177,7 +177,7 @@ const Welcome = () => {
   return (
     <>
       <ToastContainer />
-      <StyledCard>
+      <StyledCard sx={{ height: '40vh' }}>
         <CardContent>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
             <Typography variant="h4" fontWeight="bold" color="#2c3ce3">
@@ -229,7 +229,7 @@ const Welcome = () => {
             </IconButton>
           </Box>
           <TextareaAutosize
-            minRows={5}
+            minRows={4}
             placeholder="Enter your quote"
             value={quote}
             onChange={(e) => setQuote(e.target.value)}

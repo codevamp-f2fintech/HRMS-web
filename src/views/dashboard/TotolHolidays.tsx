@@ -63,15 +63,16 @@ const HolidaysTable = () => {
   };
 
   return (
-    <StyledCard>
+    <StyledCard sx={{ height: '116vh' }}>
       <CardHeader
-        title={<Typography variant="h6">Holidays</Typography>}
+        sx={{ paddingTop: '5vh', textAlign: 'center' }}
+        title={<Typography variant="h3" sx={{ fontWeight: 600 }}>Holidays</Typography>}
       />
-      <CardContent>
+      <CardContent sx={{ marginTop: '3vh' }}>
         <StyledTableContainer component={Paper}>
           <Table stickyHeader aria-label="holidays table">
             <TableHead>
-              <TableRow>
+              <TableRow sx={{ height: '12vh' }}>
                 <StyledTableCell>Days</StyledTableCell>
                 <StyledTableCell>Start Date</StyledTableCell>
                 <StyledTableCell>End Date</StyledTableCell>
@@ -80,7 +81,7 @@ const HolidaysTable = () => {
             </TableHead>
             <TableBody sx={{ height: '340px' }}>
               {holidays.map((row, index) => (
-                <TableRow key={index} hover>
+                <TableRow key={index} hover sx={{ height: '12.2vh' }}>
                   <TableCell>{row.day}</TableCell>
                   <TableCell>{row.start_date}</TableCell>
                   <TableCell>{row.end_date}</TableCell>
@@ -103,7 +104,25 @@ const HolidaysTable = () => {
           onChange={handlePageChange}
           color="primary"
           size="large"
-          sx={{ marginTop: 2, display: 'flex', justifyContent: 'center' }}
+          sx={{
+            marginTop: 12, display: 'flex', justifyContent: 'center', position: 'relative',
+
+            '.MuiPaginationItem-root': {
+              fontSize: '1.5rem',
+            },
+            'li:first-of-type': {
+              position: 'absolute',
+              left: 0,
+              top: '50%',
+              transform: 'translateY(-50%)',
+            },
+            'li:last-of-type': {
+              position: 'absolute',
+              right: 0,
+              top: '50%',
+              transform: 'translateY(-50%)',
+            },
+          }}
         />
       </CardContent>
     </StyledCard>
