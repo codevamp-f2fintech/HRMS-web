@@ -2,16 +2,19 @@
 
 import React, { useEffect, useState, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { Button, Grid, TextField, MenuItem, Typography, Box, Autocomplete } from '@mui/material'
-import { addBreak, Break, fetchBreaksById } from '@/redux/features/breaksheets/breaksSlice'
+import { Button, Grid, TextField, MenuItem, Typography, Box, Autocomplete, IconButton, Tooltip } from '@mui/material'
+import { addBreak, Break, fetchBreaksById, updateBreak } from '@/redux/features/breaksheets/breaksSlice'
 import { RootState, AppDispatch } from '@/redux/store'
 import { apiResponse } from '../utility/apiResponse/employeesResponse'
+import { MoreVert } from '@mui/icons-material'
+import EditBreakForm from '@/components/breaksheet/BreakSheetForm'
 
 const BreakSheet: React.FC = () => {
     const dispatch: AppDispatch = useDispatch()
     const { breaks, loading, error } = useSelector((state: RootState) => state.breaks)
 
     const [breakType, setBreakType] = useState<string>('')
+    const [otherBreakType, setOtherBreakType] = useState<string>('')
     const [startTime, setStartTime] = useState<string>('')
     const [endTime, setEndTime] = useState<string>('')
     const [duration, setDuration] = useState<string>('')
@@ -22,13 +25,16 @@ const BreakSheet: React.FC = () => {
     const [isCurrentDate, setIsCurrentDate] = useState<boolean>(true)
     const [employees, setEmployees] = useState([])
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null)
+    const [openEditForm, setOpenEditForm] = useState(false)
+    const [currentBreak, setCurrentBreak] = useState(null)
+
     const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
     const employee = JSON.parse(localStorage.getItem('user') || '{}')
     const employeeId = employee?.id
     const userRole = employee?.role
 
-    const breakOptions = ['Washroom', 'Lunch', 'Refreshment', 'Tea', 'Personal Call']
+    const breakOptions = ['Washroom', 'Lunch', 'Refreshment', 'Tea', 'Personal Call', 'Other']
 
     useEffect(() => {
         if (userRole === '1') {
@@ -89,10 +95,11 @@ const BreakSheet: React.FC = () => {
             }
 
             const idToUse = selectedEmployeeId ? selectedEmployeeId : employeeId
+            const finalBreakType = breakType === 'Other' ? otherBreakType : breakType
 
             dispatch(
                 addBreak({
-                    type: breakType,
+                    type: finalBreakType,
                     startTime,
                     duration: formattedDuration,
                     date: selectedDate,
@@ -100,6 +107,7 @@ const BreakSheet: React.FC = () => {
                 })
             ).then(() => {
                 setBreakType('')
+                setOtherBreakType('')
                 setStartTime('')
                 setEndTime('')
                 setDuration('')
@@ -126,20 +134,42 @@ const BreakSheet: React.FC = () => {
 
     const totalDurationForDate = filteredBreaks.reduce((acc, b) => acc + convertToMilliseconds(b.duration), 0)
 
+    const handleEditClick = (breakToEdit) => {
+        const breakWithCorrectIds = {
+            ...breakToEdit,
+            _id: breakToEdit._id,
+            employee: breakToEdit.employee,
+        }
+
+        setCurrentBreak(breakWithCorrectIds)
+        setOpenEditForm(true)
+    }
+
+    const handleEditSubmit = (updatedBreak) => {
+        if (updatedBreak && updatedBreak._id) {
+            const breakId = updatedBreak._id
+            dispatch(updateBreak({ id: breakId, updatedBreak }))
+            dispatch(fetchBreaksById(selectedEmployeeId || employeeId));
+            setOpenEditForm(false)
+        } else {
+            console.error('Error: Break ID is undefined.')
+        }
+    }
+
     return (
         <Box sx={{ p: 4 }}>
-            <Grid container spacing={3} alignItems='center'>
+            <Grid container spacing={3} alignItems="center">
                 <Grid item xs={12}>
-                    <Typography variant='h4'>Break Sheet</Typography>
+                    <Typography variant="h4">Break Sheet</Typography>
                 </Grid>
 
                 {userRole === '1' && (
                     <Grid item xs={12} sm={6}>
                         <Autocomplete
                             options={employees}
-                            getOptionLabel={option => `${option.first_name} ${option.last_name}`}
-                            renderInput={params => <TextField {...params} label='Select Employee' variant='outlined' fullWidth />}
-                            value={selectedEmployeeId ? employees.find(emp => emp._id === selectedEmployeeId) : null}
+                            getOptionLabel={(option) => `${option.first_name} ${option.last_name}`}
+                            renderInput={(params) => <TextField {...params} label="Select Employee" variant="outlined" fullWidth />}
+                            value={selectedEmployeeId ? employees.find((emp) => emp._id === selectedEmployeeId) : null}
                             onChange={(e, value) => setSelectedEmployeeId(value ? value._id : null)}
                         />
                     </Grid>
@@ -153,22 +183,22 @@ const BreakSheet: React.FC = () => {
                             justifyContent: 'flex-start',
                             alignItems: 'center',
                             gap: 10,
-                            flexWrap: 'wrap'
+                            flexWrap: 'wrap',
                         }}
                     >
                         <Typography
-                            variant='h6'
+                            variant="h6"
                             sx={{
                                 fontSize: { xs: '1rem', sm: '1rem' },
                                 mb: { xs: 1, sm: 0 },
-                                flexShrink: 0
+                                flexShrink: 0,
                             }}
                         >
                             Total Break Time for {selectedDate}:
                         </Typography>
 
                         <Typography
-                            variant='body1'
+                            variant="body1"
                             sx={{
                                 fontSize: { xs: '0.875rem', sm: '1rem' },
                                 mb: { xs: 1, sm: 0 },
@@ -178,26 +208,26 @@ const BreakSheet: React.FC = () => {
                                 borderRadius: '0.5rem',
                                 width: 'auto',
                                 maxWidth: '10rem',
-                                textAlign: 'center'
+                                textAlign: 'center',
                             }}
                         >
                             {formatTime(totalDurationForDate)}
                         </Typography>
 
                         <TextField
-                            label='Select Date'
-                            type='date'
+                            label="Select Date"
+                            type="date"
                             value={selectedDate}
-                            onChange={e => setSelectedDate(e.target.value)}
+                            onChange={(e) => setSelectedDate(e.target.value)}
                             sx={{
                                 width: { xs: '100%', sm: 'auto' },
                                 ml: { xs: 0, sm: 2 },
                                 flex: 1,
                                 maxWidth: '200px',
-                                mb: { xs: 0, sm: 3 }
+                                mb: { xs: 0, sm: 3 },
                             }}
                             InputLabelProps={{
-                                shrink: true
+                                shrink: true,
                             }}
                         />
                     </Box>
@@ -208,33 +238,45 @@ const BreakSheet: React.FC = () => {
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 select
-                                label='Choose Break Type'
+                                label="Choose Break Type"
                                 value={breakType}
-                                onChange={e => setBreakType(e.target.value)}
+                                onChange={(e) => setBreakType(e.target.value)}
                                 fullWidth
-                                variant='outlined'
+                                variant="outlined"
                                 disabled={!isCurrentDate}
                                 sx={{
-                                    display: { xs: 'none', sm: 'block' }
+                                    display: { xs: 'none', sm: 'block' },
                                 }}
                             >
-                                {breakOptions.map(option => (
+                                {breakOptions.map((option) => (
                                     <MenuItem key={option} value={option}>
                                         {option}
                                     </MenuItem>
                                 ))}
                             </TextField>
                         </Grid>
+                        {breakType === 'Other' && (
+                            <Grid item xs={12} sm={6}>
+                                <TextField
+                                    label="Please specify"
+                                    value={otherBreakType}
+                                    onChange={(e) => setOtherBreakType(e.target.value)}
+                                    fullWidth
+                                    variant="outlined"
+                                />
+                            </Grid>
+                        )}
+
 
                         <Grid item xs={12} sm={6}>
                             <Button
-                                variant='contained'
-                                color='primary'
+                                variant="contained"
+                                color="primary"
                                 onClick={handleStartTime}
                                 disabled={!isCurrentDate || timerRunning}
                                 fullWidth
                                 sx={{
-                                    display: { xs: 'none', sm: 'block' }
+                                    display: { xs: 'none', sm: 'block' },
                                 }}
                             >
                                 {timerRunning ? 'Break Running...' : 'Start Break'}
@@ -243,49 +285,48 @@ const BreakSheet: React.FC = () => {
 
                         <Grid item xs={12} sm={6}>
                             <TextField
-                                label='Start Time'
+                                label="Start Time"
                                 value={startTime}
                                 disabled
                                 fullWidth
-                                variant='outlined'
+                                variant="outlined"
                                 sx={{
-                                    display: { xs: 'none', sm: 'block' }
+                                    display: { xs: 'none', sm: 'block' },
+                                }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                label="Duration"
+                                value={duration}
+                                disabled
+                                fullWidth
+                                variant="outlined"
+                                sx={{
+                                    display: { xs: 'none', sm: 'block' },
                                 }}
                             />
                         </Grid>
 
                         <Grid item xs={12} sm={6}>
                             <Button
-                                variant='contained'
-                                color='secondary'
+                                variant="contained"
+                                color="secondary"
                                 onClick={handleEndTime}
                                 disabled={!isCurrentDate || !timerRunning}
                                 fullWidth
                                 sx={{
-                                    display: { xs: 'none', sm: 'block' }
+                                    display: { xs: 'none', sm: 'block' },
                                 }}
                             >
                                 End Break
                             </Button>
                         </Grid>
-
-                        <Grid item xs={12} sm={6}>
-                            <TextField
-                                label='Duration'
-                                value={duration}
-                                disabled
-                                fullWidth
-                                variant='outlined'
-                                sx={{
-                                    display: { xs: 'none', sm: 'block' }
-                                }}
-                            />
-                        </Grid>
                     </Grid>
                 )}
 
                 <Grid item xs={12}>
-                    <Typography variant='h6'>All Breaks</Typography>
+                    <Typography variant="h6">All Breaks</Typography>
                     <Grid container spacing={2}>
                         {filteredBreaks.map((breakEntry, index) => (
                             <Grid item xs={12} sm={4} key={index}>
@@ -294,22 +335,48 @@ const BreakSheet: React.FC = () => {
                                         border: '1px solid #ccc',
                                         p: 2,
                                         borderRadius: '8px',
-                                        textAlign: 'center'
+                                        textAlign: 'center',
+                                        position: 'relative',
+                                        minHeight: '120px',
                                     }}
                                 >
-                                    <Typography variant='subtitle1'>
-                                        {breakEntry.type} ({breakEntry.date})
+                                    <Typography variant="subtitle1" sx={{ textDecoration: 'underline', color: 'green' }}>
+                                        {breakEntry.type}
                                     </Typography>
-                                    <Typography variant='body2'>Start Time: {breakEntry.startTime}</Typography>
-                                    <Typography variant='body2'>Duration: {breakEntry.duration}</Typography>
+                                    <Typography variant="body2">Start Time: {breakEntry.startTime}</Typography>
+                                    <Typography sx={{ color: 'blue' }} variant="body2">Duration: {breakEntry.duration}</Typography>
+
+                                    {userRole === '1' && <Tooltip title="Edit">
+                                        <IconButton
+                                            sx={{
+                                                position: 'absolute',
+                                                top: 8,
+                                                right: 8,
+                                                zIndex: 10,
+                                            }}
+                                            onClick={() => handleEditClick(breakEntry)}
+                                        >
+                                            <MoreVert />
+                                        </IconButton>
+                                    </Tooltip>}
                                 </Box>
                             </Grid>
                         ))}
                     </Grid>
                 </Grid>
             </Grid>
+
+            {currentBreak && (
+                <EditBreakForm
+                    open={openEditForm}
+                    onClose={() => setOpenEditForm(false)}
+                    onSubmit={handleEditSubmit}
+                    breakToEdit={currentBreak}
+                />
+            )}
         </Box>
     )
+
 }
 
 export default BreakSheet

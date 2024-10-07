@@ -3,6 +3,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || ''
 
 export interface Break {
+    id: string
     type: string
     startTime: string
     duration: string
@@ -44,6 +45,27 @@ export const addBreak = createAsyncThunk('breaks/addBreak', async (breakData: Br
 
     return await response.json()
 })
+
+export const updateBreak = createAsyncThunk(
+    'breaks/updateBreak',
+    async ({ id, updatedBreak }: { id: string; updatedBreak: Break }) => {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${BASE_URL}/breaksheet/update/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(updatedBreak),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to update break');
+        }
+
+        return await response.json();
+    }
+);
 
 const initialState = {
     breaks: [] as Break[],
