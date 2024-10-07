@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { debounce } from 'lodash';
+import { format } from 'date-fns';
+
 
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -85,6 +87,8 @@ export default function AssestsGrid() {
     setUserId(user.id);
   })
 
+  console.log('total', total)
+
   const AddAssetForm: React.FC<AddAssetFormProps> = ({ handleClose, asset }) => {
     const { employees } = useSelector((state: RootState) => state.employees)
     const { addassets } = useSelector((state: RootState) => state.addAssets);
@@ -105,8 +109,10 @@ export default function AssestsGrid() {
 
     useEffect(() => {
       if (asset) {
-        const selected = assests.find(ast => ast._id === asset);
-        console.log("selected", selected)
+        const foundAsset = assests.find(employee =>
+          employee.assets.find(ass => ass._id === asset)
+        );
+        const selected = foundAsset.assets.find(asse => asse._id === asset);
 
         if (selected) {
           setFormData({
@@ -173,7 +179,6 @@ export default function AssestsGrid() {
       if (validateForm()) {
         const method = asset ? 'PUT' : 'POST'
         const url = asset ? `${process.env.NEXT_PUBLIC_APP_URL}/assests/update/${asset}` : `${process.env.NEXT_PUBLIC_APP_URL}/assests/create`
-        console.log('asset', asset)
 
         fetch(url, {
           method,
@@ -182,6 +187,7 @@ export default function AssestsGrid() {
         })
           .then(response => response.json())
           .then(data => {
+            console.log("data>>>", data);
             if (data.message) {
               if (data.message.includes('success')) {
                 toast.success(data.message, {
@@ -197,7 +203,6 @@ export default function AssestsGrid() {
                 position: 'top-center',
               });
             }
-
             handleClose();
             dispatch(fetchAssests({ page, limit, keyword: selectedKeyword }));
           })
@@ -349,6 +354,7 @@ export default function AssestsGrid() {
   }
 
   const handleEditAssetClick = (id: string) => {
+    console.log("id", id)
     setSelectedAsset(id)
     setShowForm(true)
   }
@@ -356,58 +362,30 @@ export default function AssestsGrid() {
   const handleClose = () => {
     setShowForm(false)
   }
-  function transformEmployeeData() {
-    const groupedData = {};
 
-    // Loop over each entry in the data
-    assests.forEach((item) => {
-      const employeeId = item.employee._id;
-
-      // If the employeeId is not in groupedData, initialize it
-      if (!groupedData[employeeId]) {
-        groupedData[employeeId] = {
-          _id: employeeId,
-          employee: item.employee,
-          assets: [],
-          totalAssets: 0,
-        };
-      }
-
-      groupedData[employeeId].assets.push({
-        _id: item._id,
-        name: item.name,
-        assignment_date: item.assignment_date,
-        return_date: item.return_date,
-      });
-
-      groupedData[employeeId].totalAssets += 1;
-    });
-
-    // Return the grouped data as an array (if needed)
-    return Object.values(groupedData);
-  }
-  const assetsRow = transformEmployeeData()
-
+  console.log("assets>>>>>", assests);
   const generateColumns = () => {
     const columns = [
       ...(userRole === '1' ? [
         {
-          field: 'employee_name',
+          field: 'employee',
           headerName: 'Employee',
           width: 250,
           headerAlign: 'center',
           headerClassName: 'super-app-theme--header',
+          align: "center",
           sortable: true,
           renderCell: (params) => {
             const textStyle = {
               fontSize: '1em',
               fontWeight: 'bold',
             };
+            console.log("params>>>", params);
 
             return (
-              <Box display="flex" alignItems="center" justifyContent='center' height='100%'>
-                <Avatar src={params.row.employee_image} alt={params.row.employee_name} sx={{ mr: 2 }} />
-                <Typography sx={textStyle}>{params.row.employee_name}</Typography>
+              <Box display="flex" alignItems="center" justifyContent='center' height='100%' width='100%'>
+                <Avatar src={params.row.employee.image} alt={params.row.employee_name} sx={{ mr: 2 }} />
+                <Typography sx={textStyle}>{params.row.employee.first_name} {params.row.employee.last_name}</Typography>
               </Box>
             );
           },
@@ -419,7 +397,9 @@ export default function AssestsGrid() {
           headerAlign: 'center',
           headerClassName: 'super-app-theme--header',
           renderCell: (params) => {
-            const groupedAssets = params.row.assets.reduce((acc, asset) => {
+            const assets = Array.isArray(params.row.assets) ? params.row.assets : []; // Default to an empty array if undefined
+
+            const groupedAssets = assets.reduce((acc, asset) => {
               const groupKey = 'View all assets';
               if (!acc[groupKey]) {
                 acc[groupKey] = [];
@@ -427,6 +407,7 @@ export default function AssestsGrid() {
               acc[groupKey].push(asset);
               return acc;
             }, {});
+
             return (
               <Box>
                 {Object.keys(groupedAssets).map((groupKey, index) => (
@@ -452,16 +433,15 @@ export default function AssestsGrid() {
                           {groupedAssets[groupKey].map((asset, idx) => (
                             <TableRow key={`asset-${idx}`}>
                               <TableCell sx={{ padding: '2px' }}>{asset.name}</TableCell>
-                              {/* <TableCell></TableCell>
-                              <TableCell></TableCell> */}
-                              <TableCell>{new Date(asset.assignment_date).toLocaleDateString('en-GB')}</TableCell>
-                              {asset.return_date === '' ?
-                                <TableCell>No date</TableCell> : (
-                                  <TableCell>{new Date(asset.return_date).toLocaleDateString('en-GB')}</TableCell>
-                                )}
+                              <TableCell>{asset.assignment_date}</TableCell>
+                              {asset.return_date === '' ? (
+                                <TableCell>No date</TableCell>
+                              ) : (
+                                <TableCell>{new Date(asset.return_date).toLocaleDateString('en-GB')}</TableCell>
+                              )}
                               {userRole === '1' ? (
                                 <TableCell>
-                                  <Button color="info" variant="contained" sx={{ minWidth: "50px" }} onClick={() => handleEditAssetClick(asset._id)}>
+                                  <Button color="info" variant="contained" sx={{ minWidth: '50px' }} onClick={() => handleEditAssetClick(asset._id)}>
                                     <DriveFileRenameOutlineOutlined />
                                   </Button>
                                 </TableCell>
@@ -476,7 +456,8 @@ export default function AssestsGrid() {
               </Box>
             );
           }
-        },
+        }
+
       ] : [
 
         {
@@ -495,6 +476,11 @@ export default function AssestsGrid() {
           headerClassName: 'super-app-theme--header',
           headerAlign: 'center',
           align: 'center',
+          valueFormatter: (params) => {
+            const date = params;
+            return date ? new Date(date).toLocaleDateString() : '';
+          },
+
         },
         {
           field: 'return_date',
@@ -503,6 +489,10 @@ export default function AssestsGrid() {
           headerClassName: 'super-app-theme--header',
           headerAlign: 'center',
           align: 'center',
+          valueFormatter: (params) => {
+            const date = params;
+            return date ? new Date(date).toLocaleDateString() : "";
+          },
         },
       ]),
 
@@ -524,48 +514,48 @@ export default function AssestsGrid() {
   }
 
   // Function to transform data into rows suitable for the table
-  const transformData = (): GroupedData[] => {
-    let assestSource = Array.isArray(filteredAssest) && filteredAssest.length > 0 ? filteredAssest : Array.isArray(assetsRow) ? assetsRow : [];
+  // const transformData = (): GroupedData[] => {
+  //   let assestSource = Array.isArray(filteredAssest) && filteredAssest.length > 0 ? filteredAssest : Array.isArray(assests) ? assests : [];
 
-    if (Number(userRole) >= 2) {
+  //   if (Number(userRole) >= 2) {
 
-      assestSource = assestSource.filter(asset => asset.employee && asset.employee._id === userId);
-    }
+  //     assestSource = assestSource.filter(asset => asset.employee && asset.employee._id === userId);
+  //   }
 
-    if (!Array.isArray(assestSource) || assestSource.length === 0) {
-      return [];
-    }
+  //   if (!Array.isArray(assestSource) || assestSource.length === 0) {
+  //     return [];
+  //   }
 
-    const groupedData = assestSource.reduce<GroupedData[]>((acc, curr) => {
-      const { employee, assets, _id } = curr;
+  //   const groupedData = assestSource.reduce<GroupedData[]>((acc, curr) => {
+  //     const { employee, assets, _id } = curr;
 
-      if (!employee || !Array.isArray(assets)) {
-        return acc;
-      }
+  //     if (!employee || !Array.isArray(assets)) {
+  //       return acc;
+  //     }
 
-      acc.push({
-        _id,
-        employee_id: employee._id,
-        employee_name: `${employee.first_name} ${employee.last_name}`,
-        employee_image: employee.image || '',
-        assets: assets.map(asset => ({
-          _id: asset._id,
-          name: asset.name,
-          assignment_date: asset.assignment_date,
-          return_date: asset.return_date,
-        })),
-        assignment_date: assets.length > 0 ? assets[0].assignment_date : '',
-        return_date: assets.length > 0 ? assets[0].return_date : '',
-      });
+  //     acc.push({
+  //       _id,
+  //       employee_id: employee._id,
+  //       employee_name: `${employee.first_name} ${employee.last_name}`,
+  //       employee_image: employee.image || '',
+  //       assets: assets.map(asset => ({
+  //         _id: asset._id,
+  //         name: asset.name,
+  //         assignment_date: asset.assignment_date,
+  //         return_date: asset.return_date,
+  //       })),
+  //       assignment_date: assets.length > 0 ? assets[0].assignment_date : '',
+  //       return_date: assets.length > 0 ? assets[0].return_date : '',
+  //     });
+  //     console.log("acc", acc);
+  //     return acc;
+  //   }, []);
 
-      return acc;
-    }, []);
-
-    return groupedData;
-  };
+  //   return groupedData;
+  // };
 
   const columns = generateColumns();
-  const rows = transformData();
+  // const rows = transformData();
 
   const userAssets = useMemo(() => {
     return assests.map((asset) => ({
@@ -573,10 +563,8 @@ export default function AssestsGrid() {
       name: asset.name,
       assignment_date: asset.assignment_date,
       return_date: asset.return_date,
-
-    }))
+    }));
   }, [assests])
-  console.log("userasset", assests)
 
   return (
     <>
@@ -670,9 +658,14 @@ export default function AssestsGrid() {
               boxSizing: 'border-box'
             },
           }}
-          rows={userRole === "1" ? (rows) : (userAssets)}
+          rows={userRole === "1" ? (assests) : (userAssets)}
           columns={columns}
-          getRowId={(row) => row._id}
+          getRowId={(row) => {
+            if (userRole === "1") {
+              return row._id && row._id._id ? row._id._id : row._id;
+            }
+            return row._id;
+          }}
           paginationMode="server"
           rowCount={total}
           onPaginationModelChange={handlePaginationModelChange}
