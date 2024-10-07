@@ -28,7 +28,7 @@ const BreakSheet: React.FC = () => {
     const employeeId = employee?.id
     const userRole = employee?.role
 
-    const breakOptions = ['Washroom', 'Lunch', 'Break', 'Tea', 'Personal Call', 'Customer Call']
+    const breakOptions = ['Washroom', 'Lunch', 'Refreshment', 'Tea', 'Personal Call']
 
     useEffect(() => {
         if (userRole === '1') {
