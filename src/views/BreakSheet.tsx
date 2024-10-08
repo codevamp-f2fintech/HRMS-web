@@ -37,7 +37,7 @@ const BreakSheet: React.FC = () => {
     const breakOptions = ['Washroom', 'Lunch', 'Refreshment', 'Tea', 'Personal Call', 'Other']
 
     useEffect(() => {
-        if (userRole === '1') {
+        if (Number(userRole) <= 2) {
             const fetchEmployees = async () => {
                 try {
                     const employeeData = await apiResponse()
@@ -117,7 +117,7 @@ const BreakSheet: React.FC = () => {
     }
 
     useEffect(() => {
-        if (userRole === '1' && selectedEmployeeId) {
+        if (Number(userRole) <= 2 && selectedEmployeeId) {
             dispatch(fetchBreaksById(selectedEmployeeId))
         } else {
             dispatch(fetchBreaksById(null))
@@ -163,7 +163,7 @@ const BreakSheet: React.FC = () => {
                     <Typography variant="h4">Break Sheet</Typography>
                 </Grid>
 
-                {userRole === '1' && (
+                {Number(userRole) <= 2 && (
                     <Grid item xs={12} sm={6}>
                         <Autocomplete
                             options={employees}
