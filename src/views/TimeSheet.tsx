@@ -142,7 +142,7 @@ export default function TimeSheetGrid() {
         [row._id || row.attendance_id]: {
           time: row.time || '0',
           startShift: row.startShift || '09:00',
-          endShift: row.endShift || '18:00',
+          endShift: row.endShift || '00:00',
           status: row.status || 'Pending',
           note: row.note || '',
           submission_date: row.submission_date || '',
@@ -207,27 +207,65 @@ export default function TimeSheetGrid() {
   }
 
   const handleIncrementShiftTime = (id, field) => {
-    setEditableRows(prev => ({
-      ...prev,
-      [id]: {
+    setEditableRows(prev => {
+      const updatedRow = {
         ...prev[id],
         [field]: getNextTime(prev[id][field] || '09:00')
       }
-    }))
+      const hasValidShifts = updatedRow.startShift && updatedRow.endShift && updatedRow.endShift !== '00:00'
+      const calculatedTime = hasValidShifts ? calculateTimeDifference(updatedRow.startShift, updatedRow.endShift) : '0'
+
+      const totalMinutes = hasValidShifts ? timeToMinutes(calculatedTime) : 0
+
+      let updatedStatus = updatedRow.status
+      if (totalMinutes >= 540) {
+        updatedStatus = 'Approved'
+      } else if (updatedStatus === 'Approved') {
+        updatedStatus = 'Pending'
+      }
+
+      return {
+        ...prev,
+        [id]: {
+          ...updatedRow,
+          time: calculatedTime,
+          status: updatedStatus
+        }
+      }
+    })
   }
 
   const handleDecrementShiftTime = (id, field) => {
-    setEditableRows(prev => ({
-      ...prev,
-      [id]: {
+    setEditableRows(prev => {
+      const updatedRow = {
         ...prev[id],
         [field]: getPreviousTime(prev[id][field] || '09:00')
       }
-    }))
+
+      const hasValidShifts = updatedRow.startShift && updatedRow.endShift && updatedRow.endShift !== '00:00'
+      const calculatedTime = hasValidShifts ? calculateTimeDifference(updatedRow.startShift, updatedRow.endShift) : '0'
+
+      const totalMinutes = hasValidShifts ? timeToMinutes(calculatedTime) : 0
+      let updatedStatus = updatedRow.status
+      if (totalMinutes >= 540) {
+        updatedStatus = 'Approved'
+      } else if (updatedStatus === 'Approved') {
+        updatedStatus = 'Pending'
+      }
+
+      return {
+        ...prev,
+        [id]: {
+          ...updatedRow,
+          time: calculatedTime,
+          status: updatedStatus
+        }
+      }
+    })
   }
 
   const calculateTimeDifference = (startShift, endShift) => {
-    if (!startShift || !endShift) return '0'
+    if (!startShift || !endShift || endShift === '00:00') return '0'
 
     const [startHours, startMinutes] = startShift.split(':').map(Number)
     const [endHours, endMinutes] = endShift.split(':').map(Number)
@@ -247,20 +285,26 @@ export default function TimeSheetGrid() {
     return `${hours}:${minutes.toString().padStart(2, '0')}`
   }
 
+  const timeToMinutes = time => {
+    const [hours, minutes] = time.split(':').map(Number)
+    return hours * 60 + minutes
+  }
+
   const handleShiftChange = (id, field, value) => {
     setEditableRows(prev => {
       const updatedRow = {
         ...prev[id],
         [field]: value
       }
+      const hasValidShifts = updatedRow.startShift && updatedRow.endShift && updatedRow.endShift !== '00:00'
+      const calculatedTime = hasValidShifts ? calculateTimeDifference(updatedRow.startShift, updatedRow.endShift) : '0'
+      const totalMinutes = hasValidShifts ? timeToMinutes(calculatedTime) : 0
+      let updatedStatus = updatedRow.status
 
-      // Time is calculated here and will trigger re-render
-      const calculatedTime = calculateTimeDifference(updatedRow.startShift || '00:00', updatedRow.endShift || '00:00')
-
-      // Auto-set status to "Approved" if time is 9:00 or more
-      let updatedStatus = updatedRow.status;
-      if (calculatedTime >= '09:00') {
-        updatedStatus = 'Approved';
+      if (totalMinutes >= 540) {
+        updatedStatus = 'Approved'
+      } else if (totalMinutes < 540 && updatedStatus === 'Approved') {
+        updatedStatus = 'Pending'
       }
 
       return {
@@ -268,12 +312,11 @@ export default function TimeSheetGrid() {
         [id]: {
           ...updatedRow,
           time: calculatedTime,
-          status: updatedStatus // Update the status here
+          status: updatedStatus
         }
       }
     })
   }
-
 
   const handleSaveAll = () => {
     const hasLessThanNineHours = Object.values(editableRows).some(row => parseInt(row.time, 10) < 9)
@@ -288,13 +331,12 @@ export default function TimeSheetGrid() {
 
     const savePromises = Object.keys(editableRows).map(id => {
       const row = editableRows[id]
-
-      // Auto-approve status if time is 9:00 or more
-      let updatedStatus = row.status;
-      if (row.time >= '09:00') {
-        updatedStatus = 'Approved';
+      let updatedStatus = row.status
+      if (timeToMinutes(row.time) >= 540) {
+        updatedStatus = 'Approved'
+      } else if (timeToMinutes(row.time) < 540 && updatedStatus === 'Approved') {
+        updatedStatus = 'Pending'
       }
-
       const method = id.toString() !== row.attendance ? 'PUT' : 'POST'
       const url =
         id.toString() !== row.attendance
@@ -306,7 +348,7 @@ export default function TimeSheetGrid() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...row,
-          status: updatedStatus // Include updated status when saving
+          status: updatedStatus
         })
       }).then(response => {
         if (!response.ok) {
@@ -337,7 +379,6 @@ export default function TimeSheetGrid() {
       })
   }
 
-
   const transformData = () => {
     const filteredAttendances = attendances.filter(att => new Date(att.date).getMonth() + 1 === month)
 
@@ -350,7 +391,7 @@ export default function TimeSheetGrid() {
         const employee = employees.find(emp => emp._id === attendance.employee?._id)
 
         const startShift = timesheet ? timesheet.startShift : '00:00'
-        const endShift = timesheet ? timesheet.endShift : '00:00'
+        const endShift = timesheet ? timesheet.endShift : ''
 
         const calculatedTime = calculateTimeDifference(startShift, endShift)
 
@@ -364,7 +405,7 @@ export default function TimeSheetGrid() {
           attendance_status: attendance.status,
           time: calculatedTime,
           startShift: timesheet ? timesheet.startShift : '09:00',
-          endShift: timesheet ? timesheet.endShift : '18:00',
+          endShift: endShift,
           status: timesheet ? timesheet.status : 'Pending',
           note: timesheet ? timesheet.note : '',
           submission_date: timesheet ? timesheet.submission_date : ''
@@ -682,7 +723,7 @@ export default function TimeSheetGrid() {
                                             style={{ border: '1px black solid', padding: '5px 10px 5px 10px' }}
                                             onClick={() => handleEditClick(row)}
                                           >
-                                            {row.endShift || '18:00'}
+                                            {row.endShift || '00:00'}
                                           </span>
                                         </Tooltip>
                                       )}
@@ -856,7 +897,7 @@ export default function TimeSheetGrid() {
                               style={{ border: '1px black solid', padding: '5px 10px 5px 10px' }}
                               onClick={() => handleEditClick(row)}
                             >
-                              {row.endShift || '18:00'}
+                              {row.endShift || '00:00'}
                             </span>
                           </Tooltip>
                         )}
