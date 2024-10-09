@@ -57,6 +57,8 @@ export default function LeavesGrid() {
   const [selectedKeyword, setSelectedKeyword] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [loading, setLoading] = useState(false); // State to track loading
+
 
   const debouncedFetch = useMemo(
     () => debounce(() => {
@@ -86,9 +88,9 @@ export default function LeavesGrid() {
     if (leaves.length === 0) {
       dispatch(fetchLeaves({ page, limit, keyword: selectedKeyword }));
     }
+    const user = JSON.parse(localStorage.getItem("user") || '{}')
 
-    const user = JSON.parse(localStorage.getItem("user") || '{}');
-    setUserRole(user.role);
+    setUserRole(user.role)
     setUserId(user.id);
 
     return debouncedFetch.cancel;
@@ -118,57 +120,11 @@ export default function LeavesGrid() {
     setShowForm(false)
   }, []);
 
-
-  function transformEmployeeData() {
-    const groupedData = {};
-
-    // Loop over each entry in the data
-    leaves.forEach((item) => {
-      const employeeId = item.employee._id;
-
-      // If the employeeId is not in groupedData, initialize it
-      if (!groupedData[employeeId]) {
-        groupedData[employeeId] = {
-          _id: employeeId,
-          employee_name: `${item.employee?.first_name} ${item.employee?.last_name}`,
-          employee_image: item.employee?.image,
-          leave: [],
-          totalLeaves: 0,
-        };
-      }
-
-      // Push the asset details for the current employee
-      groupedData[employeeId].leave.push({
-        _id: item._id,
-        day: item.day,
-        start_date: item.start_date,
-        end_date: item.end_date,
-        status: item.status,
-        application: item.application,
-        type: item.type,
-        half_day_period: item.half_day_period,
-        reason: item.reason || 'N/A',
-
-      });
-
-      // Increment the total assets count
-      groupedData[employeeId].totalLeaves += 1;
-    });
-
-    // Return the grouped data as an array (if needed)
-    return Object.values(groupedData);
-  }
-  const leavesRow = useMemo(() => transformEmployeeData(), [leaves]);
-
   const renderAccordion = (params) => {
-
-
-    console.log("params", params)
-    console.log("leaves", leaves)
     return (
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography>{`View all Leaves (${params.row.totalLeaves})`}</Typography>
+          <Typography>{`View all Leaves (${Array.isArray(params.row.assets) ? params.row.assets.length : 0})`}</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Table>
@@ -187,69 +143,81 @@ export default function LeavesGrid() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {params.row.leave.map((leave) => {
-                const dayValue = parseFloat(leave.day);
-                const halfPeriod = leave.half_day_period;
+              {Array.isArray(params.row.assets) && params.row.assets.length > 0 ? (
+                params.row.assets.map((leave) => {
+                  const dayValue = parseFloat(leave.day);
+                  const halfPeriod = leave.half_day_period;
 
-                return (
-                  <TableRow key={leave._id}>
-                    {dayValue === 0.5 && halfPeriod ? (
-                      <TableCell>
-                        <Box
-                          sx={{
-                            position: 'relative',
-                            width: '100%',
-                            height: '100%',
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                          }}
-                        >
-                          <ContrastIcon
+                  return (
+                    <TableRow key={leave._id}>
+                      {dayValue === 0.5 && halfPeriod ? (
+                        <TableCell>
+                          <Box
                             sx={{
-                              color: '#989c9a',
-                              fontSize: 40,
-                            }}
-                          />
-                          <Typography
-                            fontWeight="bold"
-                            fontSize="0.9em"
-                            color="black"
-                            sx={{
-                              position: 'absolute',
-                              top: '50%',
-                              left: '50%',
-                              transform: 'translate(-50%, -50%)',
+                              position: 'relative',
+                              width: '100%',
+                              height: '100%',
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
                             }}
                           >
-                            {halfPeriod === 'First Half' ? 'FH' : 'SH'}
-                          </Typography>
-                        </Box>
+                            <ContrastIcon
+                              sx={{
+                                color: '#989c9a',
+                                fontSize: 40,
+                              }}
+                            />
+                            <Typography
+                              fontWeight="bold"
+                              fontSize="0.9em"
+                              color="black"
+                              sx={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                              }}
+                            >
+                              {halfPeriod === 'First Half' ? 'FH' : 'SH'}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                      ) : (
+                        <TableCell sx={{ paddingLeft: '25px' }}>{leave.day}</TableCell>
+                      )}
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                        {leave.start_date ? format(new Date(leave.start_date), 'dd-MMM-yyyy').toUpperCase() : ''}
                       </TableCell>
-                    ) : (
-                      <TableCell sx={{ paddingLeft: '25px' }}>{leave.day}</TableCell>
-                    )}
-                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{leave.start_date}</TableCell>
-                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{leave.end_date}</TableCell>
-                    <TableCell>{leave.type}</TableCell>
-                    <TableCell>{leave.application}</TableCell>
-                    <TableCell>{leave.status}</TableCell>
-                    <TableCell sx={{ minWidth: 100 }}>{leave.reason}</TableCell>
-                    {userRole === '1' ? (
-                      <TableCell>
-                        <Button
-                          color="info"
-                          variant="contained"
-                          sx={{ minWidth: '50px' }}
-                          onClick={() => handleLeaveEditClick(leave._id)}
-                        >
-                          <DriveFileRenameOutlineOutlined />
-                        </Button>
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                        {leave.end_date ? format(new Date(leave.end_date), 'dd-MMM-yyyy').toUpperCase() : ''}
                       </TableCell>
-                    ) : null}
-                  </TableRow>
-                );
-              })}
+                      <TableCell>{leave.type}</TableCell>
+                      <TableCell>{leave.application}</TableCell>
+                      <TableCell>{leave.status}</TableCell>
+                      <TableCell sx={{ minWidth: 100 }}>{leave.reason}</TableCell>
+                      {userRole === '1' ? (
+                        <TableCell>
+                          <Button
+                            color="info"
+                            variant="contained"
+                            sx={{ minWidth: '50px' }}
+                            onClick={() => handleLeaveEditClick(leave._id)}
+                          >
+                            <DriveFileRenameOutlineOutlined />
+                          </Button>
+                        </TableCell>
+                      ) : null}
+                    </TableRow>
+                  );
+                })
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} align="center">
+                    No leaves available
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </AccordionDetails>
@@ -258,22 +226,31 @@ export default function LeavesGrid() {
   };
 
 
+
   const generateColumns = useMemo(() => {
     return [
       ...(userRole === '1' ? [{
-        field: 'employee_name',
+        field: 'employee',
         headerName: 'Employee',
         minWidth: 220,
         headerAlign: 'center',
         headerClassName: 'super-app-theme--header',
         sortable: true,
         align: 'center',
-        renderCell: (params) => (
-          <Box display="flex" alignItems="center" alignItems="center" justifyContent='center' height='100%'>
-            <Avatar src={params.row.employee_image} alt={params.row.employee_name} sx={{ mr: 2 }} />
-            <Typography sx={{ fontSize: '1em', fontWeight: 'bold' }}>{params.row.employee_name}</Typography>
-          </Box>
-        ),
+        renderCell: (params) => {
+          return (
+            <Box display="flex" alignItems="center" height="100%">
+              <Avatar
+                src={params.row.employee.image}
+                sx={{ marginLeft: 10, width: 40, height: 40 }}
+              />
+              <Typography sx={{ fontSize: '1em', fontWeight: 'bold', textTransform: 'capitalize' }}>
+                {params.row.employee.first_name} {params.row.employee.last_name}
+              </Typography>
+            </Box>
+          );
+        }
+
       },
       {
         field: 'leave',
@@ -293,6 +270,7 @@ export default function LeavesGrid() {
           headerAlign: 'center',
           headerClassName: 'super-app-theme--header',
           renderCell: (params) => {
+            console.log("param", params)
             const dayValue = parseFloat(params.value);
             const halfDayPeriod = params.row.half_day_period;
 
@@ -356,22 +334,13 @@ export default function LeavesGrid() {
           headerAlign: 'center',
           headerClassName: 'super-app-theme--header',
           renderCell: (params) => {
-            if (params.value) {
-              try {
-                const date = new Date(params.value);
-                return !isNaN(date.getTime()) ? (
-                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>
-                    {format(date, 'dd-MMM-yyyy').toUpperCase()}
-                  </div>
-                ) : (
-                  'Invalid Date'
-                );
-              } catch (error) {
-                return 'Invalid Date';
-              }
-            }
+            const date = new Date(params.value);
+            return !isNaN(date.getTime()) ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>
+                {format(date, 'dd-MMM-yyyy').toUpperCase()}
+              </div>
+            ) : ''
 
-            return 'No Date';
           },
         },
         {
@@ -381,21 +350,13 @@ export default function LeavesGrid() {
           headerAlign: 'center',
           headerClassName: 'super-app-theme--header',
           renderCell: (params) => {
-            if (params.value) {
-              try {
-                const date = new Date(params.value);
-                return !isNaN(date.getTime()) ? (
-                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>
-                    {format(date, 'dd-MMM-yyyy').toUpperCase()}
-                  </div>
-                ) : (
-                  'Invalid Date'
-                );
-              } catch (error) {
-                return 'Invalid Date';
-              }
-            }
-            return 'No Date';
+            const date = new Date(params.value);
+            return !isNaN(date.getTime()) ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>
+                {format(date, 'dd-MMM-yyyy').toUpperCase()}
+              </div>
+            ) : null
+
           },
         },
         {
@@ -452,19 +413,22 @@ export default function LeavesGrid() {
   }, [userRole]);
 
   const rows = useMemo(() => {
-
-    return leaves.map((leave) => ({
-      _id: leave._id,
-      start_date: leave.start_date,
-      end_date: leave.end_date,
-      type: leave.type,
-      status: leave.status,
-      day: leave.day,
-      application: leave.application,
-      half_day_period: leave.half_day_period,
-      reason: leave.reason || 'N/A',
-    }));
+    return leaves
+      .filter(leave => leave && leave.day && leave.start_date) // Filter out invalid leaves
+      .map((leave) => ({
+        _id: leave._id,
+        start_date: leave.start_date,
+        end_date: leave.end_date,
+        type: leave.type,
+        status: leave.status,
+        day: leave.day,
+        application: leave.application,
+        half_day_period: leave.half_day_period,
+        reason: leave.reason || '',
+      }));
   }, [leaves]);
+
+  console.log('leaves', leaves);
 
   return (
     <Box>
@@ -572,11 +536,17 @@ export default function LeavesGrid() {
             },
 
           }}
-          rows={userRole === "1" ? (leavesRow) : (rows)}
+          rows={userRole === "1" ? (leaves) : (rows)}
           columns={generateColumns}
-          getRowId={(row) => row._id}
+          getRowId={(row) => {
+            if (userRole === "1") {
+              return row._id && row._id._id ? row._id._id : row._id;
+            } else {
+              return row._id;
+            }
+          }}
           paginationMode="server"
-          rowCount={total}
+          rowCount={userRole === '1' ? (leaves.length) : (leaves.length)}
           onPaginationModelChange={handlePaginationModelChange}
           pageSizeOptions={[10, 20, 30]}
           paginationModel={{ page: page - 1, pageSize: limit }}

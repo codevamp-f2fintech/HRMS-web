@@ -2,9 +2,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { debounce } from 'lodash';
-import { format } from 'date-fns';
-
-
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import type { SelectChangeEvent } from '@mui/material';
@@ -16,7 +13,7 @@ import { DataGrid } from '@mui/x-data-grid';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-
+import { format } from 'date-fns';
 import SearchIcon from '@mui/icons-material/Search';
 import InputAdornment from '@mui/material/InputAdornment';
 import { DriveFileRenameOutlineOutlined, Padding } from '@mui/icons-material';
@@ -86,8 +83,6 @@ export default function AssestsGrid() {
     setUserRole(user.role)
     setUserId(user.id);
   })
-
-  console.log('total', total)
 
   const AddAssetForm: React.FC<AddAssetFormProps> = ({ handleClose, asset }) => {
     const { employees } = useSelector((state: RootState) => state.employees)
@@ -354,7 +349,6 @@ export default function AssestsGrid() {
   }
 
   const handleEditAssetClick = (id: string) => {
-    console.log("id", id)
     setSelectedAsset(id)
     setShowForm(true)
   }
@@ -363,7 +357,6 @@ export default function AssestsGrid() {
     setShowForm(false)
   }
 
-  console.log("assets>>>>>", assests);
   const generateColumns = () => {
     const columns = [
       ...(userRole === '1' ? [
@@ -376,18 +369,17 @@ export default function AssestsGrid() {
           align: "center",
           sortable: true,
           renderCell: (params) => {
-            const textStyle = {
-              fontSize: '1em',
-              fontWeight: 'bold',
-            };
-            console.log("params>>>", params);
-
             return (
-              <Box display="flex" alignItems="center" justifyContent='center' height='100%' width='100%'>
-                <Avatar src={params.row.employee.image} alt={params.row.employee_name} sx={{ mr: 2 }} />
-                <Typography sx={textStyle}>{params.row.employee.first_name} {params.row.employee.last_name}</Typography>
+              <Box display="flex" alignItems="center" height="100%">
+                <Avatar
+                  src={params.row.employee.image}
+                  sx={{ marginLeft: 10, width: 40, height: 40 }}
+                />
+                <Typography sx={{ fontSize: '1em', fontWeight: 'bold', textTransform: 'capitalize' }}>
+                  {params.row.employee.first_name} {params.row.employee.last_name}
+                </Typography>
               </Box>
-            );
+            )
           },
         },
         {
@@ -433,11 +425,15 @@ export default function AssestsGrid() {
                           {groupedAssets[groupKey].map((asset, idx) => (
                             <TableRow key={`asset-${idx}`}>
                               <TableCell sx={{ padding: '2px' }}>{asset.name}</TableCell>
-                              <TableCell>{asset.assignment_date}</TableCell>
+                              <TableCell>
+                                {asset.assignment_date ? format(new Date(asset.assignment_date), 'dd-MMM-yyyy').toUpperCase() : ''}
+                              </TableCell>
                               {asset.return_date === '' ? (
                                 <TableCell>No date</TableCell>
                               ) : (
-                                <TableCell>{new Date(asset.return_date).toLocaleDateString('en-GB')}</TableCell>
+                                <TableCell>
+                                  {asset.return_date ? format(new Date(asset.return_date), 'dd-MMM-yyyy').toUpperCase() : ''}
+                                </TableCell>
                               )}
                               {userRole === '1' ? (
                                 <TableCell>
@@ -459,6 +455,24 @@ export default function AssestsGrid() {
         }
 
       ] : [
+        {
+          field: 'rowNumber',
+          headerName: 'S.No.',
+          flex: 0.5,
+          headerAlign: 'center',
+          headerClassName: 'super-app-theme--header',
+          renderCell: (params) => {
+            const number = params.api.getRowIndexRelativeToVisibleRows(params.id) + 1;
+            return (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>
+                {number}
+              </div>
+            )
+
+
+
+          }
+        },
 
         {
           field: 'name',
@@ -476,9 +490,15 @@ export default function AssestsGrid() {
           headerClassName: 'super-app-theme--header',
           headerAlign: 'center',
           align: 'center',
-          valueFormatter: (params) => {
-            const date = params;
-            return date ? new Date(date).toLocaleDateString() : '';
+          renderCell: (params) => {
+            console.log('params', params)
+            const date = new Date(params.value);
+            return !isNaN(date.getTime()) ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>
+                {format(date, 'dd-MMM-yyyy').toUpperCase()}
+              </div>
+            ) : ''
+
           },
 
         },
@@ -489,9 +509,14 @@ export default function AssestsGrid() {
           headerClassName: 'super-app-theme--header',
           headerAlign: 'center',
           align: 'center',
-          valueFormatter: (params) => {
-            const date = params;
-            return date ? new Date(date).toLocaleDateString() : "";
+          renderCell: (params) => {
+            const date = new Date(params.value);
+            return !isNaN(date.getTime()) ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>
+                {format(date, 'dd-MMM-yyyy').toUpperCase()}
+              </div>
+            ) : ''
+
           },
         },
       ]),
@@ -513,53 +538,11 @@ export default function AssestsGrid() {
     return_date: string;
   }
 
-  // Function to transform data into rows suitable for the table
-  // const transformData = (): GroupedData[] => {
-  //   let assestSource = Array.isArray(filteredAssest) && filteredAssest.length > 0 ? filteredAssest : Array.isArray(assests) ? assests : [];
-
-  //   if (Number(userRole) >= 2) {
-
-  //     assestSource = assestSource.filter(asset => asset.employee && asset.employee._id === userId);
-  //   }
-
-  //   if (!Array.isArray(assestSource) || assestSource.length === 0) {
-  //     return [];
-  //   }
-
-  //   const groupedData = assestSource.reduce<GroupedData[]>((acc, curr) => {
-  //     const { employee, assets, _id } = curr;
-
-  //     if (!employee || !Array.isArray(assets)) {
-  //       return acc;
-  //     }
-
-  //     acc.push({
-  //       _id,
-  //       employee_id: employee._id,
-  //       employee_name: `${employee.first_name} ${employee.last_name}`,
-  //       employee_image: employee.image || '',
-  //       assets: assets.map(asset => ({
-  //         _id: asset._id,
-  //         name: asset.name,
-  //         assignment_date: asset.assignment_date,
-  //         return_date: asset.return_date,
-  //       })),
-  //       assignment_date: assets.length > 0 ? assets[0].assignment_date : '',
-  //       return_date: assets.length > 0 ? assets[0].return_date : '',
-  //     });
-  //     console.log("acc", acc);
-  //     return acc;
-  //   }, []);
-
-  //   return groupedData;
-  // };
-
-  const columns = generateColumns();
-  // const rows = transformData();
-
+  const columns = generateColumns()
   const userAssets = useMemo(() => {
-    return assests.map((asset) => ({
+    return assests.map((asset, index) => ({
       _id: asset._id,
+      number: index + 1,
       name: asset.name,
       assignment_date: asset.assignment_date,
       return_date: asset.return_date,
@@ -667,7 +650,7 @@ export default function AssestsGrid() {
             return row._id;
           }}
           paginationMode="server"
-          rowCount={total}
+          rowCount={userRole === '1' ? (assests.length) : (assests.length)}
           onPaginationModelChange={handlePaginationModelChange}
           pageSizeOptions={[10, 20, 30]}
           paginationModel={{ page: page - 1, pageSize: limit }}
