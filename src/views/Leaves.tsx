@@ -546,7 +546,7 @@ export default function LeavesGrid() {
             }
           }}
           paginationMode="server"
-          rowCount={userRole === '1' ? (leaves.length) : (leaves.length)}
+          rowCount={total}
           onPaginationModelChange={handlePaginationModelChange}
           pageSizeOptions={[10, 20, 30]}
           paginationModel={{ page: page - 1, pageSize: limit }}

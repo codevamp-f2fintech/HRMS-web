@@ -456,25 +456,6 @@ export default function AssestsGrid() {
 
       ] : [
         {
-          field: 'rowNumber',
-          headerName: 'S.No.',
-          flex: 0.5,
-          headerAlign: 'center',
-          headerClassName: 'super-app-theme--header',
-          renderCell: (params) => {
-            const number = params.api.getRowIndexRelativeToVisibleRows(params.id) + 1;
-            return (
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>
-                {number}
-              </div>
-            )
-
-
-
-          }
-        },
-
-        {
           field: 'name',
           headerName: 'Assets Name - Model No. - Serial No',
           width: 500,
@@ -527,22 +508,11 @@ export default function AssestsGrid() {
     return columns;
   };
 
-  // Define the row structure for the data
-  interface GroupedData {
-    _id: string;
-    employee_id: string;
-    employee_name: string;
-    employee_image: string;
-    assets: Array<{ name: string; assignment_date: string; return_date: string }>;
-    assignment_date: string;
-    return_date: string;
-  }
 
   const columns = generateColumns()
   const userAssets = useMemo(() => {
     return assests.map((asset, index) => ({
       _id: asset._id,
-      number: index + 1,
       name: asset.name,
       assignment_date: asset.assignment_date,
       return_date: asset.return_date,
@@ -650,7 +620,7 @@ export default function AssestsGrid() {
             return row._id;
           }}
           paginationMode="server"
-          rowCount={userRole === '1' ? (assests.length) : (assests.length)}
+          rowCount={total}
           onPaginationModelChange={handlePaginationModelChange}
           pageSizeOptions={[10, 20, 30]}
           paginationModel={{ page: page - 1, pageSize: limit }}
