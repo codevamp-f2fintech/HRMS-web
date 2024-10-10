@@ -8,7 +8,6 @@ import type { SelectChangeEvent } from '@mui/material';
 import { Avatar, Button, Dialog, DialogContent, FormControl, Grid, IconButton, Accordion, AccordionSummary, AccordionDetails, TextField, Typography, FormHelperText, Autocomplete, Divider, Table, TableHead, TableRow, TableCell, TableBody } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import Box from '@mui/material/Box';
-import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { DataGrid } from '@mui/x-data-grid';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
@@ -579,7 +578,7 @@ export default function AssestsGrid() {
           </Grid>
         </Grid>}
       </Box>
-      <Box sx={{ height: 500, width: '100%' }}>
+      <Box sx={{ height: 600, width: '100%' }}>
         <DataGrid
           getRowHeight={() => 'auto'}
           sx={{

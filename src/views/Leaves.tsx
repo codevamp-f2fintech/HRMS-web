@@ -503,7 +503,7 @@ export default function LeavesGrid() {
           )}
         </Grid>
       </Box>
-      <Box sx={{ height: 500, width: '100%' }}>
+      <Box sx={{ height: 600, width: '100%' }}>
         <DataGrid
           getRowHeight={() => 'auto'}
           sx={{
