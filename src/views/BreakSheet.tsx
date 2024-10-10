@@ -8,6 +8,7 @@ import { RootState, AppDispatch } from '@/redux/store'
 import { apiResponse } from '../utility/apiResponse/employeesResponse'
 import { MoreVert } from '@mui/icons-material'
 import EditBreakForm from '@/components/breaksheet/BreakSheetForm'
+import TeamBreakSheets from '@/utility/breaksheets/TeamBreakSheets'
 
 const BreakSheet: React.FC = () => {
     const dispatch: AppDispatch = useDispatch()
@@ -27,8 +28,11 @@ const BreakSheet: React.FC = () => {
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null)
     const [openEditForm, setOpenEditForm] = useState(false)
     const [currentBreak, setCurrentBreak] = useState(null)
+    const [specifyError, setSpecifyError] = useState<string>('')
 
     const intervalRef = useRef<NodeJS.Timeout | null>(null)
+
+    const [showTeamBreakSheets, setShowTeamBreakSheets] = useState(false);
 
     const employee = JSON.parse(localStorage.getItem('user') || '{}')
     const employeeId = employee?.id
@@ -64,6 +68,12 @@ const BreakSheet: React.FC = () => {
     }
 
     const handleStartTime = () => {
+
+        if (breakType === 'Other' && !otherBreakType.trim()) {
+            setSpecifyError('THIS FIELD IS REQUIRED..........')
+            return
+        }
+
         if (breakType) {
             const now = Date.now()
             setStartTimestamp(now)
@@ -80,6 +90,8 @@ const BreakSheet: React.FC = () => {
     }
 
     const handleEndTime = () => {
+
+
         if (timerRunning && startTimestamp) {
             const endTimestamp = Date.now()
             const diff = endTimestamp - startTimestamp
@@ -112,6 +124,7 @@ const BreakSheet: React.FC = () => {
                 setEndTime('')
                 setDuration('')
                 setStartTimestamp(null)
+                setSpecifyError('')
             })
         }
     }
@@ -156,6 +169,17 @@ const BreakSheet: React.FC = () => {
         }
     }
 
+    const handleEmployeeClick = (empId: string) => {
+        setSelectedEmployeeId(empId);
+        dispatch(fetchBreaksById(empId));
+    };
+
+    const handleTeamsBreakSheetClick = () => {
+        setShowTeamBreakSheets((prev) => !prev);
+        setSelectedEmployeeId(null)
+    };
+
+
     return (
         <Box sx={{ p: 4 }}>
             <Grid container spacing={3} alignItems="center">
@@ -163,7 +187,21 @@ const BreakSheet: React.FC = () => {
                     <Typography variant="h4">Break Sheet</Typography>
                 </Grid>
 
-                {Number(userRole) <= 2 && (
+                {userRole === '2' && <Grid item xs={12}>
+                    <Button sx={{ backgroundColor: '#2c3ce3' }} variant="contained" color="primary" onClick={handleTeamsBreakSheetClick}>
+                        {showTeamBreakSheets ? 'Hide Team Break Sheets' : 'View Team Break Sheets'}
+                    </Button>
+                </Grid>}
+
+
+                {showTeamBreakSheets && (
+                    <Grid item xs={12}>
+
+                        <TeamBreakSheets managerId={employeeId} onEmployeeClick={handleEmployeeClick} />
+                    </Grid>
+                )}
+
+                {Number(userRole) <= 1 && (
                     <Grid item xs={12} sm={6}>
                         <Autocomplete
                             options={employees}
@@ -243,7 +281,8 @@ const BreakSheet: React.FC = () => {
                                 onChange={(e) => setBreakType(e.target.value)}
                                 fullWidth
                                 variant="outlined"
-                                disabled={!isCurrentDate}
+                                disabled={!isCurrentDate || (selectedEmployeeId && selectedEmployeeId !== employeeId && userRole === '2') || undefined}
+
                                 sx={{
                                     display: { xs: 'none', sm: 'block' },
                                 }}
@@ -260,9 +299,15 @@ const BreakSheet: React.FC = () => {
                                 <TextField
                                     label="Please specify"
                                     value={otherBreakType}
-                                    onChange={(e) => setOtherBreakType(e.target.value)}
+                                    onChange={(e) => {
+                                        setOtherBreakType(e.target.value)
+                                        setSpecifyError('')
+                                    }}
                                     fullWidth
                                     variant="outlined"
+
+                                    error={!!specifyError}
+                                    helperText={specifyError}
                                 />
                             </Grid>
                         )}
@@ -273,10 +318,11 @@ const BreakSheet: React.FC = () => {
                                 variant="contained"
                                 color="primary"
                                 onClick={handleStartTime}
-                                disabled={!isCurrentDate || timerRunning}
+                                disabled={!isCurrentDate || timerRunning || (selectedEmployeeId && selectedEmployeeId !== employeeId && userRole === '2') || undefined}
                                 fullWidth
                                 sx={{
                                     display: { xs: 'none', sm: 'block' },
+                                    backgroundColor: '#2c3ce3'
                                 }}
                             >
                                 {timerRunning ? 'Break Running...' : 'Start Break'}
