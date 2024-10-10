@@ -36,6 +36,26 @@ export const fetchTeams = createAsyncThunk('teams/fetchTeams', async ({ page, li
   return (await response.json()) as { teams: Team[], total: number };
 });
 
+export const fetchTeamsByManager = createAsyncThunk(
+  'teams/fetchTeamsByManager',
+  async (managerId: string) => {
+    const token = localStorage.getItem('token'); // Fetch token from localStorage
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/teams/manager/${managerId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch teams by manager');
+    }
+
+    return (await response.json()) as Team[];
+  }
+);
+
 const teamsSlice = createSlice({
   name: 'teams',
   initialState,
@@ -50,12 +70,25 @@ const teamsSlice = createSlice({
       })
       .addCase(fetchTeams.fulfilled, (state, action) => {
         state.teams = action.payload.teams;
-        state.total = action.payload.total; // Set total number of records
+        state.total = action.payload.total;
         state.loading = false;
       })
       .addCase(fetchTeams.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Something went wrong';
+      })
+
+      .addCase(fetchTeamsByManager.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchTeamsByManager.fulfilled, (state, action) => {
+        state.teams = action.payload;
+        state.loading = false;
+      })
+      .addCase(fetchTeamsByManager.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to fetch teams by manager';
       });
   },
 });
