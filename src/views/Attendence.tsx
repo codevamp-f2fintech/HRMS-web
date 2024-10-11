@@ -1132,6 +1132,3 @@ export default function AttendanceGrid() {
     </Box>
   );
 }
-
-
-

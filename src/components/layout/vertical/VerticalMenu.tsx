@@ -1,5 +1,5 @@
 // MUI Imports
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react'
 
 import Chip from '@mui/material/Chip'
 import { useTheme } from '@mui/material/styles'
@@ -10,22 +10,22 @@ import PerfectScrollbar from 'react-perfect-scrollbar'
 // Type Imports
 import HolidayVillageIcon from '@mui/icons-material/HolidayVillage'
 
-
 // Component Imports
 
 // Hook Imports
 
 // Styled Component Imports
-import EventAvailableIcon from '@mui/icons-material/EventAvailable';
-import GroupIcon from '@mui/icons-material/Group';
-import InventoryIcon from '@mui/icons-material/Inventory';
-import EventIcon from '@mui/icons-material/Event';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import DescriptionIcon from '@mui/icons-material/Description';
-import AccessTimeFilledIcon from '@mui/icons-material/AccessTimeFilled';
-import ProductionQuantityLimitsIcon from '@mui/icons-material/ProductionQuantityLimits';
-import SchoolIcon from '@mui/icons-material/School';
-import GavelIcon from '@mui/icons-material/Gavel';
+import EventAvailableIcon from '@mui/icons-material/EventAvailable'
+import GroupIcon from '@mui/icons-material/Group'
+import InventoryIcon from '@mui/icons-material/Inventory'
+import EventIcon from '@mui/icons-material/Event'
+import AccessTimeIcon from '@mui/icons-material/AccessTime'
+import DescriptionIcon from '@mui/icons-material/Description'
+import AccessTimeFilledIcon from '@mui/icons-material/AccessTimeFilled'
+import FreeBreakfastIcon from '@mui/icons-material/FreeBreakfast'
+import ProductionQuantityLimitsIcon from '@mui/icons-material/ProductionQuantityLimits'
+import SchoolIcon from '@mui/icons-material/School'
+import GavelIcon from '@mui/icons-material/Gavel'
 
 import StyledVerticalNavExpandIcon from '@menu/styles/vertical/StyledVerticalNavExpandIcon'
 import useVerticalNav from '@menu/hooks/useVerticalNav'
@@ -47,8 +47,6 @@ const RenderExpandIcon = ({ open, transitionDuration }: RenderExpandIconProps) =
   </StyledVerticalNavExpandIcon>
 )
 
-
-
 const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectScrollbar: boolean) => void }) => {
   // Hooks
   const theme = useTheme()
@@ -56,13 +54,13 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
 
   const ScrollWrapper = isBreakpointReached ? 'div' : PerfectScrollbar
 
-  const [userRole, setUserRole] = useState<string>('');
+  const [userRole, setUserRole] = useState<string>('')
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
 
-    setUserRole(user.role || null);
-  }, []);
+    setUserRole(user.role || null)
+  }, [])
 
   return (
     // eslint-disable-next-line lines-around-comment
@@ -162,14 +160,21 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
           <MenuItem href={`/attendance`} icon={<AccessTimeIcon />}>
             Attendance
           </MenuItem>
+          <MenuItem href={`/leaves`} icon={<EventAvailableIcon />}>
+            Leaves
+          </MenuItem>
           <MenuItem href={`/teams`} icon={<GroupIcon />}>
             Teams
           </MenuItem>
+          <MenuItem href={`/breaksheets`} icon={<FreeBreakfastIcon />}>
+            Break Sheet
+          </MenuItem>
+          <MenuItem href={`/fine`} icon={<GavelIcon />}>
+            Fine
+          </MenuItem>
+
           <MenuItem href={`/assests`} icon={<InventoryIcon />}>
             Assets
-          </MenuItem>
-          <MenuItem href={`/leaves`} icon={<EventAvailableIcon />}>
-            Leaves
           </MenuItem>
           <MenuItem href={`/timesheets`} icon={<AccessTimeFilledIcon />}>
             Time Sheet
@@ -177,17 +182,17 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
           <MenuItem href={`/policy`} icon={<DescriptionIcon />}>
             Policy
           </MenuItem>
-          {userRole === '1' && <MenuItem href={`/inventory`} icon={<ProductionQuantityLimitsIcon />}>
-            Inventory
-          </MenuItem>
-          }
-          <MenuItem href={`/fine`} icon={<GavelIcon />}>
-            Fine
-          </MenuItem>
+          {userRole === '1' && (
+            <MenuItem href={`/inventory`} icon={<ProductionQuantityLimitsIcon />}>
+              Inventory
+            </MenuItem>
+          )}
 
-          {userRole === '1' && <MenuItem href={`/designation`} icon={<SchoolIcon />}>
-            Designations
-          </MenuItem>}
+          {userRole === '1' && (
+            <MenuItem href={`/designation`} icon={<SchoolIcon />}>
+              Designations
+            </MenuItem>
+          )}
 
           {/* <MenuItem href='/account-settings' icon={<i className='ri-user-settings-line' />}>
             Account Settings
