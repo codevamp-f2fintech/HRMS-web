@@ -40,7 +40,10 @@ const AddLeavesForm = ({ handleClose, leave, leaves, userRole, userId, employees
 
   useEffect(() => {
     if (leave) {
-      const selected = leaves.find(l => l._id === leave);
+      const foundLeave = leaves.find(employee =>
+        employee.assets.find(ass => ass._id === leave)
+      )
+      const selected = foundLeave.assets.find(l => l._id === leave);
 
       if (selected) {
         setFormData({

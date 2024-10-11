@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable padding-line-between-statements */
+
 'use client'
 
 import React, { useCallback, useEffect, useState } from 'react'
@@ -19,9 +18,12 @@ import {
   TextField,
   Dialog,
   DialogContent,
-  FormHelperText
+  FormHelperText,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material'
-
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
 import SearchIcon from '@mui/icons-material/Search';
@@ -272,12 +274,12 @@ export default function PolicyGrid() {
   }
 
   const columns: GridColDef[] = [
-    { field: 'name', headerName: 'Name', headerClassName: 'super-app-theme--header', flex: 2, headerAlign: 'center', align: 'center', sortable: false },
+    { field: 'name', headerName: 'Name', headerClassName: 'super-app-theme--header', flex: 1, headerAlign: 'center', align: 'center', sortable: false },
     {
       field: 'document_url',
-      headerName: 'Document Url',
+      headerName: 'Open Document',
       headerClassName: 'super-app-theme--header',
-      flex: 2,
+      flex: 1,
       headerAlign: 'center',
       align: 'center',
       sortable: false,
@@ -293,20 +295,77 @@ export default function PolicyGrid() {
               window.open(previewUrl, '_blank');
             }}
           >
-            Open Document
+            Open
           </Button>
         );
       }
 
     },
+    {
+      field: 'download',
+      headerName: 'Download Document',
+      headerClassName: 'super-app-theme--header',
+      flex: 1.5,
+      headerAlign: 'center',
+      align: 'center',
+      sortable: false,
+      renderCell: (params) => {
+        const documentUrl = params.row.document_url;
 
-    { field: 'description', headerName: 'Description', headerClassName: 'super-app-theme--header', flex: 2, headerAlign: 'center', align: 'center', sortable: false },
+        return (
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              const link = document.createElement('a');
+              link.href = documentUrl;
+              link.download = documentUrl.split('/').pop(); // Extract filename from URL
+              link.click();
+            }}
+          >
+            Download
+          </Button>
+        );
+      }
+    },
+    {
+      field: 'description',
+      headerName: 'Description',
+      headerClassName: 'super-app-theme--header',
+      flex: 2.5,
+      headerAlign: 'center',
+      align: 'center',
+      renderCell: (params) => {
+        const description = params.row?.description || 'No description available'; // Fallback
+
+        console.log('des', description);
+
+        return (
+          <Box>
+            <Accordion>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography>
+                  View Description
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Typography>
+                  {description}
+                </Typography>
+              </AccordionDetails>
+            </Accordion>
+          </Box>
+        );
+      },
+    },
+
+
     ...(userRole === '1' ? [{
       field: 'edit',
       headerName: 'Edit',
       sortable: false,
       headerAlign: 'center',
-      flex: 1,
+      flex: 0.5,
       headerClassName: 'super-app-theme--header',
       renderCell: ({ row: { _id } }) => (
         <Box width="85%" m="0 auto" p="5px" display="flex" justifyContent="space-around">
@@ -356,8 +415,11 @@ export default function PolicyGrid() {
         </Box>
         <Grid container spacing={6} alignItems='center' mb={2}>
 
-          <Grid item xs={12} md={3}>
-            <TextField fullWidth label='Policy Name' variant='outlined' value={selectedKeyword} onChange={handleInputChange} InputProps={{
+          <Grid item xs={12} md={6}>
+            <TextField fullWidth label="search" variant='outlined' value={selectedKeyword} onChange={handleInputChange} InputProps={{
+              sx: {
+                borderRadius: "50px",
+              },
               endAdornment: (
                 <InputAdornment position="end">
                   <SearchIcon />
@@ -365,15 +427,11 @@ export default function PolicyGrid() {
               ),
             }} />
           </Grid>
-          {/* <Grid item xs={12} md={3}>
-            <Button style={{ padding: 15, backgroundColor: '#198754' }} variant='contained' fullWidth>
-              SEARCH
-            </Button>
-          </Grid> */}
         </Grid>
       </Box>
       <Box sx={{ height: 500, width: '100%' }}>
         <DataGrid
+          getRowHeight={() => 'auto'}
           sx={{
             '& .super-app-theme--header': {
               fontSize: 17,
@@ -399,9 +457,6 @@ export default function PolicyGrid() {
               fontSize: '14px',
               boxSizing: 'border-box',
             },
-          }}
-          components={{
-            Toolbar: GridToolbar,
           }}
           rows={filteredPolicies?.length > 0 ? filteredPolicies : policies}
           columns={columns}
