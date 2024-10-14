@@ -17,6 +17,7 @@ import UpcomingBirthdaysReducer from '@/redux/features/employees/employeesSlice'
 import AwardSlice from '@/redux/features/performer/performereSlice';
 import fineReducer from '@/redux/features/fines/fineSlice';
 import breakSheetsReducer from '@/redux/features/breaksheets/breaksSlice'
+import punchSheetReducer from '@/redux/features/punches/punchesSlice'
 
 const store = configureStore({
   reducer: {
@@ -35,6 +36,7 @@ const store = configureStore({
     awards: AwardSlice,
     fines: fineReducer,
     breaks: breakSheetsReducer,
+    punches: punchSheetReducer,
   }
 })
 

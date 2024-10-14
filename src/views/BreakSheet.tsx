@@ -9,6 +9,8 @@ import { apiResponse } from '../utility/apiResponse/employeesResponse'
 import { MoreVert } from '@mui/icons-material'
 import EditBreakForm from '@/components/breaksheet/BreakSheetForm'
 import TeamBreakSheets from '@/utility/breaksheets/TeamBreakSheets'
+import PunchInOut from './PunchInOut'
+import { fetchTotalWorkingHours } from '@/redux/features/punches/punchesSlice'
 
 const BreakSheet: React.FC = () => {
     const dispatch: AppDispatch = useDispatch()
@@ -34,6 +36,8 @@ const BreakSheet: React.FC = () => {
 
     const [showTeamBreakSheets, setShowTeamBreakSheets] = useState(false)
     const [isLargeScreen, setIsLargeScreen] = useState(false)
+
+    const [selectedEmployeeWorkingHours, setSelectedEmployeeWorkingHours] = useState<string>('00h 00m 00s')
 
     const employee = JSON.parse(localStorage.getItem('user') || '{}')
     const employeeId = employee?.id
@@ -77,6 +81,24 @@ const BreakSheet: React.FC = () => {
             if (breakType === 'Other') setOtherBreakType(otherBreakType)
         }
     }, [userRole])
+
+    useEffect(() => {
+        const fetchWorkingHours = async () => {
+            if (selectedEmployeeId && selectedDate) {
+                const workingHoursResponse = await dispatch(
+                    fetchTotalWorkingHours({ employeeId: selectedEmployeeId, date: selectedDate })
+                )
+
+                console.log('Working Hours Response:', workingHoursResponse.payload)
+
+                const { hours = 0, minutes = 0, seconds = 0 } = workingHoursResponse.payload || {}
+
+                setSelectedEmployeeWorkingHours(`${hours}h ${minutes}m ${seconds}s`)
+            }
+        }
+
+        fetchWorkingHours()
+    }, [selectedEmployeeId, selectedDate, dispatch])
 
     const startBreakTimer = (timestamp: number) => {
         if (startTime === '') {
@@ -236,7 +258,8 @@ const BreakSheet: React.FC = () => {
 
     return (
         <Box sx={{ p: 4 }}>
-            <Grid container spacing={3} alignItems='center'>
+            {userRole !== '1' && <PunchInOut selectedDate={selectedDate} />}
+            <Grid container spacing={1} alignItems='center'>
                 <Grid item xs={12}>
                     <Typography variant='h4'>Break Sheet</Typography>
                 </Grid>
@@ -269,6 +292,12 @@ const BreakSheet: React.FC = () => {
                             value={selectedEmployeeId ? employees.find(emp => emp._id === selectedEmployeeId) : null}
                             onChange={(e, value) => setSelectedEmployeeId(value ? value._id : null)}
                         />
+                    </Grid>
+                )}
+
+                {selectedEmployeeId && (
+                    <Grid item xs={12} sm={6}>
+                        <Typography variant='h5'>Total Working Hours: {selectedEmployeeWorkingHours}</Typography>
                     </Grid>
                 )}
 
