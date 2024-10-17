@@ -57,16 +57,10 @@ export const fetchPunchByEmployeeAndDate = createAsyncThunk(
             throw new Error('Failed to fetch punch data')
         }
 
-        const responseData = await response.text()
-
-        if (!responseData) {
-            return null
-        }
-
-        return JSON.parse(responseData)
+        const responseData = await response.json()
+        return responseData
     }
 )
-
 export const addPunch = createAsyncThunk('punch/addPunch', async (punchData: Punch) => {
     const token = localStorage.getItem('token')
     const response = await fetch(`${BASE_URL}/punch/create`, {
@@ -84,6 +78,27 @@ export const addPunch = createAsyncThunk('punch/addPunch', async (punchData: Pun
 
     return await response.json()
 })
+
+export const updatePunch = createAsyncThunk(
+    'punch/updatePunch',
+    async ({ employeeId, punchData }: { employeeId: string; punchData: { punchOut: string; totalTime: string } }) => {
+        const token = localStorage.getItem('token')
+        const response = await fetch(`${BASE_URL}/punch/update-latest/${employeeId}`, {
+            method: 'PUT',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(punchData)
+        })
+
+        if (!response.ok) {
+            throw new Error('Failed to update punch')
+        }
+
+        return await response.json()
+    }
+)
 
 const initialState = {
     punches: [] as Punch[],
@@ -117,7 +132,7 @@ const punchSlice = createSlice({
                 state.error = null
             })
             .addCase(fetchPunchByEmployeeAndDate.fulfilled, (state, action) => {
-                state.punch = action.payload
+                state.punches = action.payload
                 state.loading = false
             })
             .addCase(fetchPunchByEmployeeAndDate.rejected, (state, action) => {
@@ -135,6 +150,22 @@ const punchSlice = createSlice({
             .addCase(addPunch.rejected, (state, action) => {
                 state.loading = false
                 state.error = action.error.message || 'Failed to add punch'
+            })
+
+            .addCase(updatePunch.pending, state => {
+                state.loading = true
+                state.error = null
+            })
+            .addCase(updatePunch.fulfilled, (state, action) => {
+                const index = state.punches.findIndex(p => p.id === action.payload.id)
+                if (index !== -1) {
+                    state.punches[index] = action.payload
+                }
+                state.loading = false
+            })
+            .addCase(updatePunch.rejected, (state, action) => {
+                state.loading = false
+                state.error = action.error.message || 'Failed to update punch'
             })
     }
 })
