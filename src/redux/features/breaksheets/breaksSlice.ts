@@ -6,8 +6,10 @@ export interface Break {
     id: string
     type: string
     startTime: string
+    endTime: string
     duration: string
     date: string
+    employee: string
 }
 
 export const fetchBreaksById = createAsyncThunk('breaks/fetchBreaksById', async (employeeId: string | null) => {
@@ -67,6 +69,28 @@ export const updateBreak = createAsyncThunk(
     }
 );
 
+export const updateLatestBreak = createAsyncThunk(
+    'break/updateBreak',
+    async ({ employeeId, breakData }: { employeeId: string; breakData: { endTime: string; duration: string } }) => {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${BASE_URL}/breaksheet/update-latest/break/${employeeId}`, {
+            method: 'PUT',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(breakData),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to update breaksheet');
+        }
+
+        return await response.json();
+    }
+);
+
+
 const initialState = {
     breaks: [] as Break[],
     loading: false,
@@ -103,6 +127,23 @@ const breaksSlice = createSlice({
                 state.loading = false
                 state.error = action.error.message || 'Failed to add break'
             })
+
+            // Update Latest Break
+            .addCase(updateLatestBreak.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(updateLatestBreak.fulfilled, (state, action) => {
+                const index = state.breaks.findIndex((b) => b.id === action.payload.id);
+                if (index !== -1) {
+                    state.breaks[index] = action.payload;
+                }
+                state.loading = false;
+            })
+            .addCase(updateLatestBreak.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.error.message || 'Failed to update latest break';
+            });
     }
 })
 

@@ -1,9 +1,14 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { Button, Typography, Box, Grid, Divider, CardContent, Card } from '@mui/material'
+import { Button, Typography, Box, Grid, Card } from '@mui/material'
 import { useDispatch, useSelector } from 'react-redux'
-import { addPunch, fetchTotalWorkingHours, fetchPunchByEmployeeAndDate } from '@/redux/features/punches/punchesSlice'
+import {
+    addPunch,
+    fetchTotalWorkingHours,
+    fetchPunchByEmployeeAndDate,
+    updatePunch
+} from '@/redux/features/punches/punchesSlice'
 import { RootState } from '@/redux/store'
 
 interface PunchInOutProps {
@@ -18,10 +23,25 @@ const PunchInOut: React.FC<PunchInOutProps> = ({ selectedDate }) => {
         isPunchIn: false,
         startTime: '',
         endTime: '',
-        totalTime: '00h 00m 00s'
+        totalTime: '00h 00m 00s',
+        isPunchOutDisabled: false,
+        isPunchInDisabled: false
     })
 
+    const [timer, setTimer] = useState('00h 00m 00s')
+    const [currentPunchIndex, setCurrentPunchIndex] = useState(0)
+    const [currentDateTime, setCurrentDateTime] = useState(new Date())
     const [isLargeScreen, setIsLargeScreen] = useState(false)
+
+    const employee = JSON.parse(localStorage.getItem('user') || '{}')
+    const employeeId = employee?.id
+    const totalWorkingHours = useSelector((state: RootState) => state.punches.totalWorkingHours)
+    const punch = useSelector((state: RootState) => state.punches.punches)
+    const loading = useSelector((state: RootState) => state.punches.loading)
+    const error = useSelector((state: RootState) => state.punches.error)
+
+    const currentDate = new Date().toISOString().split('T')[0]
+    const isCurrentDate = selectedDate === currentDate
 
     useEffect(() => {
         const handleResize = () => {
@@ -34,20 +54,42 @@ const PunchInOut: React.FC<PunchInOutProps> = ({ selectedDate }) => {
         return () => window.removeEventListener('resize', handleResize)
     }, [])
 
-    const employee = JSON.parse(localStorage.getItem('user') || '{}')
-    const employeeId = employee?.id
-    const totalWorkingHours = useSelector((state: RootState) => state.punches.totalWorkingHours)
-    const punch = useSelector((state: RootState) => state.punches.punch)
-    const loading = useSelector((state: RootState) => state.punches.loading)
-    const error = useSelector((state: RootState) => state.punches.error)
+    useEffect(() => {
+        const timerInterval = setInterval(() => {
+            setCurrentDateTime(new Date())
+        }, 1000)
 
-    const currentDate = new Date().toISOString().split('T')[0]
-
-    const isCurrentDate = selectedDate === currentDate
+        return () => clearInterval(timerInterval)
+    }, [])
 
     useEffect(() => {
         if (employeeId && selectedDate) {
             dispatch(fetchPunchByEmployeeAndDate({ employeeId, date: selectedDate }))
+                .unwrap()
+                .then(punchData => {
+                    if (punchData.length > 0) {
+                        const latestPunch = punchData[punchData.length - 1]
+                        if (latestPunch.punchOut) {
+                            setPunchState({
+                                ...punchState,
+                                isPunchIn: false,
+                                startTime: latestPunch.punchIn,
+                                endTime: latestPunch.punchOut,
+                                isPunchInDisabled: false,
+                                isPunchOutDisabled: true
+                            })
+                        } else {
+                            setPunchState({
+                                ...punchState,
+                                isPunchIn: true,
+                                startTime: latestPunch.punchIn,
+                                isPunchInDisabled: true,
+                                isPunchOutDisabled: false
+                            })
+                        }
+                    }
+                })
+
             dispatch(fetchTotalWorkingHours({ employeeId, date: selectedDate }))
         }
     }, [dispatch, employeeId, selectedDate])
@@ -61,10 +103,9 @@ const PunchInOut: React.FC<PunchInOutProps> = ({ selectedDate }) => {
             const minutes = Math.floor((totalSeconds % 3600) / 60)
             const seconds = totalSeconds % 60
 
-            setPunchState(prevState => ({
-                ...prevState,
-                totalTime: `${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`
-            }))
+            setTimer(
+                `${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`
+            )
         }, 1000)
     }
 
@@ -76,61 +117,79 @@ const PunchInOut: React.FC<PunchInOutProps> = ({ selectedDate }) => {
     }
 
     const handlePunchIn = async () => {
-        const now = Date.now()
-        const startTime = new Date(now).toLocaleTimeString('en-US', { hour12: false })
+        const now = new Date()
+        const startTime = now.toLocaleTimeString('en-US', {
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        })
+
+        const punchData = {
+            punchIn: startTime,
+            punchOut: '',
+            totalTime: '00h 00m 00s',
+            date: currentDate,
+            employee: employeeId
+        }
+
+        await dispatch(addPunch(punchData)).unwrap()
 
         setPunchState({
             ...punchState,
             isPunchIn: true,
             startTime,
-            totalTime: '00h 00m 00s'
+            isPunchInDisabled: true,
+            isPunchOutDisabled: false
         })
 
-        startPunchInTimer(now)
+        startPunchInTimer(now.getTime())
         localStorage.setItem(
             'punchState',
             JSON.stringify({
-                ...punchState,
                 isPunchIn: true,
                 startTime,
-                timestamp: now
+                timestamp: now.getTime()
             })
         )
     }
 
     const handlePunchOut = async () => {
-
         const now = new Date()
-        const endTime = now.toLocaleTimeString('en-US', { hour12: false })
+        const endTime = now.toLocaleTimeString('en-US', {
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        })
 
-        const confirmation = window.confirm("Are you sure you want to punch out?");
+        const confirmation = window.confirm('Are you sure you want to punch out?')
 
         if (!confirmation) {
-            return;
+            return
         }
-
         stopPunchTimer()
 
         const punchData = {
-            punchIn: punchState.startTime,
             punchOut: endTime,
-            totalTime: punchState.totalTime,
-            date: new Date().toISOString().split('T')[0],
-            employee: employeeId
+            totalTime: timer
         }
 
-        await dispatch(addPunch(punchData))
+        await dispatch(updatePunch({ employeeId, punchData }))
 
         setPunchState({
             isPunchIn: false,
             startTime: '',
             endTime: '',
-            totalTime: '00h 00m 00s'
+            totalTime: '00h 00m 00s',
+            isPunchInDisabled: false,
+            isPunchOutDisabled: true
         })
 
         localStorage.removeItem('punchState')
+
+        await dispatch(fetchPunchByEmployeeAndDate({ employeeId, date: selectedDate }))
         dispatch(fetchTotalWorkingHours({ employeeId, date: selectedDate }))
-        dispatch(fetchPunchByEmployeeAndDate({ employeeId, date: selectedDate }))
     }
 
     useEffect(() => {
@@ -140,9 +199,7 @@ const PunchInOut: React.FC<PunchInOutProps> = ({ selectedDate }) => {
 
             if (restoredPunchState.isPunchIn) {
                 setPunchState(restoredPunchState)
-
-                const punchInTimestamp = restoredPunchState.timestamp
-                startPunchInTimer(punchInTimestamp)
+                startPunchInTimer(restoredPunchState.timestamp)
             }
         }
 
@@ -153,6 +210,18 @@ const PunchInOut: React.FC<PunchInOutProps> = ({ selectedDate }) => {
         }
     }, [])
 
+    const handlePreviousPunch = () => {
+        if (currentPunchIndex > 0) {
+            setCurrentPunchIndex(currentPunchIndex - 1)
+        }
+    }
+
+    const handleNextPunch = () => {
+        if (currentPunchIndex < punch.length - 1) {
+            setCurrentPunchIndex(currentPunchIndex + 1)
+        }
+    }
+
     if (loading) {
         return <div>Loading...</div>
     }
@@ -161,78 +230,181 @@ const PunchInOut: React.FC<PunchInOutProps> = ({ selectedDate }) => {
         return <div>Error: {error}</div>
     }
 
+    const currentPunch = punch.length > 0 ? punch[currentPunchIndex] : null
+
     return (
         <Box sx={{ p: [2, 4], maxWidth: '100%' }}>
             <Card
-                sx={{ width: '100%', maxWidth: [300, 500], p: [2, 3], mb: 4, backgroundColor: '', color: 'white', mx: 'auto' }}
+                sx={{
+                    display: 'flex',
+                    flexDirection: ['column', 'row'],
+                    justifyContent: 'space-between',
+                    p: [2, 3],
+                    mb: 4,
+                    backgroundColor: '',
+                    color: 'white',
+                    borderRadius: 3,
+                    alignItems: 'center',
+                    minHeight: ['auto', '150px']
+                }}
             >
-                <Typography variant='h5' gutterBottom textAlign='center' sx={{ fontSize: ['1.2rem', '1.5rem'] }}>
-                    <span style={{ color: 'black' }}>Work Hours Of {selectedDate} : </span>
-                    <span style={{ color: 'blue', fontSize: ['1.1rem', '1.4rem'] }}>
-                        {`${totalWorkingHours?.hours || 0}h ${totalWorkingHours?.minutes || 0}m ${totalWorkingHours?.seconds || 0}s`}
-                    </span>
-                </Typography>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        width: ['100%', '45%'],
+                        backgroundColor: '#2c3ce3',
+                        padding: 2,
+                        borderRadius: 3,
+                        marginBottom: [2, 0],
+                        marginRight: [0, '1rem'],
+                        height: ['auto', '150px'],
+                        minHeight: '150px'
+                    }}
+                >
+                    <Typography variant='h4' sx={{ fontSize: ['1.5rem', '2rem'], color: '#fff' }}>
+                        {currentDateTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}
+                    </Typography>
+                    <Typography sx={{ fontSize: ['0.875rem', '1rem'], color: '#fff' }}>
+                        {currentDateTime.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </Typography>
+
+                    {isLargeScreen && isCurrentDate && (
+                        <Button
+                            variant='contained'
+                            color='primary'
+                            sx={{ width: '30%', backgroundColor: '#1e40af', mt: 2, fontSize: '0.875rem' }}
+                            onClick={handlePunchIn}
+                            disabled={punchState.isPunchInDisabled}
+                        >
+                            Punch In
+                        </Button>
+                    )}
+                </Box>
+
+                <Box
+                    sx={{
+                        width: ['100%', '45%'],
+                        backgroundColor: '#f0f8ff',
+                        color: '#000',
+                        borderRadius: 3,
+                        textAlign: 'center',
+                        padding: 2,
+                        marginTop: [2, 0],
+                        height: ['auto', '150px'],
+                        minHeight: '150px'
+                    }}
+                >
+                    {punchState.isPunchIn && (
+                        <Typography sx={{ mt: 2, fontSize: '1rem', color: '#000' }}>
+                            Punch In Time: {punchState.startTime}
+                        </Typography>
+                    )}
+
+                    <Typography variant='h6'>Daily Check</Typography>
+                    {isLargeScreen && isCurrentDate && (
+                        <Button
+                            variant='contained'
+                            color='primary'
+                            sx={{ backgroundColor: '#007bff', width: '30%', mt: 8, fontSize: '0.875rem' }}
+                            onClick={handlePunchOut}
+                            disabled={punchState.isPunchOutDisabled}
+                        >
+                            Punch Out
+                        </Button>
+                    )}
+                </Box>
             </Card>
-            {/* Start punch box */}
-            <Grid container justifyContent='center'>
-                <Grid item xs={12} sm={10} md={8}>
-                    <Card sx={{ p: [1, 2], mb: 4, mx: 'auto', width: '100%', maxWidth: [300, 600] }}>
-                        <CardContent>
-                            {/* Display punchIn, punchOut, and totalTime at the top */}
-                            <Typography variant='h6' textAlign='center' sx={{ mb: 3 }}>
-                                <span style={{ color: 'blue' }}>
-                                    Punch In: {punch?.punchIn || '-'} | Punch Out: {punch?.punchOut || '-'} | Total Time:{' '}
-                                    {punch?.totalTime || '-'}
-                                </span>
+
+            <Box sx={{ display: 'flex', flexDirection: ['column', 'row'], gap: 4 }}>
+                <Card
+                    sx={{
+                        width: '100%',
+                        maxWidth: [300, 500],
+                        p: [2, 3],
+                        backgroundColor: '#2c3ce3',
+                        color: 'white',
+                        mx: 'auto',
+                        borderRadius: 3,
+                        marginBottom: [2, 0]
+                    }}
+                >
+                    <Typography variant='h6' textAlign='center' sx={{ mb: 3, color: 'white' }}>
+                        Punch Records
+                    </Typography>
+
+                    <Grid container justifyContent='center'>
+                        <Grid item xs={4}>
+                            <Typography variant='h6' textAlign='center' sx={{ color: 'white' }}>
+                                Punch In
                             </Typography>
+                            <Typography textAlign='center' sx={{ color: 'white' }}>
+                                {currentPunch?.punchIn || '-'}
+                            </Typography>
+                        </Grid>
+                        <Grid item xs={4}>
+                            <Typography variant='h6' textAlign='center' sx={{ color: 'white' }}>
+                                Punch Out
+                            </Typography>
+                            <Typography textAlign='center' sx={{ color: 'white' }}>
+                                {currentPunch?.punchOut || '-'}
+                            </Typography>
+                        </Grid>
+                        <Grid item xs={4}>
+                            <Typography variant='h6' textAlign='center' sx={{ color: 'white' }}>
+                                Total Time
+                            </Typography>
+                            <Typography textAlign='center' sx={{ color: 'white' }}>
+                                {currentPunch?.totalTime || '-'}
+                            </Typography>
+                        </Grid>
+                    </Grid>
 
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3, width: '100%' }}>
-                                <Typography variant='h6' textAlign='center' sx={{ flexGrow: 1, fontSize: ['1rem', '1.3rem'] }}>
-                                    Timer
-                                </Typography>
-                                <Typography variant='h6' textAlign='center' sx={{ flexGrow: 1, fontSize: ['1rem', '1.3rem'] }}>
-                                    Start Time
-                                </Typography>
-                            </Box>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3, width: '100%' }}>
-                                <Typography
-                                    variant='h5'
-                                    color='text.secondary'
-                                    textAlign='center'
-                                    sx={{ flexGrow: 1, fontSize: ['1rem', '1.3rem'] }}
-                                >
-                                    {punchState.totalTime}
-                                </Typography>
-                                <Typography
-                                    variant='h5'
-                                    color='text.secondary'
-                                    textAlign='center'
-                                    sx={{ flexGrow: 2, fontSize: ['1rem', '1.3rem'] }}
-                                >
-                                    {punchState.startTime || '-'}
-                                </Typography>
-                            </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
+                        <Button
+                            variant='contained'
+                            color='primary'
+                            disabled={currentPunchIndex === 0}
+                            onClick={handlePreviousPunch}
+                        >
+                            Previous
+                        </Button>
+                        <Button
+                            variant='contained'
+                            color='primary'
+                            disabled={currentPunchIndex === punch.length - 1}
+                            onClick={handleNextPunch}
+                        >
+                            Next
+                        </Button>
+                    </Box>
+                </Card>
 
-                            <Divider sx={{ my: 3 }} />
-
-                            {/* Punch In/Out Button */}
-                            {isLargeScreen && isCurrentDate && (
-                                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-                                    {punchState.isPunchIn ? (
-                                        <Button variant='contained' color='primary' onClick={handlePunchOut}>
-                                            Punch Out
-                                        </Button>
-                                    ) : (
-                                        <Button variant='contained' color='secondary' onClick={handlePunchIn}>
-                                            Punch In
-                                        </Button>
-                                    )}
-                                </Box>
-                            )}
-                        </CardContent>
-                    </Card>
-                </Grid>
-            </Grid>
+                <Card
+                    sx={{
+                        width: '100%',
+                        maxWidth: [300, 500],
+                        p: [2, 3],
+                        backgroundColor: '#2c3ce3',
+                        color: 'white',
+                        mx: 'auto',
+                        borderRadius: 3,
+                        marginTop: [2, 0]
+                    }}
+                >
+                    <Typography variant='h5' textAlign='center' sx={{ color: 'white' }}>
+                        Total Working Hours of {selectedDate}
+                    </Typography>
+                    <Typography variant='h2' textAlign='center' sx={{ color: 'white' }}>
+                        <span>
+                            {' '}
+                            {`${totalWorkingHours?.hours || 0}h ${totalWorkingHours?.minutes || 0}m ${totalWorkingHours?.seconds || 0}s`}
+                        </span>
+                    </Typography>
+                </Card>
+            </Box>
         </Box>
     )
 }

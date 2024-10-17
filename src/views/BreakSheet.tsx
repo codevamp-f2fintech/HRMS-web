@@ -22,6 +22,7 @@ const BreakSheet: React.FC = () => {
     const [endTime, setEndTime] = useState<string>('')
     const [duration, setDuration] = useState<string>('')
     const [filteredBreaks, setFilteredBreaks] = useState<Break[]>([])
+    const [onFieldBreaks, setOnFieldBreaks] = useState<Break[]>([])
     const [timerRunning, setTimerRunning] = useState<boolean>(false)
     const [startTimestamp, setStartTimestamp] = useState<number | null>(null)
     const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0])
@@ -43,7 +44,7 @@ const BreakSheet: React.FC = () => {
     const employeeId = employee?.id
     const userRole = employee?.role
 
-    const breakOptions = ['Washroom', 'Lunch', 'Refreshment', 'Tea', 'Personal Call', 'Other']
+    const breakOptions = ['Washroom', 'Lunch', 'Refreshment', 'Tea', 'Personal Call', 'On Field', 'Other']
 
     useEffect(() => {
         const handleResize = () => {
@@ -216,13 +217,15 @@ const BreakSheet: React.FC = () => {
 
     useEffect(() => {
         const filtered = breaks.filter(b => b.date === selectedDate)
-        setFilteredBreaks(filtered)
+        const onField = filtered.filter(b => b.type === 'On Field') // Separate "On Field" breaks
+        const nonOnFieldBreaks = filtered.filter(b => b.type !== 'On Field') // Filter out "On Field"
 
-        const today = new Date().toISOString().split('T')[0]
-        setIsCurrentDate(selectedDate === today)
+        setFilteredBreaks(nonOnFieldBreaks)
+        setOnFieldBreaks(onField)
     }, [selectedDate, breaks])
 
     const totalDurationForDate = filteredBreaks.reduce((acc, b) => acc + convertToMilliseconds(b.duration), 0)
+    const totalOnFieldDuration = onFieldBreaks.reduce((acc, b) => acc + convertToMilliseconds(b.duration), 0) // Calculate total "On Field" time
 
     const handleEditClick = breakToEdit => {
         const breakWithCorrectIds = {
@@ -300,6 +303,23 @@ const BreakSheet: React.FC = () => {
                         <Typography variant='h5'>Total Working Hours: {selectedEmployeeWorkingHours}</Typography>
                     </Grid>
                 )}
+                <Typography variant='h6'>
+                    Total On Field Time for {selectedDate}:
+                </Typography>
+                <Typography
+                    variant='body1'
+                    sx={{
+                        fontSize: { xs: '0.875rem', sm: '1rem' },
+                        color: 'blue',
+                        padding: { xs: '0.5rem 1rem', sm: '0.75rem 1.5rem' },
+                        borderRadius: '0.5rem',
+                        width: 'auto',
+                        maxWidth: '10rem',
+                        textAlign: 'center'
+                    }}
+                >
+                    {formatTime(totalOnFieldDuration)}
+                </Typography>
 
                 <Grid item xs={12}>
                     <Box
@@ -312,6 +332,8 @@ const BreakSheet: React.FC = () => {
                             flexWrap: 'wrap'
                         }}
                     >
+
+
                         <Typography
                             variant='h6'
                             sx={{
@@ -322,6 +344,7 @@ const BreakSheet: React.FC = () => {
                         >
                             Total Break Time for {selectedDate}:
                         </Typography>
+
 
                         <Typography
                             variant='body1'
