@@ -19,11 +19,15 @@ import Divider from '@mui/material/Divider';
 // MUI Icons
 import CakeIcon from '@mui/icons-material/Cake';
 import PersonIcon from '@mui/icons-material/Person';
+import { utility } from '@/utility'
+
 
 const UpcomingBirthdays = () => {
   const dispatch = useDispatch<AppDispatch>();
   const [userId, setUserId] = useState()
   const { upcomingBirthdays } = useSelector((state: RootState) => state.upcomingBirthdays);
+  const { capitalizeFirstLetter } = utility();
+
 
   useEffect(() => {
     if (upcomingBirthdays.length === 0) {
@@ -65,7 +69,7 @@ const UpcomingBirthdays = () => {
                     </Avatar>
                   </ListItemAvatar>
                   <ListItemText
-                    primary={`${row._doc.first_name} ${row._doc.last_name}`}
+                    primary={`${capitalizeFirstLetter(row._doc.first_name)} ${capitalizeFirstLetter(row._doc.last_name)}`}
                     secondary={
                       <React.Fragment>
                         <Typography

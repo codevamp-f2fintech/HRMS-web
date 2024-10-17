@@ -1,7 +1,7 @@
 const Logo = () => {
   return (
     <img
-      src="https://th.bing.com/th/id/OIP.OLwPrP2TBX0gwUdX9f53qwHaHa?rs=1&pid=ImgDetMain"
+      src="/images/logos/fintech.png"
       alt="New Logo"
       width="80"
       style={{ backgroundColor: 'transparent' }}

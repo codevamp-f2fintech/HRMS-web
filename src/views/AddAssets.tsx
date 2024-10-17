@@ -461,7 +461,7 @@ export default function AddAssets() {
               fullWidth
               onClick={handleSubmit}
             >
-              {asset ? 'UPDATE ASSET' : 'ADD ASSET'}
+              {asset ? 'UPDATE Inventory' : 'ADD Inventory'}
             </Button>
           </Grid>
 

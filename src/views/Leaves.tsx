@@ -137,9 +137,7 @@ export default function LeavesGrid() {
                 <StyledTableCell>Application</StyledTableCell>
                 <StyledTableCell>Status</StyledTableCell>
                 <StyledTableCell>Decision</StyledTableCell>
-                {userRole === '1' ? (
-                  <StyledTableCell>Edit</StyledTableCell>
-                ) : ''}
+                {userRole === '1' ? <StyledTableCell>Edit</StyledTableCell> : ''}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -147,6 +145,13 @@ export default function LeavesGrid() {
                 params.row.assets.map((leave) => {
                   const dayValue = parseFloat(leave.day);
                   const halfPeriod = leave.half_day_period;
+                  const [showFullText, setShowFullText] = React.useState(false);
+
+                  const handleToggleText = () => {
+                    setShowFullText((prev) => !prev);
+                  };
+
+                  const maxChars = 15; // Set character limit for truncation
 
                   return (
                     <TableRow key={leave._id}>
@@ -193,7 +198,25 @@ export default function LeavesGrid() {
                         {leave.end_date ? format(new Date(leave.end_date), 'dd-MMM-yyyy').toUpperCase() : ''}
                       </TableCell>
                       <TableCell>{leave.type}</TableCell>
-                      <TableCell>{leave.application}</TableCell>
+
+                      {/* Application with 'Show More' functionality */}
+                      <TableCell>
+                        {showFullText || leave.application.length <= maxChars ? (
+                          leave.application
+                        ) : (
+                          `${leave.application.slice(0, maxChars)}...`
+                        )}
+                        {leave.application.length > maxChars && (
+                          <Button
+                            variant="text"
+                            color="primary"
+                            onClick={handleToggleText}
+                          >
+                            {showFullText ? 'Less' : 'More'}
+                          </Button>
+                        )}
+                      </TableCell>
+
                       <TableCell>{leave.status}</TableCell>
                       <TableCell sx={{ minWidth: 100 }}>{leave.reason}</TableCell>
                       {userRole === '1' ? (
@@ -224,6 +247,7 @@ export default function LeavesGrid() {
       </Accordion>
     );
   };
+
 
 
 
@@ -376,12 +400,13 @@ export default function LeavesGrid() {
           headerName: 'Application',
           flex: 2,
           headerAlign: 'center',
+          align: 'center',
           headerClassName: 'super-app-theme--header',
-          renderCell: (params) => (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>
-              {params.value}
-            </div>
-          )
+          // renderCell: (params) => (
+          //   <div style={{ alignItems: 'center' }}>
+          //     {params.value}
+          //   </div>
+          // )
         },
 
         {

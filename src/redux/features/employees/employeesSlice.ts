@@ -134,6 +134,15 @@ const employeesSlice = createSlice({
         state.employees.push(updatedEmployee);
       }
     },
+    deleteEmployee(state, action: PayloadAction<string>) {  // Assuming we pass the employee _id for deletion
+      const employeeId = action.payload;
+      const index = state.employees.findIndex(emp => emp._id === employeeId);
+
+      if (index !== -1) {
+        state.employees.splice(index, 1);  // Remove employee from array
+      }
+    }
+
   },
   extraReducers: (builder) => {
     // Handle fetching regular employees
@@ -171,5 +180,5 @@ const employeesSlice = createSlice({
 });
 
 // Exporting actions and the reducer
-export const { resetEmployees, updateEmployee, addOrUpdateEmployee } = employeesSlice.actions;
+export const { resetEmployees, updateEmployee, addOrUpdateEmployee, deleteEmployee } = employeesSlice.actions;
 export default employeesSlice.reducer;

@@ -388,6 +388,7 @@ export default function AssestsGrid() {
           headerAlign: 'center',
           headerClassName: 'super-app-theme--header',
           renderCell: (params) => {
+            console.log('params', params)
             const assets = Array.isArray(params.row.assets) ? params.row.assets : []; // Default to an empty array if undefined
 
             const groupedAssets = assets.reduce((acc, asset) => {
