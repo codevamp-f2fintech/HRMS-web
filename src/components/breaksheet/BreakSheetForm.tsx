@@ -16,6 +16,7 @@ const EditBreakForm: React.FC<EditBreakFormProps> = ({ open, onClose, onSubmit, 
         type: '',
         startTime: '',
         duration: '',
+        endTime: ''
     })
 
     const [otherBreakType, setOtherBreakType] = useState<string>('')
@@ -26,6 +27,7 @@ const EditBreakForm: React.FC<EditBreakFormProps> = ({ open, onClose, onSubmit, 
                 type: breakToEdit.type || '',
                 startTime: breakToEdit.startTime || '',
                 duration: breakToEdit.duration || '',
+                endTime: breakToEdit.endTime || '',
             })
 
             if (!breakOptions.includes(breakToEdit.type)) {
@@ -50,7 +52,7 @@ const EditBreakForm: React.FC<EditBreakFormProps> = ({ open, onClose, onSubmit, 
     const handleSubmit = () => {
         if (breakToEdit) {
             const finalBreakType = formValues.type === 'Other' ? otherBreakType : formValues.type
-            onSubmit({ ...breakToEdit, type: finalBreakType, startTime: formValues.startTime, duration: formValues.duration })
+            onSubmit({ ...breakToEdit, type: finalBreakType, startTime: formValues.startTime, duration: formValues.duration, endTime: formValues.endTime }) // Include endTime in the updated data
         }
     }
 
@@ -93,6 +95,14 @@ const EditBreakForm: React.FC<EditBreakFormProps> = ({ open, onClose, onSubmit, 
                     margin="normal"
                 />
                 <TextField
+                    label="End Time"
+                    name="endTime"
+                    value={formValues.endTime}
+                    onChange={handleChange}
+                    fullWidth
+                    margin="normal"
+                />
+                <TextField
                     label="Duration"
                     name="duration"
                     value={formValues.duration}
@@ -100,6 +110,7 @@ const EditBreakForm: React.FC<EditBreakFormProps> = ({ open, onClose, onSubmit, 
                     fullWidth
                     margin="normal"
                 />
+
             </DialogContent>
             <DialogActions>
                 <Button onClick={onClose} color="primary">

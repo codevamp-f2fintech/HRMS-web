@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { Button, Typography, Box, Grid, Card } from '@mui/material'
+import { Button, Typography, Box, Grid, Card, Tooltip } from '@mui/material'
 import { useDispatch, useSelector } from 'react-redux'
 import {
     addPunch,
@@ -12,10 +12,12 @@ import {
 import { RootState } from '@/redux/store'
 
 interface PunchInOutProps {
-    selectedDate: string
+    selectedDate: string,
+    selectedEmployeeId?: string
+    disablePunch?: boolean
 }
 
-const PunchInOut: React.FC<PunchInOutProps> = ({ selectedDate }) => {
+const PunchInOut: React.FC<PunchInOutProps> = ({ selectedDate, selectedEmployeeId, disablePunch }) => {
     const dispatch = useDispatch()
     const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -34,7 +36,8 @@ const PunchInOut: React.FC<PunchInOutProps> = ({ selectedDate }) => {
     const [isLargeScreen, setIsLargeScreen] = useState(false)
 
     const employee = JSON.parse(localStorage.getItem('user') || '{}')
-    const employeeId = employee?.id
+    const employeeId = selectedEmployeeId || employee?.id
+    const userRole = employee?.role
     const totalWorkingHours = useSelector((state: RootState) => state.punches.totalWorkingHours)
     const punch = useSelector((state: RootState) => state.punches.punches)
     const loading = useSelector((state: RootState) => state.punches.loading)
@@ -144,14 +147,6 @@ const PunchInOut: React.FC<PunchInOutProps> = ({ selectedDate }) => {
         })
 
         startPunchInTimer(now.getTime())
-        localStorage.setItem(
-            'punchState',
-            JSON.stringify({
-                isPunchIn: true,
-                startTime,
-                timestamp: now.getTime()
-            })
-        )
     }
 
     const handlePunchOut = async () => {
@@ -186,22 +181,22 @@ const PunchInOut: React.FC<PunchInOutProps> = ({ selectedDate }) => {
             isPunchOutDisabled: true
         })
 
-        localStorage.removeItem('punchState')
+        // localStorage.removeItem('punchState')
 
         await dispatch(fetchPunchByEmployeeAndDate({ employeeId, date: selectedDate }))
         dispatch(fetchTotalWorkingHours({ employeeId, date: selectedDate }))
     }
 
     useEffect(() => {
-        const savedPunchState = localStorage.getItem('punchState')
-        if (savedPunchState) {
-            const restoredPunchState = JSON.parse(savedPunchState)
+        // const savedPunchState = localStorage.getItem('punchState')
+        // if (savedPunchState) {
+        //     const restoredPunchState = JSON.parse(savedPunchState)
 
-            if (restoredPunchState.isPunchIn) {
-                setPunchState(restoredPunchState)
-                startPunchInTimer(restoredPunchState.timestamp)
-            }
-        }
+        //     if (restoredPunchState.isPunchIn) {
+        //         setPunchState(restoredPunchState)
+        //         startPunchInTimer(restoredPunchState.timestamp)
+        //     }
+        // }
 
         return () => {
             if (intervalRef.current) {
@@ -234,7 +229,7 @@ const PunchInOut: React.FC<PunchInOutProps> = ({ selectedDate }) => {
 
     return (
         <Box sx={{ p: [2, 4], maxWidth: '100%' }}>
-            <Card
+            {userRole !== '1' && <Card
                 sx={{
                     display: 'flex',
                     flexDirection: ['column', 'row'],
@@ -271,16 +266,28 @@ const PunchInOut: React.FC<PunchInOutProps> = ({ selectedDate }) => {
                         {currentDateTime.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </Typography>
 
-                    {isLargeScreen && isCurrentDate && (
-                        <Button
-                            variant='contained'
-                            color='primary'
-                            sx={{ width: '30%', backgroundColor: '#1e40af', mt: 2, fontSize: '0.875rem' }}
-                            onClick={handlePunchIn}
-                            disabled={punchState.isPunchInDisabled}
+                    {isLargeScreen && (
+                        <Tooltip
+                            title={
+                                disablePunch
+                                    ? `Managers can't punch in for team members.`
+                                    : !isCurrentDate
+                                        ? 'Punch-In available for today only.'
+                                        : ''
+                            }
                         >
-                            Punch In
-                        </Button>
+                            <span style={{ width: '100%', textAlign: 'center' }}>
+                                <Button
+                                    variant='contained'
+                                    color='primary'
+                                    sx={{ width: '40%', backgroundColor: '#1e40af', mt: 2, fontSize: '0.875rem' }}
+                                    onClick={handlePunchIn}
+                                    disabled={punchState.isPunchInDisabled || disablePunch || !isCurrentDate}
+                                >
+                                    Punch In
+                                </Button>
+                            </span>
+                        </Tooltip>
                     )}
                 </Box>
 
@@ -304,19 +311,32 @@ const PunchInOut: React.FC<PunchInOutProps> = ({ selectedDate }) => {
                     )}
 
                     <Typography variant='h6'>Daily Check</Typography>
-                    {isLargeScreen && isCurrentDate && (
-                        <Button
-                            variant='contained'
-                            color='primary'
-                            sx={{ backgroundColor: '#007bff', width: '30%', mt: 8, fontSize: '0.875rem' }}
-                            onClick={handlePunchOut}
-                            disabled={punchState.isPunchOutDisabled}
+                    {isLargeScreen && (
+                        <Tooltip
+                            title={
+                                disablePunch
+                                    ? `Managers can't punch out for team members.`
+                                    : !isCurrentDate
+                                        ? 'Punch-Out available for today only.'
+                                        : ''
+                            }
                         >
-                            Punch Out
-                        </Button>
+                            <div style={{ width: '100%', textAlign: 'center' }}>
+                                <Button
+                                    variant='contained'
+                                    color='primary'
+                                    sx={{ backgroundColor: '#007bff', width: '40%', mt: 8, fontSize: '0.875rem' }}
+                                    onClick={handlePunchOut}
+                                    disabled={punchState.isPunchOutDisabled || !isCurrentDate || disablePunch}
+                                >
+                                    Punch Out
+                                </Button>
+                            </div>
+                        </Tooltip>
                     )}
+
                 </Box>
-            </Card>
+            </Card>}
 
             <Box sx={{ display: 'flex', flexDirection: ['column', 'row'], gap: 4 }}>
                 <Card
