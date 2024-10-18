@@ -49,12 +49,13 @@ import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 
 import type { AppDispatch, RootState } from '@/redux/store';
-import { fetchAttendances, filterAttendance, resetAttendances, addOrUpdateAttendance } from '@/redux/features/attendances/attendancesSlice';
-import { fetchEmployees } from '@/redux/features/employees/employeesSlice';
+import { fetchAttendances, filterAttendance, addOrUpdateAttendance, resetAttendances } from '@/redux/features/attendances/attendancesSlice';
 import { apiResponse } from '@/utility/apiResponse/employeesResponse';
 import AttendanceSummary from '@/utility/attendancesummry/AttendanceSummary';
 import EmployeeStatsWithBlinkingStatus from '@/utility/totalempattendancesummary/EmployeeStatsWithBlinkingStatus';
 import { AttendanceSummaryColumns } from '@/utility/attendancesummry/AttendanceSummaryColumns';
+
+import Loader from "../components/loader/loader"
 
 function getRandomNumber(min: number, max: number) {
   return Math.round(Math.random() * (max - min) + min);
@@ -298,7 +299,7 @@ function AttendanceStatusList({ attendanceData, selectedMonth }) {
 
 export default function AttendanceGrid() {
   const dispatch: AppDispatch = useDispatch();
-  const { attendances, loading, error, filteredAttendance } = useSelector((state: RootState) => state.attendances);
+  const { attendances, loading, error, filteredAttendance, count } = useSelector((state: RootState) => state.attendances);
 
   const [showForm, setShowForm] = useState(false);
   const [selectedAttendance, setSelectedAttendance] = useState(null);
@@ -309,6 +310,8 @@ export default function AttendanceGrid() {
   const [userRole, setUserRole] = useState<string>('');
   const [userId, setUserId] = useState<string>('');
   const [searchName, setSearchName] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [searchLocation, setSearchLoaction] = useState('All');
 
   const [employees, setEmployees] = useState([]);
@@ -317,33 +320,33 @@ export default function AttendanceGrid() {
   const [prefillEmployeeName, setPrefillEmployeeName] = useState('');
   const [prefillDate, setPrefillDate] = useState('');
 
-
   const debouncedSearch = useCallback(
     debounce(() => {
-      console.log('debounce triggered');
-      dispatch(filterAttendance({ name: searchName, location: searchLocation }));
+      console.log("this is callled search");
+      dispatch(fetchAttendances({ month: month, weekIndex: startDayIndex, page: page, limit: limit, keyword: searchName }));
     }, 300),
-    [searchName, searchLocation]
+    [searchName]
   );
 
   useEffect(() => {
-    debouncedSearch();
+    if (searchName !== '') {
+      debouncedSearch();
+    }
 
     return debouncedSearch.cancel;
-  }, [searchName, searchLocation, debouncedSearch]);
+  }, [searchName, debouncedSearch]);
 
   const handleInputChange = (e) => {
     setSearchName(e.target.value);
   };
 
   const handleLocationInputChange = (e) => {
-    setSearchLoaction(e.target.value);
+    setSearchName(e.target.value);
   };
 
   useEffect(() => {
-    if (attendances.length === 0) {
-      dispatch(fetchAttendances());
-    }
+    console.log("this is callled initial");
+    dispatch(fetchAttendances({ month: month, weekIndex: startDayIndex, page: page, limit: limit, keyword: searchName }));
 
     const fetchEmployees = async () => {
       const data = await apiResponse();
@@ -352,7 +355,7 @@ export default function AttendanceGrid() {
     };
 
     fetchEmployees();
-  }, [dispatch, attendances.length]);
+  }, [dispatch, month, startDayIndex, page, limit]);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -360,6 +363,15 @@ export default function AttendanceGrid() {
     setUserRole(user.role);
     setUserId(user.id);
   }, []);
+
+  const handlePageChange = (newPage: number, newPageSize: number) => {
+    setPage(newPage + 1);
+    setLimit(newPageSize);
+  };
+
+  const handlePaginationModelChange = (params: { page: number; pageSize: number }) => {
+    handlePageChange(params.page, params.pageSize);
+  };
 
   function AddAttendanceForm({ handleClose, attendance, prefillEmployee, prefillEmployeeName, prefillDate }) {
     const [formData, setFormData] = useState({
@@ -624,8 +636,6 @@ export default function AttendanceGrid() {
     );
   }
 
-
-
   const handleAttendanceAddClick = (employeeId = '', employeeName = '', day) => {
     const date = dayjs(new Date(new Date().getFullYear(), month - 1, day)).format('YYYY-MM-DD');
 
@@ -812,7 +822,7 @@ export default function AttendanceGrid() {
 
 
   const transformData = () => {
-    const attendanceSource = filteredAttendance.length > 0 ? filteredAttendance : attendances;
+    const attendanceSource = attendances;
 
     const groupedData = attendanceSource.reduce((acc, curr) => {
       const { employee, date, status, timeComplete, _id } = curr;
@@ -899,6 +909,8 @@ export default function AttendanceGrid() {
     setMonth(newMonth);
   };
 
+  console.log("rows", rows);
+
   return (
     <Box>
       <ToastContainer />
@@ -930,7 +942,6 @@ export default function AttendanceGrid() {
         </Dialog>
 
         {userRole === '1' && <EmployeeStatsWithBlinkingStatus />}
-
 
         <Box mb={2}>
           <Grid container spacing={2} alignItems="center">
@@ -1045,10 +1056,10 @@ export default function AttendanceGrid() {
                 label='Select Location'
                 labelId='demo-simple-select-label'
                 id='demo-simple-select'
-                value={searchLocation}
+                value={searchName}
                 onChange={handleLocationInputChange}
               >
-                <MenuItem value="All">All</MenuItem>
+                <MenuItem value="">All</MenuItem>
                 <MenuItem value="noida">Noida</MenuItem>
                 <MenuItem value="bareilly">Bareilly</MenuItem>
                 <MenuItem value="patel Nagar">Patel Nagar</MenuItem>
@@ -1058,76 +1069,66 @@ export default function AttendanceGrid() {
         </Grid>}
       </Box>
       <Box sx={{ display: 'flex' }}>
-        <Box sx={{ height: 500, width: '100%' }}>
-          {userRole === '1' ? (
-            <DataGrid
-              getRowHeight={() => 'auto'}
-              sx={{
-
-                '& .MuiDataGrid-columnHeader .MuiDataGrid-sortIcon': {
-                  color: 'white',
-                },
-                '& .MuiDataGrid-columnHeader .MuiDataGrid-menuIconButton': {
-                  color: 'white',
-                },
-                '& .mui-yrdy0g-MuiDataGrid-columnHeaderRow ': {
-                  background: 'linear-gradient(270deg, var(--mui-palette-primary-main), rgb(197, 171, 255) 100%) !important',
-                },
-                '& .mui-wop1k0-MuiDataGrid-footerContainer': {
-                  background: 'linear-gradient(270deg, var(--mui-palette-primary-main), rgb(197, 171, 255) 100%) !important',
-                },
-                '& .MuiDataGrid-cell': {
-                  fontSize: '1.2em',
-                  color: '#633030',
-                  align: 'center',
-                }
-              }}
-
-              // components={{
-              //   Toolbar: () => {
-              //     return (
-              //       <GridToolbar />
-              //     )
-              //   }
-
-
-              // ... other components
-              // }}
-              slots={{ toolbar: GridToolbar }}
-              rows={rows}
-              columns={columns}
-              getRowId={(row) => row._id}
-              initialState={{
-                pagination: {
-                  paginationModel: {
-                    pageSize: 10,
-                  },
-                },
-                sorting: {
-                  sortModel: [{ field: 'employee_id', sort: 'asc' }],
-                },
-              }}
-              pageSizeOptions={[10, 20, 30]}
-              checkboxSelection
-              disableRowSelectionOnClick
-            />
-          ) : (
-            <Box display="flex">
-              <Box display="flex" flexDirection="column" flexShrink={0}>
-                <DateCalendarServerRequest
-                  attendanceData={attendanceData}
-                  selectedMonth={month}
-                  onMonthChange={handleMonthChange}
-                />
-                <Legend />
-              </Box>
-              <AttendanceStatusList
+        {userRole === '1' ? (
+          <DataGrid
+            autoHeight
+            getRowHeight={() => 'auto'}
+            sx={{
+              '& .MuiDataGrid-columnHeader .MuiDataGrid-sortIcon': {
+                color: 'white',
+              },
+              '& .MuiDataGrid-columnHeader .MuiDataGrid-menuIconButton': {
+                color: 'white',
+              },
+              '& .mui-yrdy0g-MuiDataGrid-columnHeaderRow ': {
+                background: 'linear-gradient(270deg, var(--mui-palette-primary-main), rgb(197, 171, 255) 100%) !important',
+              },
+              '& .mui-wop1k0-MuiDataGrid-footerContainer': {
+                background: 'linear-gradient(270deg, var(--mui-palette-primary-main), rgb(197, 171, 255) 100%) !important',
+              },
+              '& .MuiDataGrid-cell': {
+                fontSize: '1.2em',
+                color: '#633030',
+                align: 'center',
+              }
+            }}
+            slots={{
+              toolbar: GridToolbar,
+              loadingOverlay: Loader,
+            }}
+            rows={searchName === '' ? rows.slice((page - 1) * limit, page * limit) : rows.slice(-count)}
+            columns={columns}
+            getRowId={(row) => row._id}
+            initialState={{
+              sorting: {
+                sortModel: [{ field: 'employee_id', sort: 'asc' }],
+              },
+            }}
+            pageSizeOptions={[10, 20, 30]}
+            paginationMode="server"
+            onPaginationModelChange={handlePaginationModelChange}
+            paginationModel={{ page: page - 1, pageSize: limit }}
+            checkboxSelection
+            rowCount={count}
+            disableRowSelectionOnClick
+            loading={loading}
+          />
+        ) : (
+          <Box display="flex">
+            <Box display="flex" flexDirection="column" flexShrink={0}>
+              <DateCalendarServerRequest
                 attendanceData={attendanceData}
                 selectedMonth={month}
+                onMonthChange={handleMonthChange}
               />
+              <Legend />
             </Box>
-          )}
-        </Box>
+            <AttendanceStatusList
+              attendanceData={attendanceData}
+              selectedMonth={month}
+            />
+          </Box>
+        )}
       </Box>
     </Box>
   );
