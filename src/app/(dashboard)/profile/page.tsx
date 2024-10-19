@@ -101,7 +101,7 @@ const Profile = () => {
     if (profileId) {
       fetchUserData(profileId);
     }
-  }, []); // Empty dependency array
+  }, [id, user.id]);
 
   const handleBioChange = (e) => {
     e.preventDefault();
