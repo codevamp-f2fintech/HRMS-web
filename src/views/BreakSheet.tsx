@@ -39,7 +39,7 @@ const BreakSheet: React.FC = () => {
     const [currentBreak, setCurrentBreak] = useState(null)
     const [specifyError, setSpecifyError] = useState<string>('')
 
-    // const intervalRef = useRef<NodeJS.Timeout | null>(null)
+    const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
     const [showTeamBreakSheets, setShowTeamBreakSheets] = useState(false)
     const [isLargeScreen, setIsLargeScreen] = useState(false)
@@ -53,11 +53,9 @@ const BreakSheet: React.FC = () => {
     const breakOptions = ['Washroom', 'Lunch', 'Refreshment', 'Tea', 'Personal Call', 'On Field', 'Other']
 
     useEffect(() => {
-        const today = new Date().toISOString().split('T')[0];
-        setIsCurrentDate(selectedDate === today);
-    }, [selectedDate]);
-
-
+        const today = new Date().toISOString().split('T')[0]
+        setIsCurrentDate(selectedDate === today)
+    }, [selectedDate])
 
     useEffect(() => {
         const handleResize = () => {
@@ -114,46 +112,34 @@ const BreakSheet: React.FC = () => {
         fetchWorkingHours()
     }, [selectedEmployeeId, selectedDate, dispatch])
 
-    /*
-      const startBreakTimer = (timestamp: number) => {
-          if (startTimestamp !== null) {
-              intervalRef.current = setInterval(() => {
-                  const currentTime = Date.now()
-                  const diff = currentTime - timestamp 
-                  if (diff >= 0) {
-                      setDuration(formatTime(diff))
-                  } else {
-                      setDuration('00h 00m 00s') 
-                  }
-              }, 1000)
-          }
-      }
-          */
+    const startBreakTimer = (timestamp: number) => {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current)
+        }
 
-    /*
-      const stopBreakTimer = () => {
-          if (intervalRef.current) {
-              clearInterval(intervalRef.current)
-              intervalRef.current = null
-          }
-  
-          if (timerRunning) {
-              setTimerRunning(false)
-          }
-  
-          if (duration !== '') {
-              setDuration('')
-          }
-      }
-  
-      useEffect(() => {
-          return () => {
-              if (intervalRef.current) {
-                  clearInterval(intervalRef.current)
-              }
-          }
-      }, [])
-  */
+        intervalRef.current = setInterval(() => {
+            const currentTime = Date.now()
+            const diff = currentTime - timestamp
+            setDuration(formatTime(diff))
+        }, 1000)
+    }
+
+    const stopBreakTimer = () => {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current)
+            intervalRef.current = null
+        }
+        setDuration('00h 00m 00s')
+        setTimerRunning(false)
+    }
+
+    useEffect(() => {
+        return () => {
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current)
+            }
+        }
+    }, [])
 
     const formatTime = (milliseconds: number) => {
         const seconds = Math.floor((milliseconds / 1000) % 60)
@@ -168,25 +154,28 @@ const BreakSheet: React.FC = () => {
         return hours * 3600000 + minutes * 60000 + seconds * 1000
     }
 
+    const getTimestampFromTime = (timeString: string, dateString: string) => {
+        const combinedString = `${dateString} ${timeString}`
+        return new Date(combinedString).getTime()
+    }
+
     useEffect(() => {
         const fetchRunningBreak = async () => {
-            const idToUse = selectedEmployeeId || employeeId
-            const runningBreakResponse = await dispatch(fetchBreaksById(idToUse))
-
+            const runningBreakResponse = await dispatch(fetchBreaksById(employeeId))
             const runningBreak = runningBreakResponse.payload.find((b: Break) => !b.endTime)
-            console.log('break running', runningBreak)
 
             if (runningBreak) {
                 setStartTime(runningBreak.startTime)
+
+                const startTimestamp = getTimestampFromTime(runningBreak.startTime, runningBreak.date)
+                setStartTimestamp(startTimestamp)
                 setTimerRunning(true)
-            } else {
-                setStartTime('')
-                setTimerRunning(false)
+                startBreakTimer(startTimestamp)
             }
         }
 
         fetchRunningBreak()
-    }, [selectedEmployeeId, employeeId, dispatch])
+    }, [dispatch, employeeId])
 
     const handleStartTime = () => {
         if (!breakType) {
@@ -194,21 +183,23 @@ const BreakSheet: React.FC = () => {
             return
         }
         if (breakType === 'Other' && !otherBreakType.trim()) {
-            setSpecifyError('Please specify the break type')
+            alert('Please specify the break type')
             return
         }
 
         const now = new Date()
         const formattedStartTime = now.toLocaleTimeString('en-US')
+        const timestamp = now.getTime()
 
         setStartTime(formattedStartTime)
+        setStartTimestamp(timestamp)
         setTimerRunning(true)
 
         const breakData = {
             type: breakType === 'Other' ? otherBreakType : breakType,
             startTime: formattedStartTime,
             endTime: '',
-            date: selectedDate,
+            date: new Date().toISOString().split('T')[0],
             employee: employeeId
         }
 
@@ -216,8 +207,9 @@ const BreakSheet: React.FC = () => {
             setBreakType('')
             setOtherBreakType('')
         })
-    }
 
+        startBreakTimer(timestamp)
+    }
     const handleEndTime = () => {
         if (startTime) {
             const now = new Date()
@@ -230,12 +222,17 @@ const BreakSheet: React.FC = () => {
                 endTime: formattedEndTime
             }
 
-            dispatch(updateLatestBreak({ employeeId, breakData })).then(() => {
-                setStartTime('')
-                setEndTime('')
+            dispatch(updateLatestBreak({ employeeId, breakData }))
+                .then(() => {
+                    stopBreakTimer()
+                    setStartTime('')
+                    setEndTime('')
 
-                dispatch(fetchBreaksById(employeeId))
-            })
+                    return dispatch(fetchBreaksById(employeeId))
+                })
+                .catch(error => {
+                    console.error('Error updating the latest break:', error)
+                })
         }
     }
 
@@ -478,7 +475,7 @@ const BreakSheet: React.FC = () => {
                             <TextField label='Break Start' value={startTime} disabled fullWidth variant='outlined' />
                         </Grid>
 
-                        {/* <Grid item xs={12} sm={6}>
+                        <Grid item xs={12} sm={6}>
                             <TextField
                                 label='Duration'
                                 value={duration}
@@ -489,7 +486,7 @@ const BreakSheet: React.FC = () => {
                                     display: { xs: 'none', sm: 'block' }
                                 }}
                             />
-                        </Grid> */}
+                        </Grid>
 
                         <Grid item xs={12} sm={6}>
                             <Button
@@ -509,8 +506,7 @@ const BreakSheet: React.FC = () => {
                 )}
 
                 <Grid item xs={12}>
-                    <Typography variant='h6'>Breaks Taken on {selectedDate}
-                    </Typography>
+                    <Typography variant='h6'>Breaks Taken on {selectedDate}</Typography>
                     <Grid container spacing={2}>
                         {filteredBreaks.map((breakEntry, index) => (
                             <Grid item xs={12} sm={3} key={index}>
@@ -522,15 +518,15 @@ const BreakSheet: React.FC = () => {
                                         textAlign: 'center',
                                         position: 'relative',
                                         minHeight: '120px',
-                                        backgroundColor: breakEntry.endTime === '' ? '#f0f8ff' : 'white', // Change background color for running breaks
-                                        animation: breakEntry.endTime === '' ? 'blinking 1.8s infinite' : 'none', // Apply blinking if endTime is empty
+                                        backgroundColor: breakEntry.endTime === '' ? '#f0f8ff' : 'white',
+                                        animation: breakEntry.endTime === '' ? 'blinking 1.8s infinite' : 'none',
                                         '@keyframes blinking': {
                                             '0%': { opacity: 1 },
                                             '50%': { opacity: 0 },
                                             '100%': { opacity: 1 }
                                         },
                                         '&:hover': {
-                                            animation: 'none' // Stop animation on hover
+                                            animation: 'none'
                                         }
                                     }}
                                 >

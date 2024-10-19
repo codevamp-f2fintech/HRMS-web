@@ -12,7 +12,7 @@ import {
 import { RootState } from '@/redux/store'
 
 interface PunchInOutProps {
-    selectedDate: string,
+    selectedDate: string
     selectedEmployeeId?: string
     disablePunch?: boolean
 }
@@ -34,6 +34,7 @@ const PunchInOut: React.FC<PunchInOutProps> = ({ selectedDate, selectedEmployeeI
     const [currentPunchIndex, setCurrentPunchIndex] = useState(0)
     const [currentDateTime, setCurrentDateTime] = useState(new Date())
     const [isLargeScreen, setIsLargeScreen] = useState(false)
+    const [startTimestamp, setStartTimestamp] = useState<number | null>(null)
 
     const employee = JSON.parse(localStorage.getItem('user') || '{}')
     const employeeId = selectedEmployeeId || employee?.id
@@ -72,7 +73,18 @@ const PunchInOut: React.FC<PunchInOutProps> = ({ selectedDate, selectedEmployeeI
                 .then(punchData => {
                     if (punchData.length > 0) {
                         const latestPunch = punchData[punchData.length - 1]
-                        if (latestPunch.punchOut) {
+                        if (!latestPunch.punchOut) {
+                            const punchInTimestamp = new Date(`${selectedDate} ${latestPunch.punchIn}`).getTime()
+                            setPunchState({
+                                ...punchState,
+                                isPunchIn: true,
+                                startTime: latestPunch.punchIn,
+                                isPunchInDisabled: true,
+                                isPunchOutDisabled: false
+                            })
+                            setStartTimestamp(punchInTimestamp)
+                            startPunchInTimer(punchInTimestamp)
+                        } else {
                             setPunchState({
                                 ...punchState,
                                 isPunchIn: false,
@@ -81,14 +93,7 @@ const PunchInOut: React.FC<PunchInOutProps> = ({ selectedDate, selectedEmployeeI
                                 isPunchInDisabled: false,
                                 isPunchOutDisabled: true
                             })
-                        } else {
-                            setPunchState({
-                                ...punchState,
-                                isPunchIn: true,
-                                startTime: latestPunch.punchIn,
-                                isPunchInDisabled: true,
-                                isPunchOutDisabled: false
-                            })
+                            stopPunchTimer()
                         }
                     }
                 })
@@ -229,7 +234,7 @@ const PunchInOut: React.FC<PunchInOutProps> = ({ selectedDate, selectedEmployeeI
 
     return (
         <Box sx={{ p: [2, 4], maxWidth: '100%' }}>
-            {userRole !== '1' && <Card
+            <Card
                 sx={{
                     display: 'flex',
                     flexDirection: ['column', 'row'],
@@ -266,7 +271,7 @@ const PunchInOut: React.FC<PunchInOutProps> = ({ selectedDate, selectedEmployeeI
                         {currentDateTime.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </Typography>
 
-                    {isLargeScreen && (
+                    {isLargeScreen && userRole !== '1' && (
                         <Tooltip
                             title={
                                 disablePunch
@@ -304,14 +309,13 @@ const PunchInOut: React.FC<PunchInOutProps> = ({ selectedDate, selectedEmployeeI
                         minHeight: '150px'
                     }}
                 >
+                    <Typography variant='h6'>Daily Check</Typography>
                     {punchState.isPunchIn && (
-                        <Typography sx={{ mt: 2, fontSize: '1rem', color: '#000' }}>
-                            Punch In Time: {punchState.startTime}
+                        <Typography variant='h4' sx={{ color: 'blue', mt: 2 }}>
+                            {timer}
                         </Typography>
                     )}
-
-                    <Typography variant='h6'>Daily Check</Typography>
-                    {isLargeScreen && (
+                    {isLargeScreen && userRole !== '1' && (
                         <Tooltip
                             title={
                                 disablePunch
@@ -334,9 +338,8 @@ const PunchInOut: React.FC<PunchInOutProps> = ({ selectedDate, selectedEmployeeI
                             </div>
                         </Tooltip>
                     )}
-
                 </Box>
-            </Card>}
+            </Card>
 
             <Box sx={{ display: 'flex', flexDirection: ['column', 'row'], gap: 4 }}>
                 <Card
