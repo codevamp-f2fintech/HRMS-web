@@ -742,7 +742,7 @@ export default function TeamGrid() {
             </Typography>
           </Box>
           <Box display='flex' alignItems='center'>
-            <IconButton
+            {/* <IconButton
               style={{ backgroundColor: '#ff902f', borderRadius: 10, color: 'white', marginRight: 10 }}
               aria-label='grid view'
             >
@@ -753,7 +753,7 @@ export default function TeamGrid() {
               aria-label='list view'
             >
               <ViewListIcon />
-            </IconButton>
+            </IconButton> */}
             {userRole === '1' && (
               <Button
                 style={{ borderRadius: 50, backgroundColor: '#ff902f' }}
