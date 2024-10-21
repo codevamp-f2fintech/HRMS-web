@@ -39,9 +39,11 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
 
 const HolidaysTable = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { holidays, totalPages } = useSelector((state: RootState) => state.holidays);
+  const { holidays, total } = useSelector((state: RootState) => state.holidays);
   const [page, setPage] = useState(1);
   const limit = 5;
+
+  const totalPages = Math.ceil(total / limit);
 
   useEffect(() => {
     dispatch(fetchHolidays({ page, limit, keyword: "" }));
@@ -79,7 +81,7 @@ const HolidaysTable = () => {
                 <StyledTableCell>Title</StyledTableCell>
               </TableRow>
             </TableHead>
-            <TableBody sx={{ height: '340px' }}>
+            <TableBody >
               {holidays.map((row, index) => (
                 <TableRow key={index} hover sx={{ height: '12.2vh' }}>
                   <TableCell>{row.day}</TableCell>

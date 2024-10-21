@@ -21,6 +21,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import { styled } from '@mui/material/styles';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { utility } from '@/utility'
+
 
 
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -43,6 +45,8 @@ const Welcome = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string>("");
+  const { capitalizeFirstLetter } = utility();
+
 
 
   useEffect(() => {
@@ -181,7 +185,7 @@ const Welcome = () => {
         <CardContent>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
             <Typography variant="h4" fontWeight="bold" color="#2c3ce3">
-              {userData ? `Welcome Back, ${userData.first_name}! 👋` : 'Welcome! 👋'}
+              {userData ? `Welcome Back, ${capitalizeFirstLetter(userData.first_name)}! 👋` : 'Welcome! 👋'}
             </Typography>
             {userRole === '1' && <Tooltip title="Add daily quotes">
               <IconButton onClick={handleOpen}>

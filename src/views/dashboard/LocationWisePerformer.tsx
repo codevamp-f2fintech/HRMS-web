@@ -8,7 +8,7 @@ import IconButton from '@mui/material/IconButton'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import Tooltip from '@mui/material/Tooltip'
 import Box from '@mui/material/Box'
-
+import { utility } from '@/utility'
 import { apiResponse } from '@/utility/apiResponse/employeesResponse'
 import { fetchAwards, addAward } from '@/redux/features/performer/performereSlice'
 import type { AppDispatch, RootState } from '@/redux/store'
@@ -29,6 +29,8 @@ const LocationWisePerformer = () => {
 
   const [userId, setUserId] = useState<string | null>(null)
   const [userDesg, setUserDesg] = useState(null)
+  const { capitalizeFirstLetter } = utility();
+
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}')
@@ -154,7 +156,7 @@ const LocationWisePerformer = () => {
                           <>
                             {userId === award.employee._id ? 'Congratulations' : 'Congratulate'}{' '}
                             <span style={{ fontWeight: 'bold', color: '#1976d2' }}>
-                              {award.employee.first_name} {award.employee.last_name}
+                              {capitalizeFirstLetter(award.employee.first_name)} {capitalizeFirstLetter(award.employee.last_name)}
                             </span>
                             ! 🎉
                           </>

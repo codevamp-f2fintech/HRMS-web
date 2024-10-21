@@ -9,6 +9,7 @@ import MoreVertIcon from '@mui/icons-material/MoreVert'
 
 import AwardForm from '../../components/performer/AwardForm'
 import { apiResponse } from '@/utility/apiResponse/employeesResponse'
+import { utility } from '@/utility'
 
 const Award = () => {
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -21,6 +22,8 @@ const Award = () => {
   const [userRole, setUserRole] = useState<string>("");
   const [userId, setUserId] = useState(null)
   const [userDesg, setUserDesg] = useState(null)
+  const { capitalizeFirstLetter } = utility();
+
 
   console.log('userDesg', userDesg)
 
@@ -137,7 +140,7 @@ const Award = () => {
                 <Typography variant='h4'>
                   {userId === awardData.employee._id ? 'Congratulations' : 'Congratulate'}{' '}
                   <span style={{ fontWeight: 'bold', color: '#1efd44' }}>
-                    {awardData.employee.first_name} {awardData.employee.last_name}🎉
+                    {capitalizeFirstLetter(awardData.employee.first_name)} {capitalizeFirstLetter(awardData.employee.last_name)} 🎉
                   </span>
                 </Typography>
               ) : (

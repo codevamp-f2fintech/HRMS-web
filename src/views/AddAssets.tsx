@@ -317,7 +317,7 @@ export default function AddAssets() {
               }}
             >
               <MenuItem value="IT Equipments">IT Equipments</MenuItem>
-              <MenuItem value="Furniture">Furniture</MenuItem>
+              <MenuItem value="Marketing Equipments">Marketing Equipments</MenuItem>
             </TextField>
           </Grid>
           <Grid item xs={12} md={6}>
@@ -416,6 +416,7 @@ export default function AddAssets() {
             >
               <MenuItem value="Bareilly">Bareilly</MenuItem>
               <MenuItem value="Noida">Noida</MenuItem>
+              <MenuItem value="Patel Nager">Patel Nager</MenuItem>
             </TextField>
           </Grid>
           <Grid item xs={12} md={6}>
@@ -460,7 +461,7 @@ export default function AddAssets() {
               fullWidth
               onClick={handleSubmit}
             >
-              {asset ? 'UPDATE ASSET' : 'ADD ASSET'}
+              {asset ? 'UPDATE Inventory' : 'ADD Inventory'}
             </Button>
           </Grid>
 
