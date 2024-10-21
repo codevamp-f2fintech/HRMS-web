@@ -312,7 +312,7 @@ export default function AttendanceGrid() {
   const [searchName, setSearchName] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [searchLocation, setSearchLoaction] = useState('All');
+  const [searchLocation, setSearchLoaction] = useState('');
 
   const [employees, setEmployees] = useState([]);
 
@@ -323,30 +323,32 @@ export default function AttendanceGrid() {
   const debouncedSearch = useCallback(
     debounce(() => {
       console.log("this is callled search");
-      dispatch(fetchAttendances({ month: month, weekIndex: startDayIndex, page: page, limit: limit, keyword: searchName }));
-    }, 300),
-    [searchName]
+      dispatch(fetchAttendances({ month: month, weekIndex: startDayIndex, page: page, limit: limit, keyword: searchName, location: searchLocation }));
+    }, 500),
+    [searchName, searchLocation]
   );
 
   useEffect(() => {
-    if (searchName !== '') {
+    if (searchName !== '' || searchLocation !== '') {
       debouncedSearch();
     }
 
     return debouncedSearch.cancel;
-  }, [searchName, debouncedSearch]);
+  }, [searchName, searchLocation, debouncedSearch]);
 
   const handleInputChange = (e) => {
     setSearchName(e.target.value);
+    setSearchLoaction('')
   };
 
   const handleLocationInputChange = (e) => {
-    setSearchName(e.target.value);
+    setSearchLoaction(e.target.value);
+    setSearchName('')
   };
 
   useEffect(() => {
     console.log("this is callled initial");
-    dispatch(fetchAttendances({ month: month, weekIndex: startDayIndex, page: page, limit: limit, keyword: searchName }));
+    dispatch(fetchAttendances({ month: month, weekIndex: startDayIndex, page: page, limit: limit, keyword: searchName, location: searchLocation }));
 
     const fetchEmployees = async () => {
       const data = await apiResponse();
@@ -679,7 +681,6 @@ export default function AttendanceGrid() {
     }
   };
 
-
   const handleNextDaysClick = () => {
     setStartDayIndex((prev) => Math.min(prev + daysToShow, 31 - daysToShow));
   };
@@ -831,8 +832,6 @@ export default function AttendanceGrid() {
         return acc;
       }
 
-
-
       const attendanceDate = new Date(date);
       const day = attendanceDate.getDate();
       const attendanceMonth = attendanceDate.getMonth() + 1;
@@ -908,8 +907,6 @@ export default function AttendanceGrid() {
 
     setMonth(newMonth);
   };
-
-  console.log("rows", rows);
 
   return (
     <Box>
@@ -1056,7 +1053,7 @@ export default function AttendanceGrid() {
                 label='Select Location'
                 labelId='demo-simple-select-label'
                 id='demo-simple-select'
-                value={searchName}
+                value={searchLocation}
                 onChange={handleLocationInputChange}
               >
                 <MenuItem value="">All</MenuItem>
