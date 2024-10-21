@@ -369,6 +369,7 @@ export default function AttendanceGrid() {
   const handlePageChange = (newPage: number, newPageSize: number) => {
     setPage(newPage + 1);
     setLimit(newPageSize);
+    setStartDayIndex(0);
   };
 
   const handlePaginationModelChange = (params: { page: number; pageSize: number }) => {
