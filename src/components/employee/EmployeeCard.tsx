@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../redux/store';
-import { toast, ToastContainer } from 'react-toastify';
 
 import { useRouter } from 'next/navigation';
 import {
@@ -14,7 +13,6 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EmailIcon from '@mui/icons-material/Email';
 import Loader from '../loader/loader';
-import { deleteEmployee } from '@/redux/features/employees/employeesSlice';
 import 'react-toastify/dist/ReactToastify.css';
 
 
@@ -48,23 +46,26 @@ const EmailContainer = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  backgroundColor: theme.palette.grey[100],
   borderRadius: theme.shape.borderRadius,
-  padding: theme.spacing(1),
-  marginTop: theme.spacing(2),
   wordBreak: 'break-all',
 }));
 
 const EmailTypography = styled(Typography)(({ theme }) => ({
   fontSize: '0.875rem',
   textAlign: 'center',
-  color: theme.palette.text.secondary,
+  color: theme.palette.mode === 'dark' ? theme.palette.text.primary : theme.palette.text.secondary, // Set text color based on theme
+  backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[200], // Set background color based on theme
+  padding: theme.spacing(0.5),
+  borderRadius: theme.shape.borderRadius,
+  wordBreak: 'break-all',
   '&:hover': {
     color: theme.palette.primary.main,
   },
 }));
 
-const EmployeeCard = ({ employee, id, handleEditEmployeeClick, capitalizeWords }) => {
+
+
+const EmployeeCard = ({ employee, id, handleEditEmployeeClick, handleDelete, capitalizeWords }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [userRole, setUserRole] = useState("");
   const [loading, setLoading] = useState(false);
@@ -100,7 +101,6 @@ const EmployeeCard = ({ employee, id, handleEditEmployeeClick, capitalizeWords }
     setLoading(true);
     setTimeout(() => {
       router.push(`/profile?id=${id}`);
-      setLoading(false)
     }, 500);
   };
 
@@ -109,36 +109,10 @@ const EmployeeCard = ({ employee, id, handleEditEmployeeClick, capitalizeWords }
     window.location.href = `mailto:${employee.email}`;
   };
 
-  const handleDelete = async (id) => {
-    const confirmDelete = confirm('Are you sure you want to delete this employee?');
-    if (!confirmDelete) return;
-
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/employees/delete/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer',
-        },
-      });
-
-      if (response.ok) {
-        dispatch(deleteEmployee(id));
-        toast.success('Employee deleted successfully.');
-      } else {
-        const errorResult = await response.json();
-        toast.error(`Failed to delete employee: ${errorResult.message}`);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Error deleting employee. Please try again.');
-    }
-  };
 
 
   return (
     <>
-      <ToastContainer position="top-center" autoClose={3000} hideProgressBar={false} />
       <StyledCard onClick={handleCardClick}>
         {loading ? (
           <Box display="flex" justifyContent="center" alignItems="center" height="100%">

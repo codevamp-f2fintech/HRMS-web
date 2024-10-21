@@ -760,13 +760,16 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
             </section>
           </div>
 
-          {logedUser.id === profileId && <Button
-            onClick={handleSubmit}
-            disabled={isCompressing || loading}
-            className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300"
-          >
-            {isCompressing ? 'Wait Compressing Images...' : updating ? 'Update' : 'Submit'}
-          </Button>}
+          {(logedUser.id === profileId || userRole === '1') && (
+            <Button
+              onClick={handleSubmit}
+              disabled={isCompressing || loading}
+              className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300"
+            >
+              {isCompressing ? 'Wait Compressing Images...' : updating ? 'Update' : 'Submit'}
+            </Button>
+          )}
+
         </div>
       ),
     }
@@ -818,7 +821,7 @@ const ProfileForm = ({ profileId, logedUser, setCalculateFilledTabsCount, setChe
     }
   }, [calculateFilledTabs()]);
 
-  if (logedUser.id === profileId || Number(logedUser.role) < 3) {
+  if (logedUser.id === profileId || Number(logedUser.role) === 1) {
     return (
       <>
         <form onSubmit={handleSubmit}>

@@ -178,11 +178,10 @@ const FineListing = () => {
         },
         {
           field: 'total',
-          headerName: 'Total',
+          headerName: 'Total Fine ',
           headerAlign: 'center',
           flex: 1,
           headerClassName: 'super-app-theme--header',
-          align: "center",
           renderCell: (params) => {
 
             const assets = Array.isArray(params.row.assets) ? params.row.assets : [];
@@ -192,9 +191,11 @@ const FineListing = () => {
             }, 0);
 
             return (
-              <Typography fontWeight={700} sx={{ marginTop: '2.5vh' }}>
-                {totalFineAmount}
-              </Typography>
+              <Box display="flex" alignItems="center" width='100%' height="100%">
+                <Typography fontWeight={700} sx={{ marginLeft: '5vw' }}>
+                  {totalFineAmount}
+                </Typography>
+              </Box>
             );
           }
         },
