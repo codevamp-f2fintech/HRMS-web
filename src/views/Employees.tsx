@@ -72,7 +72,7 @@ export default function EmployeeGrid() {
 
   useEffect(() => {
     if (searchName === '' && selectedDesignation === '') {
-      dispatch(fetchEmployees({ page, limit: 12, searchName: '', selectedDesignation: '' }));
+      dispatch(fetchEmployees({ page, limit: 12, search: '', designation: '' }));
     }
   }, [dispatch, page, searchName, selectedDesignation]);
 
