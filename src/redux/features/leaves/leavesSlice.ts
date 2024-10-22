@@ -85,6 +85,14 @@ const leaveSlice = createSlice({
     resetFilter(state) {
       state.filteredLeave = state.leaves;
     },
+    deleteLeaves(state, action: PayloadAction<string>) {  // Assuming we pass the employee _id for deletion
+      const leaveId = action.payload;
+      const index = state.leaves.findIndex(lev => lev._id === leaveId);
+
+      if (index !== -1) {
+        state.leaves.splice(index, 1);
+      }
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -104,5 +112,5 @@ const leaveSlice = createSlice({
   },
 });
 
-export const { filterLeave, resetFilter } = leaveSlice.actions;
+export const { filterLeave, resetFilter, deleteLeaves } = leaveSlice.actions;
 export default leaveSlice.reducer;

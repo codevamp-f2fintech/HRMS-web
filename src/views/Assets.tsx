@@ -374,7 +374,7 @@ export default function AssestsGrid() {
                   src={params.row.employee.image}
                   sx={{ marginLeft: 10, width: 40, height: 40 }}
                 />
-                <Typography sx={{ fontSize: '1em', fontWeight: 'bold', textTransform: 'capitalize' }}>
+                <Typography sx={{ fontSize: '1em', fontWeight: 'bold', textTransform: 'capitalize', marginLeft: 4 }}>
                   {params.row.employee.first_name} {params.row.employee.last_name}
                 </Typography>
               </Box>

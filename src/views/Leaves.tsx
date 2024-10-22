@@ -26,26 +26,38 @@ import {
   AccordionDetails,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
+import DialogTitle from '@mui/material/DialogTitle';
 import { styled } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
 import ContrastIcon from '@mui/icons-material/Contrast';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import InputAdornment from '@mui/material/InputAdornment';
 import { DriveFileRenameOutlineOutlined } from '@mui/icons-material'
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useDispatch, useSelector } from 'react-redux';
-
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { format } from 'date-fns';
-
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
 import type { AppDispatch, RootState } from '@/redux/store';
-import { fetchLeaves, filterLeave } from '@/redux/features/leaves/leavesSlice';
+import { fetchLeaves } from '@/redux/features/leaves/leavesSlice';
 import { apiResponse } from '@/utility/apiResponse/employeesResponse';
 import AddLeavesForm from '@/components/leave/LeaveForm';
-import { Console } from 'console';
+import { deleteLeaves } from '@/redux/features/leaves/leavesSlice';
+
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   fontWeight: 'bold',
 }));
-
+const BootstrapDialog = styled(Dialog)(({ theme }) => ({
+  '& .MuiDialogContent-root': {
+    padding: theme.spacing(2),
+  },
+  '& .MuiDialogActions-root': {
+    padding: theme.spacing(1),
+  },
+}));
 export default function LeavesGrid() {
   const dispatch = useDispatch<AppDispatch>();
   const { leaves, total } = useSelector((state: RootState) => state.leaves);
@@ -59,6 +71,8 @@ export default function LeavesGrid() {
   const [limit, setLimit] = useState(10);
   const [loading, setLoading] = useState(false); // State to track loading
 
+
+  console.log('leaves', leaves)
 
   const debouncedFetch = useMemo(
     () => debounce(() => {
@@ -116,17 +130,54 @@ export default function LeavesGrid() {
     setShowForm(true)
   }, []);
 
+
+  const handleLeavedelete = async (id) => {
+    const confirmDelete = confirm('Are you sure you want to delete');
+    if (!confirmDelete) return;
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/leaves/delete/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer',
+        },
+      });
+
+      if (response.ok) {
+        // dispatch(deleteLeaves(id));
+        window.location.reload();
+        toast.success('leave deleted successfully.');
+      } else {
+        const errorResult = await response.json();
+        toast.error(`Failed to delete leave: ${errorResult.message}`);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Error deleting employee. Please try again.');
+    }
+  };
+
   const handleClose = useCallback(() => {
     setShowForm(false)
   }, []);
 
   const renderAccordion = (params) => {
     return (
-      <Accordion>
+      <Accordion sx={{ backgroundColor: '#f5f5f5', }}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography>{`View all Leaves (${Array.isArray(params.row.assets) ? params.row.assets.length : 0})`}</Typography>
+          <Box display="flex" alignItems="center" height="100%">
+            <Avatar
+              src={params.row.employee.image}
+              sx={{ marginLeft: 10, width: 30, height: 30 }}
+            />
+            <Typography sx={{ fontSize: '1em', fontWeight: 'bold', textTransform: 'capitalize', marginLeft: 4 }}>
+              {params.row.employee.first_name} {params.row.employee.last_name}
+            </Typography>
+            <Typography sx={{ marginLeft: 150 }}>{`View all Leaves (${Array.isArray(params.row.leaves) ? params.row.leaves.length : 0})`}</Typography>
+          </Box>
         </AccordionSummary>
-        <AccordionDetails>
+        <AccordionDetails sx={{ marginTop: 10 }}>
           <Table>
             <TableHead>
               <TableRow>
@@ -137,21 +188,26 @@ export default function LeavesGrid() {
                 <StyledTableCell>Application</StyledTableCell>
                 <StyledTableCell>Status</StyledTableCell>
                 <StyledTableCell>Decision</StyledTableCell>
-                {userRole === '1' ? <StyledTableCell>Edit</StyledTableCell> : ''}
+                <StyledTableCell>Edit</StyledTableCell>
+                <StyledTableCell>Delete</StyledTableCell>
+
               </TableRow>
             </TableHead>
             <TableBody>
-              {Array.isArray(params.row.assets) && params.row.assets.length > 0 ? (
-                params.row.assets.map((leave) => {
+              {Array.isArray(params.row.leaves) && params.row.leaves.length > 0 ? (
+                params.row.leaves.map((leave) => {
                   const dayValue = parseFloat(leave.day);
                   const halfPeriod = leave.half_day_period;
-                  const [showFullText, setShowFullText] = React.useState(false);
+                  const [open, setOpen] = useState(false);
 
-                  const handleToggleText = () => {
-                    setShowFullText((prev) => !prev);
+                  const handleClickOpen = () => {
+                    setOpen(true);
+                  };
+                  const handleClose = () => {
+                    setOpen(false);
                   };
 
-                  const maxChars = 15; // Set character limit for truncation
+
 
                   return (
                     <TableRow key={leave._id}>
@@ -201,36 +257,59 @@ export default function LeavesGrid() {
 
                       {/* Application with 'Show More' functionality */}
                       <TableCell>
-                        {showFullText || leave.application.length <= maxChars ? (
-                          leave.application
-                        ) : (
-                          `${leave.application.slice(0, maxChars)}...`
-                        )}
-                        {leave.application.length > maxChars && (
-                          <Button
-                            variant="text"
-                            color="primary"
-                            onClick={handleToggleText}
+                        <Button variant="outlined" onClick={handleClickOpen}>
+                          Veiw application
+                        </Button>
+                        <BootstrapDialog
+                          onClose={handleClose}
+                          aria-labelledby="customized-dialog-title"
+                          open={open}
+                        >
+                          <DialogTitle sx={{ m: 0, p: 2 }} id="customized-dialog-title">
+                            Application
+                          </DialogTitle>
+                          <IconButton
+                            aria-label="close"
+                            onClick={handleClose}
+                            sx={(theme) => ({
+                              position: 'absolute',
+                              right: 8,
+                              top: 8,
+                              color: theme.palette.grey[500],
+                            })}
                           >
-                            {showFullText ? 'Less' : 'More'}
-                          </Button>
-                        )}
+                            <CloseIcon />
+                          </IconButton><DialogContent >
+                            <Typography>
+                              {leave.application}
+                            </Typography>
+                          </DialogContent>
+                        </BootstrapDialog>
+
                       </TableCell>
 
                       <TableCell>{leave.status}</TableCell>
                       <TableCell sx={{ minWidth: 100 }}>{leave.reason}</TableCell>
-                      {userRole === '1' ? (
-                        <TableCell>
-                          <Button
-                            color="info"
-                            variant="contained"
-                            sx={{ minWidth: '50px' }}
-                            onClick={() => handleLeaveEditClick(leave._id)}
-                          >
-                            <DriveFileRenameOutlineOutlined />
-                          </Button>
-                        </TableCell>
-                      ) : null}
+                      <TableCell>
+                        <Button
+                          variant="contained"
+                          sx={{ minWidth: '50px', backgroundColor: '#2c3ce3' }}
+                          onClick={() => handleLeaveEditClick(leave._id)}
+                        >
+                          <DriveFileRenameOutlineOutlined />
+                        </Button>
+
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="contained"
+                          sx={{ minWidth: '50px', backgroundColor: '#2c3ce3' }}
+                          onClick={() => handleLeavedelete(leave._id)}
+                        >
+                          <DeleteIcon />
+                        </Button>
+
+                      </TableCell>
                     </TableRow>
                   );
                 })
@@ -253,37 +332,37 @@ export default function LeavesGrid() {
 
   const generateColumns = useMemo(() => {
     return [
-      ...(userRole === '1' ? [{
-        field: 'employee',
-        headerName: 'Employee',
-        minWidth: 220,
-        headerAlign: 'center',
-        headerClassName: 'super-app-theme--header',
-        sortable: true,
-        align: 'center',
-        renderCell: (params) => {
-          return (
-            <Box display="flex" alignItems="center" height="100%">
-              <Avatar
-                src={params.row.employee.image}
-                sx={{ marginLeft: 10, width: 40, height: 40 }}
-              />
-              <Typography sx={{ fontSize: '1em', fontWeight: 'bold', textTransform: 'capitalize' }}>
-                {params.row.employee.first_name} {params.row.employee.last_name}
-              </Typography>
-            </Box>
-          );
-        }
-
-      },
-      {
-        field: 'leave',
-        headerName: 'Leave Details',
-        width: 800,
-        headerAlign: 'center',
-        headerClassName: 'super-app-theme--header',
-        renderCell: renderAccordion
-      },
+      ...(userRole === '1' ? [
+        //   {
+        //   field: 'employee',
+        //   headerName: 'Employee',
+        //   minWidth: 200,
+        //   headerAlign: 'center',
+        //   headerClassName: 'super-app-theme--header',
+        //   sortable: true,
+        //   align: 'center',
+        //   renderCell: (params) => {
+        //     return (
+        //       <Box display="flex" alignItems="center" height="100%">
+        //         <Avatar
+        //           src={params.row.employee.image}
+        //           sx={{ marginLeft: 5, width: 40, height: 40 }}
+        //         />
+        //         <Typography sx={{ fontSize: '1em', fontWeight: 'bold', textTransform: 'capitalize', marginLeft: 4 }}>
+        //           {params.row.employee.first_name} {params.row.employee.last_name}
+        //         </Typography>
+        //       </Box>
+        //     );
+        //   }
+        // },
+        {
+          field: 'leave',
+          headerName: 'Leave Details',
+          width: 1020,
+          headerAlign: 'center',
+          headerClassName: 'super-app-theme--header',
+          renderCell: renderAccordion
+        },
       ] : [
 
 
@@ -457,7 +536,7 @@ export default function LeavesGrid() {
 
   return (
     <Box>
-      <ToastContainer />
+      <ToastContainer position="top-center" />
       <Box sx={{ flexGrow: 1, padding: 2 }}>
         <Dialog open={showForm} onClose={handleClose} fullWidth maxWidth='md'>
           <DialogContent>
@@ -549,7 +628,7 @@ export default function LeavesGrid() {
             },
             '& .MuiDataGrid-row': {
               '&:nth-of-type(odd)': {
-                backgroundColor: 'rgb(46 38 61 / 12%)',
+                backgroundColor: '#f5f5f5',
               },
               '&:nth-of-type(even)': {
                 backgroundColor: '#fffff',
