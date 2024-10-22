@@ -1,5 +1,6 @@
 import type { PayloadAction } from "@reduxjs/toolkit";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import type { RootState } from '../../store';
 
 interface Attendance {
   _id: string;
@@ -19,6 +20,7 @@ interface Attendance {
 interface attendancesState {
   attendances: Attendance[];
   filteredAttendance: Attendance[];
+  count: number;  // Add count here
   loading: boolean;
   error: string | null;
 }
@@ -26,34 +28,51 @@ interface attendancesState {
 const initialState: attendancesState = {
   attendances: [],
   filteredAttendance: [],
+  count: 0,  // Initialize with 0
   loading: false,
   error: null,
 };
 
 
 
-export const fetchAttendances = createAsyncThunk('attendances/fetchAttendances', async () => {
-  let token: string | null = null;
+export const fetchAttendances = createAsyncThunk(
+  'attendances/fetchAttendances',
+  async ({ month, weekIndex, page, limit, keyword, location }: { month: number, weekIndex: number, page: number, limit: number, keyword: string, location: string }, { getState }) => {
+    const state = getState() as RootState;
+    let token: string | null = null;
 
-  if (typeof window !== 'undefined') {
-    token = localStorage.getItem('token');
+    if (typeof window !== 'undefined') {
+      token = localStorage.getItem('token');
+    }
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/attendence/get?month=${month}&weekIndex=${weekIndex}&page=${page}&limit=${limit}&keyword=${keyword}&location=${location}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch attendances');
+    }
+
+    const data = await response.json();
+
+    // Avoid adding duplicate entries
+    const existingAttendances = state.attendances.attendances;
+    const newAttendances = data.attendances.filter((newAttendance: Attendance) =>
+      !existingAttendances.some(attendance => attendance._id === newAttendance._id)
+    );
+
+    return {
+      attendances: [...existingAttendances, ...newAttendances],
+      count: data.totalCount
+    };
   }
-
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/attendence/get`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch attendances')
-  }
+);
 
 
-  return (await response.json()) as Attendance[]
-})
 
 export const fetchEmployeeAttendances = createAsyncThunk(
   'attendances/fetchEmployeeAttendances',
@@ -87,6 +106,7 @@ export const attendancesSlice = createSlice({
     resetAttendances(state) {
       state.attendances = [];
       state.filteredAttendance = [];
+      state.count = 0;
     },
     filterAttendance(state, action: PayloadAction<{ name: string, location: string }>) {
       const { name, location } = action.payload;
@@ -141,7 +161,8 @@ export const attendancesSlice = createSlice({
       state.error = null;
     })
       .addCase(fetchAttendances.fulfilled, (state, action) => {
-        state.attendances = action.payload;
+        state.attendances = action.payload.attendances;
+        state.count = action.payload.count;  // Set the count
         state.loading = false;
       })
       .addCase(fetchAttendances.rejected, (state, action) => {

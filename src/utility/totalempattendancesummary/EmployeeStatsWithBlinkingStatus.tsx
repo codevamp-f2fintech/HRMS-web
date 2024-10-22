@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from 'react';
 
-import { useSelector } from 'react-redux';
 import dayjs from 'dayjs';
 import {
   Box,
   Typography,
-  CircularProgress,
   Grid,
   Paper,
   useTheme,
@@ -30,13 +28,9 @@ import {
 } from '@mui/icons-material';
 
 import HomeIcon from '@mui/icons-material/Home';
+import Loader from '@/components/loader/loader';
 
-import { apiResponse } from '@/utility/apiResponse/employeesResponse';
-
-interface Employee {
-  _id: string;
-  location: string;
-}
+import { employeesCountResponse } from '@/utility/apiResponse/employeesResponse';
 
 interface AttendanceCounts {
   Present: number;
@@ -59,22 +53,6 @@ interface LocationAttendanceCounts {
       OnField: string[];
       OnWfh: string[];
     };
-  };
-}
-
-interface RootState {
-  attendances: {
-    attendances: Array<{
-      date: string;
-      status: string;
-      employee: {
-        _id: string;
-        location: string;
-        first_name: string;
-        last_name: string;
-        code: string;
-      };
-    }>;
   };
 }
 
@@ -187,9 +165,6 @@ const EmployeeAttendanceStatus: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
   const [dialogTitle, setDialogTitle] = useState<string>('');
 
-  const todayDate = dayjs().format('YYYY-MM-DD');
-  const attendances = useSelector((state: RootState) => state.attendances.attendances);
-
   const handleStatusClick = (status: string, employees: string[]) => {
     const sortedEmployees = employees.sort((a, b) => a.localeCompare(b));
 
@@ -199,11 +174,10 @@ const EmployeeAttendanceStatus: React.FC = () => {
   };
 
   useEffect(() => {
-    const fetchEmployees = async () => {
+    const fetchEmployeesCount = async () => {
       try {
-        const employees: Employee[] = await apiResponse();
-
-        setTotalEmployees(employees.length);
+        const employees: number = await employeesCountResponse();
+        setTotalEmployees(employees);
         setLoading(false);
       } catch (error: any) {
         setError(error.message || 'An unexpected error occurred.');
@@ -211,68 +185,37 @@ const EmployeeAttendanceStatus: React.FC = () => {
       }
     };
 
-    fetchEmployees();
+    fetchEmployeesCount();
   }, []);
 
   useEffect(() => {
-    if (attendances.length > 0) {
-      const countsByLocation: LocationAttendanceCounts = {};
-      const uniqueAttendance = new Set<string>();
-
-      attendances.forEach((attendance) => {
-        if (attendance.date === todayDate) {
-          const uniqueKey = `${attendance.date}-${attendance.employee?._id}`;
-
-          if (!uniqueAttendance.has(uniqueKey)) {
-            uniqueAttendance.add(uniqueKey);
-
-            const location = attendance.employee?.location || 'Unknown';
-
-            if (location !== 'Unknown') {
-              if (!countsByLocation[location]) {
-                countsByLocation[location] = {
-                  counts: {
-                    Present: 0,
-                    Absent: 0,
-                    OnLeave: 0,
-                    OnHalf: 0,
-                    OnField: 0,
-                    OnWfh: 0,
-                  },
-                  totalEmployeesToday: 0,
-                  employeesByStatus: {
-                    Present: [],
-                    Absent: [],
-                    OnLeave: [],
-                    OnHalf: [],
-                    OnField: [],
-                    OnWfh: [],
-                  },
-                };
-              }
-
-              const status = attendance.status.replace(' ', '') as keyof AttendanceCounts;
-
-
-              countsByLocation[location].totalEmployeesToday += 1;
-
-              if (countsByLocation[location].counts[status] !== undefined) {
-                countsByLocation[location].counts[status] += 1;
-                countsByLocation[location].employeesByStatus[status].push(`${attendance.employee.first_name} ${attendance.employee.last_name} - ${attendance.employee.code}`);
-              }
+    if (!attendanceCountsByLocation.length) {
+      const fetchAttendanceCounts = async () => {
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_APP_URL}/attendence/location-counts`,
+            {
+              method: 'GET',
             }
+          );
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
           }
+          const data = await response.json();
+          setAttendanceCountsByLocation(data);
+        } catch (error) {
+          console.error('Error fetching attendance counts:', error);
         }
-      });
-
-      setAttendanceCountsByLocation(countsByLocation);
+      };
+      fetchAttendanceCounts();
     }
-  }, [attendances, todayDate]);
+  }, [attendanceCountsByLocation]);
+
 
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ p: 3, bgcolor: 'background.default', minHeight: '100vh' }}>
-        <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
+        <Paper elevation={3} sx={{ p: 3, mb: 1 }}>
           <Grid container spacing={2} alignItems="center" justifyContent="space-between">
             <Grid item>
               <Typography variant="h4" color="primary" gutterBottom>
@@ -294,7 +237,7 @@ const EmployeeAttendanceStatus: React.FC = () => {
             </Grid>
           </Grid>
         </Paper>
-        <Grid container spacing={4}>
+        {loading ? <Loader /> : <Grid container spacing={1}>
           {Object.entries(attendanceCountsByLocation).map(([location, data]) => (
             <Grid item xs={12} md={6} lg={4} key={location}>
               <Paper elevation={3} sx={{ p: 3 }}>
@@ -306,38 +249,40 @@ const EmployeeAttendanceStatus: React.FC = () => {
                       color="primary"
                       sx={{
                         textTransform: 'uppercase',
-                        whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         width: '150px',
                       }}
                     >
-                      {location}
+                      {data._id}
                     </Typography>
                   </Box>
-                  {/* Display Today Total just right to the location */}
+                  {/* Display Today's Total Employees Count */}
                   <Typography variant="subtitle1" color="text.secondary">
                     Today's Count: {data.totalEmployeesToday}
                   </Typography>
                 </Box>
                 <Divider sx={{ mb: 2 }} />
                 <Grid container spacing={2}>
-                  {Object.entries(data.counts).map(([status, count]) => (
-                    <Grid item xs={12} sm={6} key={status}>
-                      <StatusCard
-                        count={count}
-                        status={status.replace(/([A-Z])/g, ' $1').trim()}
-                        employees={data.employeesByStatus[status]}
-                        onClick={() => handleStatusClick(status, data.employeesByStatus[status] || [])}
-                      />
-                    </Grid>
-                  ))}
+                  {/* Iterate over each status */}
+                  {Object.entries(data).map(([status, count]) => {
+                    if (status === 'totalEmployeesToday' || status === '_id') return null;
+                    return (
+                      <Grid item xs={12} sm={6} key={status}>
+                        <StatusCard
+                          count={count}
+                          status={status.replace(/([A-Z])/g, ' $1').trim()}
+                          employees={[]}
+                          onClick={() => handleStatusClick(status, [])}
+                        />
+                      </Grid>
+                    );
+                  })}
                 </Grid>
               </Paper>
             </Grid>
           ))}
-        </Grid>
-
+        </Grid>}
         <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
           <DialogContent>
             <Typography variant="h6" gutterBottom>
