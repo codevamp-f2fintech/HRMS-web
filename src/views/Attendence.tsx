@@ -50,12 +50,12 @@ import dayjs from 'dayjs';
 
 import type { AppDispatch, RootState } from '@/redux/store';
 import { fetchAttendances, filterAttendance, addOrUpdateAttendance, resetAttendances } from '@/redux/features/attendances/attendancesSlice';
-import { apiResponse } from '@/utility/apiResponse/employeesResponse';
 import AttendanceSummary from '@/utility/attendancesummry/AttendanceSummary';
 import EmployeeStatsWithBlinkingStatus from '@/utility/totalempattendancesummary/EmployeeStatsWithBlinkingStatus';
 import { AttendanceSummaryColumns } from '@/utility/attendancesummry/AttendanceSummaryColumns';
 
-import Loader from "../components/loader/loader"
+import Loader from "../components/loader/loader";
+import AddAttendanceForm from '@/components/attendance/AttendanceForm';
 
 function getRandomNumber(min: number, max: number) {
   return Math.round(Math.random() * (max - min) + min);
@@ -312,9 +312,7 @@ export default function AttendanceGrid() {
   const [searchName, setSearchName] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [searchLocation, setSearchLoaction] = useState('');
-
-  const [employees, setEmployees] = useState([]);
+  const [searchLocation, setSearchLocation] = useState('');
 
   const [prefillEmployee, setPrefillEmployee] = useState('');
   const [prefillEmployeeName, setPrefillEmployeeName] = useState('');
@@ -322,10 +320,10 @@ export default function AttendanceGrid() {
 
   const debouncedSearch = useCallback(
     debounce(() => {
-      console.log("this is callled search");
+      dispatch(resetAttendances());
       dispatch(fetchAttendances({ month: month, weekIndex: startDayIndex, page: page, limit: limit, keyword: searchName, location: searchLocation }));
     }, 500),
-    [searchName, searchLocation]
+    [dispatch, searchName, searchLocation]
   );
 
   useEffect(() => {
@@ -337,26 +335,27 @@ export default function AttendanceGrid() {
   }, [searchName, searchLocation, debouncedSearch]);
 
   const handleInputChange = (e) => {
-    setSearchName(e.target.value);
-    setSearchLoaction('')
+    const newName = e.target.value
+    setSearchName(newName);
+    setSearchLocation('')
+    if (newName === '') {
+      dispatch(fetchAttendances({ month: month, weekIndex: startDayIndex, page: 1, limit: limit, keyword: newName, location: searchLocation }));
+      dispatch(resetAttendances());
+    }
   };
 
   const handleLocationInputChange = (e) => {
-    setSearchLoaction(e.target.value);
-    setSearchName('')
+    const newLocation = e.target.value;
+    setSearchLocation(newLocation);
+    setSearchName('');
+    if (newLocation === '') {
+      dispatch(fetchAttendances({ month: month, weekIndex: startDayIndex, page: 1, limit: limit, keyword: searchName, location: newLocation }));
+      dispatch(resetAttendances());
+    }
   };
 
   useEffect(() => {
-    console.log("this is callled initial");
     dispatch(fetchAttendances({ month: month, weekIndex: startDayIndex, page: page, limit: limit, keyword: searchName, location: searchLocation }));
-
-    const fetchEmployees = async () => {
-      const data = await apiResponse();
-
-      setEmployees(data);
-    };
-
-    fetchEmployees();
   }, [dispatch, month, startDayIndex, page, limit]);
 
   useEffect(() => {
@@ -369,275 +368,11 @@ export default function AttendanceGrid() {
   const handlePageChange = (newPage: number, newPageSize: number) => {
     setPage(newPage + 1);
     setLimit(newPageSize);
-    setStartDayIndex(0);
   };
 
   const handlePaginationModelChange = (params: { page: number; pageSize: number }) => {
     handlePageChange(params.page, params.pageSize);
   };
-
-  function AddAttendanceForm({ handleClose, attendance, prefillEmployee, prefillEmployeeName, prefillDate }) {
-    const [formData, setFormData] = useState({
-      employee: prefillEmployee || '',
-      date: prefillDate || '',
-      status: '',
-      timeComplete: '',
-    });
-
-    const [errors, setErrors] = useState({
-      employee: '',
-      date: '',
-      status: ''
-    });
-
-    useEffect(() => {
-      if (attendance) {
-        const selected = attendances.find(attend => attend._id === attendance);
-
-        if (selected) {
-          setFormData({
-            employee: selected.employee._id,
-            date: selected.date,
-            status: selected.status,
-            timeComplete: selected.timeComplete || '',
-          });
-        }
-      } else if (prefillEmployee && prefillDate) {
-        setFormData({
-          employee: prefillEmployee,
-          date: prefillDate,
-          status: '',
-          timeComplete: '',
-        });
-      }
-    }, [attendance, attendances, prefillEmployee, prefillDate]);
-
-    const validateForm = () => {
-      let isValid = true;
-
-      const newErrors = {
-        employee: '',
-        date: '',
-        status: ''
-      };
-
-      if (!formData.employee) {
-        newErrors.employee = 'Employee selection is required';
-        isValid = false;
-      }
-
-      if (!formData.date) {
-        newErrors.date = 'Date is required';
-        isValid = false;
-      }
-
-      if (!formData.status) {
-        newErrors.status = 'Status selection is required';
-        isValid = false;
-      }
-
-      setErrors(newErrors);
-
-      return isValid;
-    };
-
-    const handleChange = (e) => {
-      const { name, value } = e.target;
-
-      setFormData(prevState => ({
-        ...prevState,
-        [name]: value,
-      }));
-    };
-
-    const handleSubmit = () => {
-      if (validateForm()) {
-        const method = attendance ? 'PUT' : 'POST';
-
-        const url = attendance
-          ? `${process.env.NEXT_PUBLIC_APP_URL}/attendence/update/${attendance}`
-          : `${process.env.NEXT_PUBLIC_APP_URL}/attendence/create`;
-
-        fetch(url, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
-        })
-          .then(response => response.json())
-
-          .then(data => {
-
-
-            if (data.message) {
-              if (data.message.includes('success')) {
-                dispatch(addOrUpdateAttendance(data))
-                toast.success(data.message, {
-                  position: 'top-center',
-                });
-              } else {
-                toast.error('Error: ' + data.message, {
-                  position: 'top-center',
-                });
-              }
-            } else {
-              toast.error('Unexpected error occurred', {
-                position: 'top-center',
-              });
-            }
-
-            handleClose();
-
-            // dispatch(resetAttendances());
-
-            // dispatch(fetchAttendances());
-
-          })
-          .catch(error => {
-            console.log('Error', error);
-          });
-      }
-    };
-
-    return (
-      <Box sx={{ flexGrow: 1, padding: 2 }}>
-        <Box display='flex' justifyContent='space-between' alignItems='center'>
-          <Typography style={{ fontSize: '2em' }} variant='h5' gutterBottom>
-            {attendance ? 'Edit Attendance' : 'Add Attendance'}
-          </Typography>
-          <IconButton onClick={handleClose}>
-            <CloseIcon />
-          </IconButton>
-        </Box>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label='Date'
-              name='date'
-              type='date'
-              value={formData.date}
-              onChange={handleChange}
-              InputLabelProps={{ shrink: true }}
-              required
-              error={!!errors.date}
-              helperText={errors.date}
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <FormControl fullWidth required error={!!errors.employee}>
-              <Autocomplete
-                id="employee-autocomplete"
-                options={employees}
-                getOptionLabel={(option) => `${option.first_name} ${option.last_name}`}
-                value={employees.find((emp) => emp._id === formData.employee) || null}
-                onChange={(event, newValue) => {
-                  handleChange({
-                    target: {
-                      name: 'employee',
-                      value: newValue ? newValue._id : '',
-                    },
-                  });
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Select Employee"
-                    variant="outlined"
-                    required
-                    error={!!errors.employee}
-                    helperText={errors.employee}
-                  />
-                )}
-              />
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <FormControl fullWidth required error={!!errors.status}>
-              <InputLabel required id='demo-simple-select-label'>Status</InputLabel>
-              <Select
-                label='Select Status'
-                labelId='demo-simple-select-label'
-                id='demo-simple-select'
-                name='status'
-                value={formData.status}
-                onChange={handleChange}
-              >
-                <MenuItem value='Present'>PRESENT</MenuItem>
-                <MenuItem value='Absent'>ABSENT</MenuItem>
-                <MenuItem value='On Half'>ON_HALF</MenuItem>
-                <MenuItem value='On Leave'>ON_LEAVE</MenuItem>
-                <MenuItem value='On Field'>ON_FIELD</MenuItem>
-                <MenuItem value='On Wfh'>ON_WFH</MenuItem>
-              </Select>
-              <Typography variant="caption" color="error">{errors.status}</Typography>
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <FormControl
-              fullWidth
-              error={!!errors.timeComplete}
-              sx={{
-                position: 'relative',
-              }}
-            >
-              <InputLabel id="time-complete-select-label">Time Completion</InputLabel> {/* Remove the required prop */}
-              <Select
-                label="Select Time Completion"
-                labelId="time-complete-select-label"
-                id="time-complete-select"
-                name="timeComplete"
-                value={formData.timeComplete}
-                onChange={handleChange}
-                endAdornment={
-                  formData.timeComplete && (
-                    <IconButton
-                      aria-label="clear"
-                      onClick={() => handleChange({ target: { name: 'timeComplete', value: '' } })}
-                      sx={{
-                        visibility: 'visible',
-                        position: 'absolute',
-                        right: 40,
-                        color: 'black',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        opacity: 0.7,
-                        padding: 0,
-                      }}
-                    >
-                      <ClearIcon />
-                    </IconButton>
-                  )
-                }
-                sx={{
-                  pr: 6,
-                }}
-              >
-                <MenuItem value="Not Completed">Not Completed</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12}>
-            <Button
-              style={{
-                fontSize: '18px',
-                fontWeight: 600,
-                color: 'white',
-                padding: 15,
-                backgroundColor: '#ff902f',
-                width: 250
-              }}
-              variant='contained'
-              fullWidth
-              onClick={handleSubmit}
-            >
-              {attendance ? 'UPDATE ATTENDANCE' : 'ADD ATTENDANCE'}
-            </Button>
-          </Grid>
-        </Grid>
-      </Box>
-    );
-  }
 
   const handleAttendanceAddClick = (employeeId = '', employeeName = '', day) => {
     const date = dayjs(new Date(new Date().getFullYear(), month - 1, day)).format('YYYY-MM-DD');
@@ -921,6 +656,7 @@ export default function AttendanceGrid() {
               prefillEmployee={prefillEmployee}
               prefillEmployeeName={prefillEmployeeName}
               prefillDate={prefillDate}
+              attendances={attendances}
             />
 
           </DialogContent>
@@ -1006,7 +742,7 @@ export default function AttendanceGrid() {
                     variant='contained'
                     color='warning'
                     onClick={handlePreviousDaysClick}
-                    disabled={startDayIndex === 0}
+                    disabled={startDayIndex === 0 || loading}
                   >
                     {'<'}
                   </Button>
@@ -1019,7 +755,7 @@ export default function AttendanceGrid() {
                     variant='contained'
                     color='warning'
                     onClick={handleNextDaysClick}
-                    disabled={startDayIndex + daysToShow >= 30}
+                    disabled={startDayIndex + daysToShow >= 30 || loading}
                   >
                     {'>'}
                   </Button>

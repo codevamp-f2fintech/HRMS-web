@@ -16,6 +16,7 @@ import {
   ListItem,
   Dialog,
   List,
+  DialogTitle,
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -165,13 +166,26 @@ const EmployeeAttendanceStatus: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
   const [dialogTitle, setDialogTitle] = useState<string>('');
 
-  const handleStatusClick = (status: string, employees: string[]) => {
-    const sortedEmployees = employees.sort((a, b) => a.localeCompare(b));
+  const handleStatusClick = async (status: string, location: string) => {
 
-    setSelectedEmployees(sortedEmployees);
-    setDialogTitle(status);
-    setDialogOpen(true);
+    console.log(status, location, "status>>>>");
+    try {
+      // Fetch attendance data based on status
+      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/attendence/attendenceByStatus?status=${status}&location=${location}`); // Call your backend API
+      const employeesData = await response.json(); // Get the employee data
+      console.log("employeesData", employeesData);
+
+      // Sort employees based on their names
+      const sortedEmployees = employeesData.sort((a: any, b: any) => a.employee.first_name.localeCompare(b.employee.first_name));
+
+      setSelectedEmployees(sortedEmployees); // Set sorted employees
+      setDialogTitle(status); // Set dialog title to the status
+      setDialogOpen(true); // Open the dialog
+    } catch (error) {
+      console.error('Error fetching employees by status:', error);
+    }
   };
+
 
   useEffect(() => {
     const fetchEmployeesCount = async () => {
@@ -273,7 +287,7 @@ const EmployeeAttendanceStatus: React.FC = () => {
                           count={count}
                           status={status.replace(/([A-Z])/g, ' $1').trim()}
                           employees={[]}
-                          onClick={() => handleStatusClick(status, [])}
+                          onClick={() => handleStatusClick(status, data._id)}
                         />
                       </Grid>
                     );
@@ -284,29 +298,42 @@ const EmployeeAttendanceStatus: React.FC = () => {
           ))}
         </Grid>}
         <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+          <DialogTitle>{dialogTitle} Employees</DialogTitle>
           <DialogContent>
-            <Typography variant="h6" gutterBottom>
-              {dialogTitle}
-            </Typography>
-            <List>
-              {selectedEmployees.map((employee, index) => (
-                <ListItem key={index} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Avatar sx={{ bgcolor: '#3f51b5', mr: 2 }}>
-                    {employee.split(' ')[0][0]}{employee.split(' ')[1]?.[0]}
-                  </Avatar>
-                  <Box>
-                    <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                      {employee.split(' - ')[0]} {/* Employee name */}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Code: {employee.split(' - ')[1]} {/* Employee code */}
-                    </Typography>
-                  </Box>
-                </ListItem>
-              ))}
-            </List>
+            <ul className="divide-y divide-gray-200">
+              {Array.from(new Set(selectedEmployees.map((employee) => employee.employee._id)))
+                .map((id) => selectedEmployees.find((employee) => employee.employee._id === id))
+                .map((employee) => (
+                  <li
+                    key={employee.employee._id}
+                    className="flex items-center py-4 px-2 hover:bg-gray-50"
+                  >
+                    <div className="h-10 w-10 rounded-full overflow-hidden bg-gray-200">
+                      <img
+                        src={employee.employee.image || '/api/placeholder/40/40'}
+                        alt={employee.employee.first_name}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+
+                    <div className="ml-4 flex-1">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="font-medium text-gray-900">
+                            {employee.employee.first_name} {employee.employee.last_name}
+                          </span>
+                          <span className="ml-2 text-sm text-gray-500">
+                            {employee.employee.code}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+            </ul>
           </DialogContent>
         </Dialog>
+
       </Box>
     </ThemeProvider>
   );
