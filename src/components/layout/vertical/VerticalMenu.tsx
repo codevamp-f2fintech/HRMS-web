@@ -92,10 +92,13 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
           <MenuItem href={`/employees`} icon={<i className='ri-user-3-line' />}>
             Employees
           </MenuItem>
-          <MenuItem href={`/visitors`} icon={<i className='ri-user-3-line' />}>
-            Visitors
-          </MenuItem>
-          {userRole === "0" &&  
+          {[1, 6].includes(Number(userRole)) && (
+            <MenuItem href={`/visitors`} icon={<i className='ri-user-3-line' />}>
+              Visitors
+            </MenuItem>
+          )}
+
+          {userRole === "0" &&
             <MenuItem href={`/payment`} icon={<i className='ri-user-3-line' />}>
               Payment
             </MenuItem>
@@ -111,6 +114,7 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
             <MenuItem href={`/designation`} icon={<SchoolIcon />}>
               Designations
             </MenuItem>
+
           )}
           <MenuItem href={`/seat-layout`} icon={<HolidayVillageIcon />}>
             Seating Plan
@@ -122,15 +126,15 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
             <MenuItem href={`/attendance`} icon={<AccessTimeIcon />}>
               Attendance
             </MenuItem>
-             
+
             <MenuItem href={`/leaves`} icon={<EventAvailableIcon />}>
               Leaves
             </MenuItem>
-              {userRole === "1" && (            
-             <MenuItem href={`/attendance-activity`} icon={<AccessTimeIcon />}>
-              Attendance Activity
-            </MenuItem>)}
-             
+            {userRole === "1" && (
+              <MenuItem href={`/attendance-activity`} icon={<AccessTimeIcon />}>
+                Attendance Activity
+              </MenuItem>)}
+
             <MenuItem href={`/breaksheets`} icon={<FreeBreakfastIcon />}>
               Break Management
             </MenuItem>
