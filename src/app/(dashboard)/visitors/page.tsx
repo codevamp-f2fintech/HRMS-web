@@ -56,6 +56,7 @@ type Visitor = {
     vendorType: string
     otherVendorType?: string
     questions?: string
+    whomToMeet?: string
     description?: string
     createdAt?: string
 }
@@ -67,6 +68,7 @@ type VisitorForm = {
     vendorType: string
     otherVendorType: string
     questions: string
+    whomToMeet: string
     description: string
 }
 
@@ -77,10 +79,11 @@ const emptyForm: VisitorForm = {
     vendorType: '',
     otherVendorType: '',
     questions: '',
+    whomToMeet: '',
     description: ''
 }
 
-const VENDOR_TYPES = ['Guest', 'Vendor', 'Contractor', 'Interview', 'Delivery', 'Other']
+const VENDOR_TYPES = ['Guest', 'Banker', 'IT Vendor', 'Contractor', 'Interview', 'Delivery', 'Other']
 
 const ADMIN_ROLES = ['0', '1', '6']
 
@@ -321,6 +324,7 @@ const VisitorsPage = () => {
             vendorType: visitor.vendorType || '',
             otherVendorType: visitor.otherVendorType || '',
             questions: visitor.questions || '',
+            whomToMeet: visitor.whomToMeet || '',
             description: visitor.description || ''
         })
         setEditVisitor(visitor)
@@ -367,6 +371,7 @@ const VisitorsPage = () => {
             )
         },
         // { field: 'questions', headerName: 'Questions', minWidth: 160, flex: 1, valueGetter: (_, row) => row.questions || '-' },
+        { field: 'whomToMeet', headerName: 'Whom to Meet', minWidth: 150, flex: 1, valueGetter: (_, row) => row.whomToMeet || '-' },
         { field: 'description', headerName: 'Description', minWidth: 180, flex: 1.1, valueGetter: (_, row) => row.description || '-' },
 
         {
@@ -469,6 +474,17 @@ const VisitorsPage = () => {
                     />
                 </Grid>
             )}
+
+            <Grid item xs={12} md={6}>
+                <TextField
+                    fullWidth
+                    sx={fieldSx}
+                    label='Whom to Meet'
+                    placeholder='Person or employee name'
+                    value={form.whomToMeet}
+                    onChange={event => updateForm('whomToMeet', event.target.value)}
+                />
+            </Grid>
 
             <Grid item xs={12}>
                 <TextField fullWidth multiline minRows={2} sx={fieldSx} label='Description' placeholder='Additional notes' value={form.description} onChange={event => updateForm('description', event.target.value)} />
