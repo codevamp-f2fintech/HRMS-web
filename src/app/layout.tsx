@@ -1,5 +1,6 @@
 // Third-party Imports
 import 'react-perfect-scrollbar/dist/css/styles.css'
+import 'react-toastify/dist/ReactToastify.css'
 
 import NextTopLoader from 'nextjs-toploader';
 // Type Imports
