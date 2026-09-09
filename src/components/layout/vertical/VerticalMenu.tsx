@@ -92,12 +92,12 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
           <MenuItem href={`/employees`} icon={<i className='ri-user-3-line' />}>
             Employees
           </MenuItem>
-          {userRole === "1" &&
-            <MenuItem href={`/visitors`} icon={<i className='ri-user-3-line' />}>
-              Visitors
-            </MenuItem>
-          }
-       
+
+          <MenuItem href={`/visitors`} icon={<i className='ri-user-3-line' />}>
+            Visitors
+          </MenuItem>
+
+
 
           {/* {userRole === "0" &&
             <MenuItem href={`/payment`} icon={<i className='ri-user-3-line' />}>
